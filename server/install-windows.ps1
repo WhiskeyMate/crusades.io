@@ -53,7 +53,7 @@ Push-Location "$Root\app"
 npm install --omit=dev --no-audit --no-fund | Out-Null
 Pop-Location
 
-(Get-Content "$project\server\Caddyfile") -replace "play\.example\.com", $Hostname | Set-Content "$Root\Caddyfile" -Encoding utf8
+(Get-Content "$project\server\Caddyfile") -replace "play\.crusades\.io", $Hostname | Set-Content "$Root\Caddyfile" -Encoding utf8
 
 $nssm = "$Root\bin\nssm.exe"
 if (-not (Test-Path $nssm)) {
