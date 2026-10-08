@@ -292,6 +292,14 @@ export class Session {
     return reply.type === "player_actions_result" ? reply.result : null;
   }
 
+  /** Where each of my attacks (out and in) is being fought, as tile coordinates. */
+  async attackPositions(): Promise<{ id: string; positions: { x: number; y: number }[] }[]> {
+    const me = this.state.me;
+    if (!me) return [];
+    const reply = await this.ask({ type: "attack_clustered_positions", playerID: me.smallID });
+    return reply.type === "attack_clustered_positions_result" ? reply.attacks : [];
+  }
+
   async buildables(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],

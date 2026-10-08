@@ -18,6 +18,7 @@ import { PickHit, Stage } from "./render/Stage";
 import { Terrain } from "./render/Terrain";
 import { Units } from "./render/Units";
 import { canSail, Hud } from "./ui/Hud";
+import { AttackLabels } from "./ui/AttackLabels";
 import { Labels } from "./ui/Labels";
 
 export class Game {
@@ -29,6 +30,7 @@ export class Game {
   private armies: Armies;
   readonly hud: Hud;
   private labels: Labels;
+  private attackLabels: AttackLabels;
   private groundNames: GroundNames;
   private raf = 0;
   private last = performance.now();
@@ -57,6 +59,7 @@ export class Game {
     );
     this.hud = new Hud(this.session);
     this.labels = new Labels(document.getElementById("labels")!, this.stage, this.terrain, state);
+    this.attackLabels = new AttackLabels(document.getElementById("labels")!, this.session, this.stage, this.terrain, state);
 
     this.hud.onQuit = onQuit;
     this.hud.onCancel = () => (this.fleet = []);
@@ -95,6 +98,7 @@ export class Game {
     cancelAnimationFrame(this.raf);
     this.session.stop();
     this.hud.dispose();
+    this.attackLabels.dispose();
     document.getElementById("labels")!.innerHTML = "";
     this.stage.dispose();
   }
@@ -376,5 +380,6 @@ export class Game {
     this.groundNames.update();
     this.stage.render();
     this.labels.update();
+    this.attackLabels.update(now);
   }
 }

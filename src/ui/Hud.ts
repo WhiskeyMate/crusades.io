@@ -389,7 +389,11 @@ export class Hud {
         me.incomingAttacks
           .map((a) => {
             const p = state.players.get(a.attackerID);
-            return `<div class="war in"><span>⚔ ${esc(p?.name ?? "?")} marches on you</span><b>${fmtTroops(a.troops)}</b></div>`;
+            return (
+              `<div class="war in"><span>⚔ ${esc(p?.name ?? "?")} marches on you</span><b>${fmtTroops(a.troops)}</b>` +
+              (p ? `<button class="answer" data-answer="${esc(p.id)}" data-troops="${a.troops}" title="March on them with a matching force">Answer</button>` : "") +
+              `</div>`
+            );
           })
           .join("") +
         me.outgoingAttacks
@@ -402,7 +406,15 @@ export class Hud {
           })
           .join("");
       for (const b of Array.from(wars.querySelectorAll("button"))) {
-        b.onclick = () => this.session.send({ type: "cancel_attack", attackID: b.dataset.id! });
+        if (b.dataset.answer) {
+          // Meet them with as many levies as they sent, or all you can spare.
+          b.onclick = () => {
+            const troops = Math.min(Number(b.dataset.troops), me.troops * 0.9);
+            if (troops > 0) this.session.send({ type: "attack", targetID: b.dataset.answer!, troops });
+          };
+        } else {
+          b.onclick = () => this.session.send({ type: "cancel_attack", attackID: b.dataset.id! });
+        }
       }
     } else {
       wars.hidden = true;

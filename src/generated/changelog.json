@@ -1,8 +1,13 @@
 {
-  "version": "0.1.22",
+  "version": "0.1.23",
   "builtAt": "2026-10-09",
-  "commits": 22,
+  "commits": 23,
   "entries": [
+    {
+      "hash": "7d5bf21",
+      "date": "2026-10-09",
+      "subject": "Build bar shows how many of each you have; standings move to the top left"
+    },
     {
       "hash": "12c9031",
       "date": "2026-10-09",

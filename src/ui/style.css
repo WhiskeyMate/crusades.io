@@ -91,7 +91,15 @@ button.on { background: linear-gradient(#7b5a22, #5a3f12); border-color: var(--g
 /* Wars and the chronicle: right side, under the standings. */
 #feed { right: 12px; top: 60px; bottom: 120px; width: 372px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; pointer-events: none; z-index: 3; }
 #feed > * { pointer-events: auto; }
-#wars { padding: 6px 8px; font-size: 13px; }
+#wars { padding: 4px 10px; font-size: 13px; min-width: 420px; max-width: 640px; }
+.war button.answer { padding: 1px 9px; line-height: 18px; background: linear-gradient(#a3262b, #7a1a1f); border-color: #d68a6a; font-weight: bold; }
+.attack-pill {
+  position: absolute; left: 0; top: 0; white-space: nowrap; pointer-events: none; will-change: transform;
+  font-size: 12px; font-weight: bold; padding: 1px 7px; border-radius: 9px; border: 1px solid #1b1410;
+  text-shadow: 0 1px 1px #000; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+.attack-pill.mine { background: rgba(220, 182, 90, 0.92); color: #1b1410; text-shadow: none; }
+.attack-pill.theirs { background: rgba(190, 40, 35, 0.92); color: #fff; }
 .war { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
 .war span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .war.in span { color: var(--bad); }
