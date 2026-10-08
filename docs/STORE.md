@@ -59,6 +59,11 @@ can go on running without it.
 
    Copy each price id (`price_...`) into the variable named beside it. A
    pack whose variable is unset shows "not on sale yet" instead of failing.
+   New Stripe accounts have **Managed Payments** on by default (Stripe is
+   the seller of record and handles sales tax and VAT, for a higher fee).
+   With it on, give each product a tax code (edit the product, "Product tax
+   code"). To sell as yourself instead, set `STRIPE_MANAGED_PAYMENTS=off`
+   in Netlify, or turn it off under Settings > Managed Payments.
 2. **Settings > Payment methods**: turn on Google Pay and Apple Pay (Apple
    Pay also asks you to register the domain there).
 3. **Developers > Webhooks**: endpoint

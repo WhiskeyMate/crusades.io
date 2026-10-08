@@ -25,7 +25,15 @@ export default async (req: Request) => {
       .eq("id", user.id)
       .maybeSingle();
 
+    // Stripe's Managed Payments (Stripe as seller of record, handling tax)
+    // is on by default for new accounts and needs a tax code on each product.
+    // STRIPE_MANAGED_PAYMENTS=off opts these sessions out of it.
+    const managed =
+      process.env.STRIPE_MANAGED_PAYMENTS?.toLowerCase() === "off"
+        ? ({ managed_payments: { enabled: false } } as Record<string, unknown>)
+        : {};
     const session = await stripe().checkout.sessions.create({
+      ...managed,
       mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
       // How the webhook knows which account paid and what to grant.
