@@ -94,14 +94,36 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
         catchup: g.catchup,
       });
       session.onHash = (tick, hash) => o.reportHash(tick, hash);
+      session.onGap = () => resync("A turn went missing");
       hooks.begin(session);
     };
-    o.onDesync = () => {
-      const game = (window as unknown as { crusades?: { hud?: { toast(t: string, k: string): void } } }).crusades;
-      game?.hud?.toast("Your game has diverged from the others. Leave and rejoin to resync.", "bad");
-    };
+    o.onDesync = () => resync("Your game drifted from the others");
     status("");
     return o;
+  }
+
+  /**
+   * Reload and let the saved seat replay the game from the first turn. At
+   * most twice in five minutes, so a persistent fault can't loop forever.
+   */
+  function resync(why: string) {
+    const game = (window as unknown as { crusades?: { hud?: { toast(t: string, k: string): void } } }).crusades;
+    let tries: number[] = [];
+    try {
+      tries = (JSON.parse(sessionStorage.getItem("crusades.resync") ?? "[]") as number[]).filter(
+        (t) => Date.now() - t < 300_000,
+      );
+    } catch {
+      // Fresh.
+    }
+    if (tries.length >= 2) {
+      game?.hud?.toast(`${why}, and resyncing didn't help. Leave and rejoin the game.`, "bad");
+      return;
+    }
+    tries.push(Date.now());
+    sessionStorage.setItem("crusades.resync", JSON.stringify(tries));
+    game?.hud?.toast(`${why}; resyncing with the server…`, "warn");
+    window.setTimeout(() => location.reload(), 1500);
   }
 
   function scheduleRetry() {

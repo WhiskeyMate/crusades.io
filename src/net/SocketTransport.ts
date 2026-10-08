@@ -13,6 +13,11 @@ export class SocketTransport implements Transport {
 
   constructor(private sendIntent: (i: Intent) => void) {}
 
+  /** Turns queued so far (the catch-up a late starter has to play). */
+  get queued(): number {
+    return this.queue.length;
+  }
+
   /** From the Online client, in order. */
   push(turn: Turn) {
     if (this.running) this.onTurn(turn);

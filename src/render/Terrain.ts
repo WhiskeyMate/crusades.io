@@ -80,9 +80,9 @@ void main() {
   vec3 snow = vec3(0.93, 0.95, 0.98);
   vec3 sand = vec3(0.80, 0.73, 0.53);
 
-  vec3 col = mix(grass, heath, smoothstep(1.3, 2.6, h + big));
-  col = mix(col, rock, clamp(smoothstep(3.2, 5.5, h) + smoothstep(0.14, 0.32, slope), 0.0, 1.0));
-  col = mix(col, snow, smoothstep(6.0, 8.0, h + fine * 1.5) * (1.0 - smoothstep(0.35, 0.6, slope)));
+  vec3 col = mix(grass, heath, smoothstep(1.2, 2.2, h + big));
+  col = mix(col, rock, clamp(smoothstep(2.6, 4.2, h) + smoothstep(0.16, 0.34, slope), 0.0, 1.0));
+  col = mix(col, snow, smoothstep(4.4, 5.8, h + fine * 1.2) * (1.0 - smoothstep(0.35, 0.6, slope)));
   col = mix(sand, col, smoothstep(0.08, 0.5, h));
   if (h < 0.0) {
     col = mix(sand * 0.75, vec3(0.10, 0.19, 0.25), smoothstep(0.0, 2.5, -h));
@@ -386,16 +386,16 @@ export class Terrain {
         } else if (m <= 10) {
           v = 0.22 + m * 0.11 + noise.fbm(x * 0.06, y * 0.06, 2) * 0.25 * (m / 10);
         } else if (m <= 20) {
-          v = 1.32 + (m - 10) * 0.22 + noise.fbm(x * 0.05, y * 0.05, 3) * 0.6;
+          v = 1.1 + (m - 10) * 0.15 + noise.fbm(x * 0.05, y * 0.05, 3) * 0.45;
         } else {
           // Mountains read as mountains from afar but stay gentle enough that
           // a building on them sits on a slope, not a cliff.
           const k = (m - 20) / 10;
           v =
-            3.5 +
-            k * 4.5 +
-            noise.ridged(x * 0.035, y * 0.035, 4) * (1.5 + k * 3.5) -
-            1.2;
+            2.5 +
+            k * 2.6 +
+            noise.ridged(x * 0.035, y * 0.035, 4) * (0.9 + k * 1.8) -
+            0.7;
         }
         raw[i] = v;
       }

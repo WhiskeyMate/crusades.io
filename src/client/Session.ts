@@ -120,6 +120,8 @@ export class Session {
   onError: (message: string) => void = () => {};
   /** Engine state hashes, for the server to compare between players. */
   onHash: (tick: number, hash: number) => void = () => {};
+  /** The turn stream skipped or repeated: the game is unrecoverable without a resync. */
+  onGap: (expected: number, got: number) => void = () => {};
 
   private worker: Worker;
   private transport: Transport;
@@ -147,6 +149,12 @@ export class Session {
       this.onError(e.message || "The engine worker failed to load."),
     );
     this.transport.onTurn = (turn) => {
+      if (turn.turnNumber !== this.turns) {
+        // A missed or repeated turn means this game can never match the others.
+        console.error(`Turn ${turn.turnNumber} arrived, expected ${this.turns}`);
+        this.onGap(this.turns, turn.turnNumber);
+        return;
+      }
       this.turns++;
       this.inFlight++;
       this.post({ type: "turn", turn });

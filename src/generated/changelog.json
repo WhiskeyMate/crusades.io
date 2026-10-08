@@ -1,12 +1,37 @@
 {
-  "version": "0.1.10",
+  "version": "0.1.17",
   "builtAt": "2026-10-08",
-  "commits": 10,
+  "commits": 17,
   "entries": [
+    {
+      "hash": "7911512",
+      "date": "2026-10-08",
+      "subject": "Public games: countdown on the server's clock, failed starts reported instead of hanging"
+    },
+    {
+      "hash": "31cc90f",
+      "date": "2026-10-08",
+      "subject": "Smaller war galleys, much smaller merchant cogs"
+    },
+    {
+      "hash": "8a714e8",
+      "date": "2026-10-08",
+      "subject": "Remove install transcript from the repo"
+    },
+    {
+      "hash": "9eb08dc",
+      "date": "2026-10-08",
+      "subject": "Changelog and build version generated from git on every deploy"
+    },
     {
       "hash": "403270e",
       "date": "2026-10-08",
       "subject": "Server dashboard: live view and controls at /admin"
+    },
+    {
+      "hash": "f01d72c",
+      "date": "2026-10-08",
+      "subject": "Fix Windows service install args"
     },
     {
       "hash": "32bf4c2",

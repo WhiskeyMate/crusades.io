@@ -159,13 +159,20 @@ export class Online {
         this.lobby = null;
         this.onLobby(null);
         break;
-      case "start":
-        this.begin(msg).catch((e) => {
+      case "start": {
+        if (this.pendingStart) break;
+        // Turns start flowing the instant the game starts, while the map is
+        // still downloading. Queue them from this moment; lose none.
+        const transport = new SocketTransport(this.sendIntent);
+        this.transport = transport;
+        for (const t of msg.turns) transport.push(t);
+        this.begin(msg, transport).catch((e) => {
           console.error("Could not start the game:", e);
           this.pendingStart = null;
           this.onError(`Could not start the game: ${e instanceof Error ? e.message : e}. Leave and rejoin.`);
         });
         break;
+      }
       case "turn":
         this.transport?.push(msg.turn);
         break;
@@ -193,8 +200,7 @@ export class Online {
   }
 
   /** The game is on: build the realm, check it matches, hand over. */
-  private async begin(msg: ServerMessage & { type: "start" }) {
-    if (this.pendingStart) return;
+  private async begin(msg: ServerMessage & { type: "start" }, transport: SocketTransport) {
     this.pendingStart = msg;
     console.log(`Game ${msg.info.gameID} starting on ${msg.info.config.gameMap}, ${msg.turns.length} turns to catch up`);
     const c = msg.info.config;
@@ -220,15 +226,12 @@ export class Online {
         numLandTiles: manifest.map.num_land_tiles,
       };
     }
-    const transport = new SocketTransport(this.sendIntent);
-    this.transport = transport;
-    for (const t of msg.turns) transport.push(t);
     this.onStart({
       realm,
       info: msg.info,
       clientID: this.clientID,
       transport,
-      catchup: msg.turns.length,
+      catchup: transport.queued,
     });
   }
 }
