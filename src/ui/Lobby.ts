@@ -234,6 +234,14 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       window.clearTimeout(stallWatch);
       return;
     }
+    // Once the game is up on this side (or being raised), lobby changes such
+    // as a member dropping are none of the dialog's business: a running
+    // game must never get the waiting room drawn over it.
+    if (lobby.status !== "open" && (!el("hud").hidden || !el("loading").hidden)) {
+      box.hidden = true;
+      window.clearTimeout(stallWatch);
+      return;
+    }
     // The server says the game is running: we must be in it within 20 s,
     // or something on this side swallowed the start. Resync rather than sit.
     window.clearTimeout(stallWatch);

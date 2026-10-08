@@ -1,8 +1,13 @@
 {
-  "version": "0.1.18",
+  "version": "0.1.19",
   "builtAt": "2026-10-08",
-  "commits": 18,
+  "commits": 19,
   "entries": [
+    {
+      "hash": "8676981",
+      "date": "2026-10-08",
+      "subject": "Fix second game never starting; server log shows each client's start steps"
+    },
     {
       "hash": "4d7f60a",
       "date": "2026-10-08",

@@ -17,6 +17,14 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
+# Map terrain changes with the game and must match the server exactly:
+# always revalidate (ETags keep that cheap) rather than let a browser keep
+# an old copy for days.
+[[headers]]
+  for = "/maps/*"
+  [headers.values]
+    Cache-Control = "public, no-cache"
+
 [[headers]]
   for = "/*"
   [headers.values]
