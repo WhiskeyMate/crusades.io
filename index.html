@@ -12,14 +12,6 @@
     <div id="labels"></div>
 
     <div id="hud" hidden>
-      <div id="me" class="panel">
-        <div id="me-name"></div>
-        <div class="stat"><span title="Gold">⛃ Gold</span><b id="me-gold">0</b></div>
-        <div class="stat"><span title="Levies">⚔ Levies</span><b id="me-troops">0</b></div>
-        <div id="me-bar"><i></i></div>
-        <div class="stat"><span>⛰ Of the realm</span><b id="me-land">0%</b></div>
-      </div>
-
       <div id="banner" class="panel" hidden></div>
 
       <div id="right">
@@ -43,16 +35,22 @@
         <div id="offers"></div>
       </div>
 
-      <div id="left">
+      <div id="feed">
         <div id="wars" class="panel" hidden></div>
         <div id="chronicle"></div>
       </div>
 
       <div id="bottom">
         <div id="hint" class="panel" hidden></div>
-        <div id="ratio-box" class="panel">
-          <span id="ratio-text"></span>
-          <input type="range" id="ratio" min="1" max="100" />
+        <div id="me" class="panel">
+          <div id="me-name"></div>
+          <div class="stat" title="Gold"><span>⛃</span><b id="me-gold">0</b></div>
+          <div class="stat levies" title="Levies"><span>⚔</span><b id="me-troops">0</b><div id="me-bar"><i></i></div></div>
+          <div class="stat" title="Share of the realm"><span>⛰</span><b id="me-land">0%</b></div>
+          <div class="ratio">
+            <span id="ratio-text"></span>
+            <input type="range" id="ratio" min="1" max="100" />
+          </div>
         </div>
         <div id="build" class="panel"></div>
       </div>

@@ -1,8 +1,13 @@
 {
-  "version": "0.1.20",
+  "version": "0.1.21",
   "builtAt": "2026-10-08",
-  "commits": 20,
+  "commits": 21,
   "entries": [
+    {
+      "hash": "b529643",
+      "date": "2026-10-08",
+      "subject": "Colour every land tile; kingdom and clan counts match upstream"
+    },
     {
       "hash": "8f7a73b",
       "date": "2026-10-08",

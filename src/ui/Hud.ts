@@ -321,7 +321,7 @@ export class Hud {
 
     if (me) {
       const max = state.maxTroops(me);
-      el("me-name").innerHTML = `${shieldSVG(me.name, me.color, 26)}<span>${esc(me.name)}</span>`;
+      el("me-name").innerHTML = `${shieldSVG(me.name, me.color, 20)}<span>${esc(me.name)}</span>`;
       el("me-gold").textContent = fmt(me.gold);
       el("me-troops").textContent = `${fmtTroops(me.troops)} / ${fmtTroops(max)}`;
       (el("me-bar").firstElementChild as HTMLElement).style.width =

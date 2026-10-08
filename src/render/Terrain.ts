@@ -48,8 +48,10 @@ uniform float uTime;
 uniform int uHover;
 uniform float uSpawnPulse;
 uniform vec4 uBlasts[4];
-// Range rings: x, z, radius (tiles), kind (0 keep, 1 ballista, 2 market, 3 spacing).
-uniform vec4 uRings[16];
+// Range rings: x, z, radius (tiles), kind (0 keep, 1 ballista, 2 market,
+// 3 spacing, 4 blast: outer, 5 blast: inner). Rings of one kind are drawn as
+// their union: one outline around the merged area, one flat fill inside.
+uniform vec4 uRings[32];
 uniform int uRingCount;
 varying vec3 vWorld;
 
@@ -149,24 +151,49 @@ void main() {
   if (uSpawnPulse > 0.0 && isLand && o == 0) {
     lit += vec3(0.25, 0.22, 0.08) * uSpawnPulse * (0.5 + 0.5 * sin(uTime * 3.0));
   }
-  for (int i = 0; i < 16; i++) {
-    if (i >= uRingCount) break;
-    vec4 r = uRings[i];
-    float d = distance(vWorld.xz, r.xy);
+  {
     float fw = max(fwidth(tile.x), fwidth(tile.y));
-    float line = 1.0 - smoothstep(0.0, max(0.7, fw * 1.6), abs(d - r.z));
-    float inside = 1.0 - step(r.z, d);
-    vec3 rc = r.w < 0.5 ? vec3(1.0, 0.5, 0.3)
-            : r.w < 1.5 ? vec3(0.45, 0.8, 1.0)
-            : r.w < 2.5 ? vec3(1.0, 0.85, 0.4)
-            : vec3(1.0, 1.0, 1.0);
-    if (r.w > 2.5) {
-      // Spacing ring: dashed, so it reads as a limit rather than a reach.
-      float ang = atan(vWorld.z - r.y, vWorld.x - r.x);
-      line *= step(0.5, fract(ang * 6.0 / 3.14159));
+    float lw = max(0.7, fw * 1.6);
+    // Per kind: are we inside the union, and how close to its outline.
+    float insideK[6];
+    float lineK[6];
+    for (int k = 0; k < 6; k++) { insideK[k] = 0.0; lineK[k] = 0.0; }
+    for (int i = 0; i < 32; i++) {
+      if (i >= uRingCount) break;
+      vec4 r = uRings[i];
+      int k = int(r.w + 0.5);
+      float d = distance(vWorld.xz, r.xy);
+      if (d < r.z - lw) insideK[k] = 1.0;
+      float line = 1.0 - smoothstep(0.0, lw, abs(d - r.z));
+      if (line <= 0.0) continue;
+      // Only an outline not buried inside another ring of the same kind.
+      bool buried = false;
+      for (int j = 0; j < 32; j++) {
+        if (j >= uRingCount) break;
+        if (j == i) continue;
+        vec4 q = uRings[j];
+        if (int(q.w + 0.5) != k) continue;
+        if (distance(vWorld.xz, q.xy) < q.z - lw) { buried = true; break; }
+      }
+      if (buried) continue;
+      if (k == 3) {
+        // Spacing ring: dashed, so it reads as a limit rather than a reach.
+        float ang = atan(vWorld.z - r.y, vWorld.x - r.x);
+        line *= step(0.5, fract(ang * 6.0 / 3.14159));
+      }
+      lineK[k] = max(lineK[k], line);
     }
-    lit = mix(lit, rc, line * 0.9);
-    lit += rc * inside * (r.w > 2.5 ? 0.0 : 0.07);
+    for (int k = 0; k < 6; k++) {
+      vec3 rc = k == 0 ? vec3(1.0, 0.5, 0.3)
+              : k == 1 ? vec3(0.45, 0.8, 1.0)
+              : k == 2 ? vec3(1.0, 0.85, 0.4)
+              : k == 3 ? vec3(1.0, 1.0, 1.0)
+              : k == 4 ? vec3(1.0, 0.35, 0.15)
+              : vec3(1.0, 0.15, 0.05);
+      float fill = k == 3 ? 0.0 : k == 4 ? 0.1 : k == 5 ? 0.18 : 0.07;
+      lit = mix(lit, rc, lineK[k] * 0.9);
+      lit += rc * insideK[k] * fill;
+    }
   }
   for (int i = 0; i < 4; i++) {
     vec4 b = uBlasts[i];
@@ -345,7 +372,7 @@ export class Terrain {
         value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 1, 0)),
       },
       uRings: {
-        value: Array.from({ length: 16 }, () => new THREE.Vector4(0, 0, 1, 0)),
+        value: Array.from({ length: 32 }, () => new THREE.Vector4(0, 0, 1, 0)),
       },
       uRingCount: { value: 0 },
     };

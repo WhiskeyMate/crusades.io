@@ -289,7 +289,29 @@ export class Game {
       if (n < out.length) out[n++].set(this.terrain.worldX(tx), this.terrain.worldZ(ty), r, kind);
     };
     const placing = this.hud.placing;
-    if (placing !== null && this.hoverTile !== null && Structures.has(placing)) {
+    if (placing !== null && this.hoverTile !== null && Nukes.has(placing)) {
+      // Casting: the blast at the cursor, and every ballista tower that could
+      // shoot it down, yours and theirs, so the gaps in the defence show.
+      const hx = map.x(this.hoverTile);
+      const hy = map.y(this.hoverTile);
+      const blast = this.session.state.config.nukeMagnitudes(
+        placing === UnitType.MIRV ? UnitType.MIRVWarhead : placing,
+      );
+      put(hx, hy, blast.outer, 4);
+      put(hx, hy, blast.inner, 5);
+      const towers: { u: UnitState; d: number }[] = [];
+      for (const b of this.session.state.units.values()) {
+        if (b.type !== UnitType.SAMLauncher || b.underConstruction) continue;
+        const dx = map.x(b.pos) - hx;
+        const dy = map.y(b.pos) - hy;
+        towers.push({ u: b, d: dx * dx + dy * dy });
+      }
+      towers.sort((a, b) => a.d - b.d);
+      for (const { u: b } of towers.slice(0, 28)) {
+        const r = this.reach(b.type, b.level);
+        if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
+      }
+    } else if (placing !== null && this.hoverTile !== null && Structures.has(placing)) {
       const hx = map.x(this.hoverTile);
       const hy = map.y(this.hoverTile);
       const own = this.reach(placing, 1);
@@ -304,7 +326,7 @@ export class Game {
         near.push({ u: b, d: dx * dx + dy * dy });
       }
       near.sort((a, b) => a.d - b.d);
-      for (const { u: b } of near.slice(0, 13)) {
+      for (const { u: b } of near.slice(0, 29)) {
         const r = this.reach(b.type, b.level);
         if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
       }
