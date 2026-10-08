@@ -92,7 +92,7 @@ button.on { background: linear-gradient(#7b5a22, #5a3f12); border-color: var(--g
 #feed { right: 12px; top: 60px; bottom: 120px; width: 372px; display: flex; flex-direction: column; justify-content: flex-end; gap: 8px; pointer-events: none; z-index: 3; }
 #feed > * { pointer-events: auto; }
 #wars { padding: 4px 10px; font-size: 13px; min-width: 420px; max-width: 640px; }
-.war button.answer { padding: 1px 9px; line-height: 18px; background: linear-gradient(#a3262b, #7a1a1f); border-color: #d68a6a; font-weight: bold; }
+.war button.answer { padding: 0 7px; line-height: 18px; font-size: 14px; background: linear-gradient(#a3262b, #7a1a1f); border-color: #d68a6a; font-weight: bold; }
 .attack-pill {
   position: absolute; left: 0; top: 0; white-space: nowrap; pointer-events: none; will-change: transform;
   font-size: 12px; font-weight: bold; padding: 1px 7px; border-radius: 9px; border: 1px solid #1b1410;

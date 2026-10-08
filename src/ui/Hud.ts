@@ -391,7 +391,7 @@ export class Hud {
             const p = state.players.get(a.attackerID);
             return (
               `<div class="war in"><span>⚔ ${esc(p?.name ?? "?")} marches on you</span><b>${fmtTroops(a.troops)}</b>` +
-              (p ? `<button class="answer" data-answer="${esc(p.id)}" data-troops="${a.troops}" title="March on them with a matching force">Answer</button>` : "") +
+              (p ? `<button class="answer" data-answer="${esc(p.id)}" data-troops="${a.troops}" title="Answer: march on them with a matching force">⚔</button>` : "") +
               `</div>`
             );
           })
