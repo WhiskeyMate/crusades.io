@@ -70,6 +70,11 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       el("public-list").innerHTML = `<p class="dim small">Lost the game server. Trying again…</p>`;
       scheduleRetry();
     };
+    o.onNotice = (m) => {
+      const game = (window as unknown as { crusades?: { hud?: { toast(t: string, k: string): void } } }).crusades;
+      if (game?.hud && el("hud").hidden === false) game.hud.toast(`Herald: ${m}`, "warn");
+      else status(`Herald: ${m}`);
+    };
     o.onEnded = () => {
       el("lobby").hidden = true;
       status("The game has ended.");

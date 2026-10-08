@@ -117,6 +117,8 @@ export type ServerMessage =
     }
   | { type: "desync"; tick: number }
   | { type: "ended" }
+  /** A word from whoever runs the server, shown to everyone. */
+  | { type: "notice"; message: string }
   | { type: "pong"; t: number }
   | { type: "error"; message: string };
 

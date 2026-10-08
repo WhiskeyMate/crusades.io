@@ -86,7 +86,12 @@ function Service($name, $exe, $appArgs, $log) {
 
 $node = (Get-Command node).Source
 Service "CrusadesServer" $node "`"$Root\app\server.mjs`"" "server.log"
-& $nssm set CrusadesServer AppEnvironmentExtra "PORT=$Port" "HOST=127.0.0.1" | Out-Null
+$tokenFile = "$Root\admin-token.txt"
+if (-not (Test-Path $tokenFile)) {
+    -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ }) | Set-Content $tokenFile -NoNewline
+}
+$adminToken = (Get-Content $tokenFile -Raw).Trim()
+& $nssm set CrusadesServer AppEnvironmentExtra "PORT=$Port" "HOST=127.0.0.1" "ADMIN_TOKEN=$adminToken" | Out-Null
 Service "CrusadesCaddy" $caddy "run --config `"$Root\Caddyfile`"" "caddy.log"
 
 Write-Host "Opening the firewall..."
@@ -108,3 +113,4 @@ try {
 Write-Host ""
 Write-Host "Done. The site should be built with VITE_GAME_SERVER=wss://$Hostname"
 Write-Host "Logs: $Root\logs    Services: CrusadesServer, CrusadesCaddy (services.msc)"
+Write-Host "Dashboard: http://127.0.0.1:$Port/admin on this machine, or https://$Hostname/admin?token=$adminToken from anywhere"
