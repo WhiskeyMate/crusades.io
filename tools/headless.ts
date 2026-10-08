@@ -13,7 +13,7 @@ import {
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import { GameStartInfo } from "@crusades/engine-api/Schemas";
 import { readFileSync } from "node:fs";
-import { buildRealm, MAP_DIR, MapInfoFile } from "../src/worldgen/RealmGen";
+import { buildRealm, DEFAULT_CLANS, DEFAULT_KINGDOMS, MAP_DIR, MapInfoFile } from "../src/worldgen/RealmGen";
 
 function png(w: number, h: number, rgb: Uint8Array): Buffer {
   const crcTable = new Uint32Array(256).map((_, n) => {
@@ -58,7 +58,7 @@ const ticks = Number(process.argv[4] ?? 600);
 let t0 = performance.now();
 const dir = `public/maps/${MAP_DIR[mapArg]}`;
 const realm = buildRealm(
-  { map: mapArg, seed },
+  { map: mapArg, seed, kingdoms: DEFAULT_KINGDOMS[mapArg] },
   JSON.parse(readFileSync(`${dir}/info.json`, "utf8")) as MapInfoFile,
   new Uint8Array(readFileSync(`${dir}/main.bin`)),
   new Uint8Array(readFileSync(`${dir}/mini.bin`)),
@@ -99,7 +99,7 @@ const info: GameStartInfo = {
     gameMode: GameMode.FFA,
     gameMapSize: GameMapSize.Normal,
     nations: "default",
-    bots: 120,
+    bots: DEFAULT_CLANS,
     infiniteGold: false,
     infiniteTroops: false,
     instantBuild: false,

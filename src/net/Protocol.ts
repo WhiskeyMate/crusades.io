@@ -25,8 +25,8 @@ export const LobbyConfigSchema = z.object({
   map: z.enum(GameMapType),
   seed: z.number().int().min(1).max(999_999_999),
   difficulty: z.enum(Difficulty),
-  kingdoms: z.number().int().min(0).max(24),
-  clans: z.number().int().min(0).max(300),
+  kingdoms: z.number().int().min(0).max(120),
+  clans: z.number().int().min(0).max(400),
   maxPlayers: z.number().int().min(2).max(64),
 });
 export type LobbyConfig = z.infer<typeof LobbyConfigSchema>;
@@ -126,5 +126,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "4";
+export const PROTOCOL_VERSION = "5";
 export const TURN_MS = 100;

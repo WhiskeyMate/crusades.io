@@ -29,6 +29,18 @@ export const MAP_DIR: Record<GameMapType, string> = {
   [GameMapType.Greece]: "greece",
 };
 
+/** Kingdoms a map holds by default: the counts the upstream maps use. */
+export const DEFAULT_KINGDOMS: Record<GameMapType, number> = {
+  [GameMapType.Earth]: 107,
+  [GameMapType.Europe]: 52,
+  [GameMapType.Mediterranean]: 38,
+  [GameMapType.Greece]: 29,
+};
+/** Clans (the small AI realms) by default, as upstream. */
+export const DEFAULT_CLANS = 400;
+export const MAX_KINGDOMS = 120;
+export const MAX_CLANS = 400;
+
 export interface RealmOptions {
   map: GameMapType;
   seed: number;

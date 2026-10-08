@@ -33,7 +33,7 @@ import {
   ServerMessage,
   TURN_MS,
 } from "../../src/net/Protocol";
-import { buildRealm, MAP_DIR, MapInfoFile, Realm } from "../../src/worldgen/RealmGen";
+import { buildRealm, DEFAULT_CLANS, DEFAULT_KINGDOMS, MAP_DIR, MapInfoFile, Realm } from "../../src/worldgen/RealmGen";
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -391,8 +391,8 @@ function ensurePublicGame() {
     map,
     seed: 1 + Math.floor(Math.random() * 999_999),
     difficulty: Difficulty.Medium,
-    kingdoms: 12,
-    clans: 100,
+    kingdoms: DEFAULT_KINGDOMS[map],
+    clans: DEFAULT_CLANS,
     maxPlayers: PUBLIC_FULL,
   });
   lobbies.set(lobby.code, lobby);

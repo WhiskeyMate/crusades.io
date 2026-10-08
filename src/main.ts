@@ -4,6 +4,7 @@ import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { account } from "./account/Account";
 import { initAccountPanel } from "./account/Panel";
 import { Attract } from "./Attract";
+import { DEFAULT_KINGDOMS } from "./worldgen/RealmGen";
 import changelog from "./generated/changelog.json";
 import { setLiege } from "./client/Heraldry";
 import { BUILD_ORDER, UNIT_LORE } from "./client/Lexicon";
@@ -59,6 +60,11 @@ function drawRealms() {
     b.onclick = () => {
       chosen = r.map;
       drawRealms();
+      const k = el<HTMLInputElement>("opt-kingdoms");
+      if (!k.dataset.touched) {
+        k.value = String(DEFAULT_KINGDOMS[chosen]);
+        k.dispatchEvent(new Event("input"));
+      }
     };
     box.appendChild(b);
   }
@@ -149,6 +155,7 @@ function quit() {
 
 drawRealms();
 bindRange("opt-kingdoms");
+el("opt-kingdoms").addEventListener("change", () => (el("opt-kingdoms").dataset.touched = "1"));
 bindRange("opt-clans");
 bindRange("opt-players");
 rollSeed();

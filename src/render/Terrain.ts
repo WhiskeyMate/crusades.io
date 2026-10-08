@@ -38,6 +38,7 @@ uniform sampler2D tState;
 uniform sampler2D tPalette;
 uniform sampler2D tHeight;
 uniform sampler2D tRoads;
+uniform sampler2D tTerrain;
 uniform vec2 uMap;
 uniform vec3 uSun;
 uniform vec3 uFog;
@@ -94,7 +95,11 @@ void main() {
   ivec2 st = stateAt(ti);
   int o = ownerOf(st);
   float glow = 0.0;
-  if (h > -0.05 && o != 0) {
+  // What the game says this tile is, not what the smoothed mesh happens to
+  // show: a one-tile islet is land and gets its owner's colour.
+  bool isLand = texelFetch(tTerrain, clamp(ti, ivec2(0), ivec2(uMap) - 1), 0).r > 0.5;
+  if (isLand && h < 0.1) col = sand;
+  if (isLand && o != 0) {
     vec4 pc = texelFetch(tPalette, ivec2(o & 63, o >> 6), 0);
     float fw = max(fwidth(tile.x), fwidth(tile.y));
     float w = max(0.32, fw * 1.3);
@@ -130,7 +135,7 @@ void main() {
   }
   float road = texture(tRoads, uv).r;
   col = mix(col, vec3(0.62, 0.52, 0.36), smoothstep(0.2, 0.55, road) * 0.9);
-  if ((st.y & 32) != 0 && h > -0.05) {
+  if ((st.y & 32) != 0 && isLand) {
     // Scorched by sorcery: char, with embers still glowing in the cracks.
     float crack = fbm2(tile * 0.9 + 7.0);
     float ember = smoothstep(0.62, 0.78, crack) * (0.55 + 0.45 * sin(uTime * 2.0 + crack * 40.0));
@@ -141,7 +146,7 @@ void main() {
   float diff = max(dot(n, uSun), 0.0);
   vec3 lit = col * (vec3(0.42, 0.46, 0.55) + vec3(1.05, 0.97, 0.84) * diff * 0.85);
   lit += vec3(1.0, 0.42, 0.08) * glow * 0.9;
-  if (uSpawnPulse > 0.0 && h > 0.0 && o == 0) {
+  if (uSpawnPulse > 0.0 && isLand && o == 0) {
     lit += vec3(0.25, 0.22, 0.08) * uSpawnPulse * (0.5 + 0.5 * sin(uTime * 3.0));
   }
   for (int i = 0; i < 16; i++) {
@@ -301,6 +306,16 @@ export class Terrain {
     this.paletteTex.magFilter = this.paletteTex.minFilter = THREE.NearestFilter;
     this.paletteTex.needsUpdate = true;
 
+    const terrainTex = new THREE.DataTexture(
+      new Uint8Array(realm.terrain.buffer as ArrayBuffer, realm.terrain.byteOffset, realm.terrain.byteLength),
+      w,
+      h,
+      THREE.RedFormat,
+      THREE.UnsignedByteType,
+    );
+    terrainTex.magFilter = terrainTex.minFilter = THREE.NearestFilter;
+    terrainTex.needsUpdate = true;
+
     this.roadData = new Uint8Array(w * h);
     this.roadTex = new THREE.DataTexture(
       this.roadData,
@@ -317,6 +332,7 @@ export class Terrain {
       tPalette: { value: this.paletteTex },
       tHeight: { value: heightTex },
       tRoads: { value: this.roadTex },
+      tTerrain: { value: terrainTex },
       uMap: { value: new THREE.Vector2(w, h) },
       uSun: { value: new THREE.Vector3(0.45, 0.72, 0.35).normalize() },
       uFog: { value: new THREE.Color(0.66, 0.76, 0.86) },
@@ -342,7 +358,7 @@ export class Terrain {
     for (let i = 0; i < pos.count; i++) {
       const tx = pos.getX(i) + w / 2 - 0.5;
       const ty = pos.getZ(i) + h / 2 - 0.5;
-      pos.setY(i, this.heightAt(tx, ty));
+      pos.setY(i, this.vertexHeight(tx, ty));
     }
     geo.computeBoundingSphere();
     const land = new THREE.Mesh(
@@ -415,12 +431,29 @@ export class Terrain {
           raw[y1 * w + x0] + raw[y1 * w + x] + raw[y1 * w + x1];
         let v = c * 0.4 + (s / 8) * 0.6;
         // Keep land above the waterline and water below it.
-        if (e[y * w + x] >= 0) v = Math.max(v, 0.12);
+        if (e[y * w + x] >= 0) v = Math.max(v, 0.2);
         else v = Math.min(v, -0.12);
         out[y * w + x] = v;
       }
     }
     return out;
+  }
+
+  /**
+   * Height for a mesh vertex, which stands for a 2x2 block of tiles: the
+   * highest of them, so a tile-wide islet or spit is not averaged under the
+   * sea by its water neighbours.
+   */
+  private vertexHeight(tx: number, ty: number): number {
+    let best = -Infinity;
+    for (let dy = 0; dy <= 1; dy++) {
+      for (let dx = 0; dx <= 1; dx++) {
+        const x = Math.min(this.width - 1, Math.max(0, Math.round(tx) + dx));
+        const y = Math.min(this.height - 1, Math.max(0, Math.round(ty) + dy));
+        best = Math.max(best, this.heights[y * this.width + x]);
+      }
+    }
+    return best;
   }
 
   /** Ground height at tile coordinates (tile centres are whole numbers). */

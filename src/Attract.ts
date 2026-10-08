@@ -4,6 +4,7 @@
 import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import { Session, soloSession } from "./client/Session";
+import { DEFAULT_KINGDOMS } from "./worldgen/RealmGen";
 import { Armies } from "./render/Armies";
 import { plantWoods } from "./render/Decor";
 import { Effects } from "./render/Effects";
@@ -30,13 +31,14 @@ export class Attract {
 
   /** The realm has to be fetched first, so construction is async. */
   static async create(): Promise<Attract> {
+    const map = REALMS[(Math.random() * REALMS.length) | 0];
     const session = await soloSession({
       name: "",
-      map: REALMS[(Math.random() * REALMS.length) | 0],
+      map,
       seed: 1 + ((Math.random() * 99999) | 0),
       difficulty: Difficulty.Hard,
-      clans: 90,
-      kingdoms: 14,
+      clans: 250,
+      kingdoms: DEFAULT_KINGDOMS[map],
       sandbox: false,
       spectate: true,
     });
