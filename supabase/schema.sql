@@ -94,6 +94,24 @@ begin
 end $$;
 revoke all on function public.add_crowns(uuid, integer, text) from public, anon, authenticated;
 
+-- Called by the Stripe webhook when a pack is refunded, wholly or in part.
+-- `should_total` is how many Crowns this charge should have given back so
+-- far; only the part not yet taken is removed, so repeats are harmless. The
+-- ledger records the full amount; the balance never goes below zero (a
+-- player who already spent the Crowns keeps what they bought).
+create or replace function public.refund_crowns(uid uuid, should_total integer, charge text)
+returns integer language plpgsql security definer set search_path = public as $$
+declare done integer; take integer;
+begin
+  select coalesce(sum(-crowns), 0) into done from public.purchases where kind = 'refund' and ref = charge;
+  take := should_total - done;
+  if take <= 0 then return 0; end if;
+  insert into public.purchases (user_id, kind, ref, crowns) values (uid, 'refund', charge, -take);
+  update public.profiles set crowns = greatest(0, crowns - take), updated_at = now() where id = uid;
+  return take;
+end $$;
+revoke all on function public.refund_crowns(uuid, integer, text) from public, anon, authenticated;
+
 -- --------------------------------------------------------------- Crowns out
 -- Called by the signed-in player. The price is passed by the client but
 -- checked against the catalogue mirror below, so the client cannot cheat it.

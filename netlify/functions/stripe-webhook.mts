@@ -49,6 +49,30 @@ export default async (req: Request) => {
         }
         break;
       }
+      case "charge.refunded": {
+        // Money went back (by us, or by Stripe on the customer's request):
+        // take back the same share of the pack's Crowns. Stripe sends this
+        // again for each further partial refund; the database function only
+        // ever removes the difference.
+        const charge = event.data.object;
+        let meta = charge.metadata ?? {};
+        if ((!meta.user || !meta.pack) && typeof charge.payment_intent === "string") {
+          meta = (await stripe().paymentIntents.retrieve(charge.payment_intent)).metadata ?? {};
+        }
+        const pack = PACKS.find((p) => p.id === meta.pack);
+        if (!meta.user || !pack) {
+          console.warn("charge.refunded without pack metadata", charge.id);
+          break;
+        }
+        const share = charge.amount > 0 ? charge.amount_refunded / charge.amount : 1;
+        const { error } = await db.rpc("refund_crowns", {
+          uid: meta.user,
+          should_total: Math.round((pack.crowns + pack.bonus) * share),
+          charge: charge.id,
+        });
+        if (error) throw error;
+        break;
+      }
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const sub = event.data.object;

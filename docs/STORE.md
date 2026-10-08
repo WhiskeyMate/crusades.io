@@ -67,8 +67,9 @@ can go on running without it.
 2. **Settings > Payment methods**: turn on Google Pay and Apple Pay (Apple
    Pay also asks you to register the domain there).
 3. **Developers > Webhooks**: endpoint
-   `https://crusades.io/.netlify/functions/stripe-webhook`, event
-   `checkout.session.completed`. Copy the signing secret.
+   `https://crusades.io/.netlify/functions/stripe-webhook`, events
+   `checkout.session.completed` and `charge.refunded`. Copy the signing
+   secret.
 
 ### 3. Netlify environment variables
 
@@ -133,9 +134,11 @@ wearing and the arms editor all work, and nothing is charged. Clear
 
 ## What to settle before taking real money
 
-- **Refunds.** A refunded pack should take its Crowns back; that is not
-  wired. Until it is, handle refunds by hand: refund in Stripe, then lower
-  `profiles.crowns` in Supabase and add a `refund` row to `purchases`.
+- **Refunds.** A refund (yours, or one Stripe issues under Managed
+  Payments) takes back the same share of the pack's Crowns through the
+  `charge.refunded` webhook event. If the player has already spent them the
+  balance stops at zero and they keep what they bought; the `purchases`
+  ledger shows the full amount owed, for you to act on if you wish.
 - **Terms and privacy pages**, and a support address; Stripe requires them.
 - **Tax.** Turn on Stripe Tax if you need VAT or sales tax collected.
 - **Virtual currency rules.** Selling a currency rather than items directly

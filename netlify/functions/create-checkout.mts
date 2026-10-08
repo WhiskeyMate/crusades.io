@@ -25,13 +25,12 @@ export default async (req: Request) => {
       .eq("id", user.id)
       .maybeSingle();
 
-    // Stripe's Managed Payments (Stripe as seller of record, handling tax)
-    // is on by default for new accounts and needs a tax code on each product.
-    // STRIPE_MANAGED_PAYMENTS=off opts these sessions out of it.
-    const managed =
-      process.env.STRIPE_MANAGED_PAYMENTS?.toLowerCase() === "off"
-        ? ({ managed_payments: { enabled: false } } as Record<string, unknown>)
-        : {};
+    // Managed Payments: Stripe (as "Link") is the seller of record and
+    // handles sales tax and VAT. Each pack's product needs an eligible tax
+    // code in Stripe. STRIPE_MANAGED_PAYMENTS=off sells as ourselves instead.
+    const managed = {
+      managed_payments: { enabled: process.env.STRIPE_MANAGED_PAYMENTS?.toLowerCase() !== "off" },
+    } as Record<string, unknown>;
     const session = await stripe().checkout.sessions.create({
       ...managed,
       mode: "payment",
@@ -39,6 +38,9 @@ export default async (req: Request) => {
       // How the webhook knows which account paid and what to grant.
       client_reference_id: user.id,
       metadata: { pack: pack.id, crowns: String(pack.crowns + pack.bonus), user: user.id },
+      // The same tags on the payment itself, so a later refund can be traced
+      // back to the account and the pack without the session.
+      payment_intent_data: { metadata: { pack: pack.id, user: user.id } },
       ...(profile?.stripe_customer_id
         ? { customer: profile.stripe_customer_id }
         : { customer_email: user.email, customer_creation: "always" }),
