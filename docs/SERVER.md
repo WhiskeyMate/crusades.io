@@ -51,6 +51,27 @@ and redeploy. The setup dialog then shows "Host a game" and "Join" under the
 single-player options. Without this variable the site has no online play
 and never contacts your machine.
 
+## The dashboard
+
+The server has a control panel at `/admin`. On the machine itself open
+`http://127.0.0.1:8765/admin`; from anywhere else open
+`https://play.crusades.io/admin?token=…` with the token the install script
+printed (it is kept in `C:\crusadesdmin-token.txt`; the script reuses it on
+re-runs). Treat the token like a password: anyone with it can end games.
+
+It shows who is online, every lobby and running game with its members and
+turn count, memory and uptime, and the last 400 log lines, refreshing every
+two seconds. Controls:
+
+- **Notice to everyone** — a line shown to every connected player (a toast
+  in game, a status line in the hall). Use it before a restart.
+- **Public game countdown** — change the wait live, no restart.
+- **Maintenance** — stops new games: the public game is withdrawn and
+  hosting or joining is refused with a "back soon" message. Running games
+  carry on. Turn it on, send a notice, wait for games to end, then update.
+- Per game: **End** (running) or **Start now** (an open lobby with people in
+  it). Per player: **kick** drops their connection; they can rejoin.
+
 ## Day to day
 
 | Task | How |

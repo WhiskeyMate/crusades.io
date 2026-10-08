@@ -38,6 +38,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { realmHash } from "../../src/worldgen/RealmHash";
+import { AdminSnapshot, handleAdmin, recentLog, remember } from "./admin";
 
 const PORT = Number(process.env.PORT ?? 8765);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -49,7 +50,11 @@ const MAX_GAME_MS = 4 * 60 * 60_000;
 const INTENTS_PER_TURN = 40;
 const MAX_LOBBIES = 200;
 /** How long a public game gathers players before it starts. */
-const PUBLIC_WAIT_MS = Number(process.env.PUBLIC_WAIT_SECONDS ?? 90) * 1000;
+let PUBLIC_WAIT_MS = Number(process.env.PUBLIC_WAIT_SECONDS ?? 90) * 1000;
+/** Set from the dashboard: no new games while on. */
+let maintenance = false;
+const STARTED_AT = Date.now();
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 /** A public game starts as soon as this many have joined. */
 const PUBLIC_FULL = 40;
 const PUBLIC_REALMS = [
@@ -103,6 +108,8 @@ interface Client {
   intentsThisTurn: number;
   alive: boolean;
   greeted: boolean;
+  from: string;
+  connectedAt: number;
 }
 
 interface Member {
@@ -124,10 +131,10 @@ class Lobby {
   private info: GameStartInfo | null = null;
   private realm: Realm | null = null;
   private hash = "";
-  private turns: Turn[] = [];
-  private pending: StampedIntent[] = [];
+  turns: Turn[] = [];
+  pending: StampedIntent[] = [];
   private clock: NodeJS.Timeout | null = null;
-  private startedAt = 0;
+  startedAt = 0;
   private emptySince: number | null = null;
   /** First reported engine hash per tick, to catch a client that diverged. */
   private hashes = new Map<number, { hash: number; by: string }>();
@@ -338,8 +345,9 @@ function openPublicGames(): Lobby[] {
   return [...lobbies.values()].filter((l) => l.kind === "public" && l.status === "open");
 }
 
-/** There is always one public game gathering players. */
+/** There is always one public game gathering players (unless under maintenance). */
 function ensurePublicGame() {
+  if (maintenance) return;
   if (openPublicGames().length > 0) return;
   const map = PUBLIC_REALMS[publicRotation++ % PUBLIC_REALMS.length];
   const lobby = new Lobby(null, {
@@ -385,8 +393,101 @@ setInterval(() => {
 }, 1000);
 
 function log(s: string) {
-  console.log(`${new Date().toISOString()} ${s}`);
+  const line = `${new Date().toISOString()} ${s}`;
+  console.log(line);
+  remember(line);
 }
+
+function snapshot(): AdminSnapshot {
+  return {
+    version: PROTOCOL_VERSION,
+    startedAt: STARTED_AT,
+    now: Date.now(),
+    online: clients.size,
+    memoryMB: Math.round(process.memoryUsage().rss / 1048576),
+    publicWaitSeconds: PUBLIC_WAIT_MS / 1000,
+    maintenance,
+    clients: [...clients].map((c) => ({
+      clientID: c.clientID,
+      name: c.name,
+      lobby: c.lobby?.code ?? null,
+      from: c.from,
+      connectedAt: c.connectedAt,
+      intentsThisTurn: c.intentsThisTurn,
+    })),
+    lobbies: [...lobbies.values()].map((l) => ({
+      code: l.code,
+      kind: l.kind,
+      status: l.status,
+      map: l.config.map,
+      seed: l.config.seed,
+      kingdoms: l.config.kingdoms,
+      clans: l.config.clans,
+      difficulty: l.config.difficulty,
+      maxPlayers: l.config.maxPlayers,
+      startsAt: l.startsAt,
+      startedAt: l.startedAt,
+      turns: l.turns.length,
+      pendingIntents: l.pending.length,
+      members: [...l.members.values()].map((m) => ({
+        clientID: m.clientID,
+        name: m.name,
+        connected: m.client !== null,
+      })),
+    })),
+    log: recentLog(),
+  };
+}
+
+/** What the dashboard may do. Each returns a short result for the log. */
+const adminActions = {
+  end(code: string): string {
+    const l = lobbies.get(code);
+    if (!l) return "no such game";
+    l.end();
+    return `ended ${code}`;
+  },
+  start(code: string): string {
+    const l = lobbies.get(code);
+    if (!l || l.status !== "open") return "no open lobby with that code";
+    if (l.members.size === 0) return "nobody in it";
+    l.start();
+    return `started ${code}`;
+  },
+  kick(clientID: string): string {
+    for (const c of clients) {
+      if (c.clientID === clientID) {
+        send(c, { type: "error", message: "You were removed by the server." });
+        c.ws.close();
+        return `kicked ${c.name || clientID}`;
+      }
+    }
+    return "not connected";
+  },
+  notice(text: string): string {
+    const msg = text.trim().slice(0, 300);
+    if (!msg) return "empty notice";
+    const packet = JSON.stringify({ type: "notice", message: msg } satisfies ServerMessage);
+    for (const c of clients) if (c.ws.readyState === WebSocket.OPEN) c.ws.send(packet);
+    return `notice to ${clients.size}: ${msg}`;
+  },
+  wait(seconds: string): string {
+    const s = Math.round(Number(seconds));
+    if (!Number.isFinite(s) || s < 10 || s > 600) return "wait must be 10-600 seconds";
+    PUBLIC_WAIT_MS = s * 1000;
+    return `public countdown now ${s}s`;
+  },
+  maintenance(on: string): string {
+    maintenance = on === "1" || on === "true";
+    if (maintenance) {
+      for (const l of openPublicGames()) if (l.members.size === 0) lobbies.delete(l.code);
+    } else {
+      ensurePublicGame();
+    }
+    broadcastHall();
+    return maintenance ? "maintenance on: no new games" : "maintenance off";
+  },
+};
 
 function send(client: Client, msg: ServerMessage) {
   if (client.ws.readyState === WebSocket.OPEN) client.ws.send(JSON.stringify(msg));
@@ -430,6 +531,7 @@ function handle(client: Client, msg: ClientMessage) {
       send(client, hallMessage());
       break;
     case "create": {
+      if (maintenance) return fail(client, "The server is closed for maintenance; back soon.");
       if (client.name === "") return fail(client, "Choose a house name first.");
       if (client.lobby) return fail(client, "Leave your current game first.");
       if (lobbies.size >= MAX_LOBBIES) return fail(client, "The server is full. Try again shortly.");
@@ -440,6 +542,7 @@ function handle(client: Client, msg: ClientMessage) {
       break;
     }
     case "join": {
+      if (maintenance) return fail(client, "The server is closed for maintenance; back soon.");
       if (client.name === "") return fail(client, "Choose a house name first.");
       if (client.lobby) return fail(client, "Leave your current game first.");
       const lobby = lobbies.get(msg.lobby);
@@ -486,7 +589,19 @@ function handle(client: Client, msg: ClientMessage) {
 }
 
 const http = createServer((req, res) => {
-  if (req.url === "/health") {
+  const url = new URL(req.url ?? "/", "http://x");
+  if (
+    handleAdmin(req, res, url, ADMIN_TOKEN, snapshot, (action, arg) => {
+      const fn = (adminActions as Record<string, (a: string) => string>)[action];
+      if (!fn) return "unknown action";
+      const result = fn(arg);
+      log(`admin: ${result}`);
+      return result;
+    })
+  ) {
+    return;
+  }
+  if (url.pathname === "/health") {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
       JSON.stringify({
@@ -515,6 +630,8 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
     intentsThisTurn: 0,
     alive: true,
     greeted: false,
+    from: String(req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "?"),
+    connectedAt: Date.now(),
   };
   clients.add(client);
   const from = req.headers["x-forwarded-for"] ?? req.socket.remoteAddress;
@@ -560,7 +677,10 @@ setInterval(() => {
 
 mapsDir();
 ensurePublicGame();
-http.listen(PORT, HOST, () => log(`crusades.io game server listening on ${HOST}:${PORT}`));
+http.listen(PORT, HOST, () => {
+  log(`crusades.io game server listening on ${HOST}:${PORT}`);
+  log(ADMIN_TOKEN ? "dashboard at /admin?token=… (token in ADMIN_TOKEN)" : "dashboard at /admin, from this machine only (set ADMIN_TOKEN to open it remotely)");
+});
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {

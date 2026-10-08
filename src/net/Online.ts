@@ -41,6 +41,7 @@ export class Online {
   onDesync: (tick: number) => void = () => {};
   onEnded: () => void = () => {};
   onClose: () => void = () => {};
+  onNotice: (message: string) => void = () => {};
 
   private ws: WebSocket | null = null;
   private secret = "";
@@ -170,6 +171,9 @@ export class Online {
       case "ended":
         this.lobby = null;
         this.onEnded();
+        break;
+      case "notice":
+        this.onNotice(msg.message);
         break;
       case "pong":
         this.ping = Math.round(performance.now() - msg.t);
