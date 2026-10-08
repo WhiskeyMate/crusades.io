@@ -69,10 +69,10 @@ if (-not (Test-Path $caddy)) {
     Invoke-WebRequest "https://caddyserver.com/api/download?os=windows&arch=amd64" -OutFile $caddy
 }
 
-function Service($name, $exe, $args, $log) {
+function Service($name, $exe, $appArgs, $log) {
     $exists = Get-Service $name -ErrorAction SilentlyContinue
     if ($exists) { & $nssm stop $name | Out-Null; & $nssm remove $name confirm | Out-Null }
-    & $nssm install $name $exe $args | Out-Null
+    & $nssm install $name $exe $appArgs | Out-Null
     & $nssm set $name AppDirectory "$Root\app" | Out-Null
     & $nssm set $name AppStdout "$Root\logs\$log" | Out-Null
     & $nssm set $name AppStderr "$Root\logs\$log" | Out-Null
