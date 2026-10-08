@@ -23,7 +23,12 @@ let games: PublicGame[] = [];
 let countdown = 0;
 let retryIn = 2000;
 
-const seconds = (at: number) => Math.max(0, Math.ceil((at - Date.now()) / 1000));
+/** Seconds until a server timestamp, on the server's clock. */
+const seconds = (at: number) => Math.max(0, Math.ceil((at - (Date.now() + (online?.clockOffset ?? 0))) / 1000));
+const countdown_text = (at: number) => {
+  const s = seconds(at);
+  return s > 0 ? `Starts in ${s}s` : "Starting…";
+};
 
 export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
   if (!GAME_SERVER) {
@@ -80,6 +85,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       status("The game has ended.");
     };
     o.onStart = (g) => {
+      el("lobby-countdown").textContent = "Raising the realm…";
       const session = new Session({
         realm: g.realm,
         info: g.info,
@@ -121,7 +127,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
           `<div class="pub${inIt ? " in" : ""}" data-code="${g.code}">` +
           `<div class="pub-map">${esc(c.map)}</div>` +
           `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} clans</div>` +
-          `<div class="pub-time"><b>${g.players === 0 ? "—" : `${s}s`}</b><span>${g.players === 0 ? "waiting for lords" : "until it starts"}</span></div>` +
+          `<div class="pub-time"><b>${g.players === 0 ? "—" : s > 0 ? `${s}s` : "…"}</b><span>${g.players === 0 ? "waiting for lords" : s > 0 ? "until it starts" : "starting"}</span></div>` +
           `<button>${inIt ? "You're in — waiting" : "Join this game"}</button></div>`
         );
       })
@@ -138,7 +144,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     const lobby = online?.lobby;
     if (lobby?.kind === "public" && lobby.startsAt && !el("lobby").hidden) {
       el("lobby-countdown").textContent =
-        lobby.members.length === 0 ? "Waiting for lords" : `Starts in ${seconds(lobby.startsAt)}s`;
+        lobby.members.length === 0 ? "Waiting for lords" : countdown_text(lobby.startsAt);
     }
   }, 500);
 

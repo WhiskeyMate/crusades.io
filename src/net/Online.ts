@@ -34,6 +34,8 @@ export class Online {
   clientID = "";
   lobby: LobbyView | null = null;
   ping = 0;
+  /** Server clock minus ours, from the last message that carried the server time. */
+  clockOffset = 0;
   onLobby: (lobby: LobbyView | null) => void = () => {};
   onHall: (games: PublicGame[], running: number, online: number) => void = () => {};
   onStart: (game: GameHandoff) => void = () => {};
@@ -145,10 +147,12 @@ export class Online {
   private handle(msg: ServerMessage) {
     switch (msg.type) {
       case "lobby":
+        this.clockOffset = msg.now - Date.now();
         this.lobby = msg.lobby;
         this.onLobby(msg.lobby);
         break;
       case "lobbies":
+        this.clockOffset = msg.now - Date.now();
         this.onHall(msg.games, msg.running, msg.online);
         break;
       case "left":
@@ -156,7 +160,11 @@ export class Online {
         this.onLobby(null);
         break;
       case "start":
-        void this.begin(msg);
+        this.begin(msg).catch((e) => {
+          console.error("Could not start the game:", e);
+          this.pendingStart = null;
+          this.onError(`Could not start the game: ${e instanceof Error ? e.message : e}. Leave and rejoin.`);
+        });
         break;
       case "turn":
         this.transport?.push(msg.turn);
@@ -188,6 +196,7 @@ export class Online {
   private async begin(msg: ServerMessage & { type: "start" }) {
     if (this.pendingStart) return;
     this.pendingStart = msg;
+    console.log(`Game ${msg.info.gameID} starting on ${msg.info.config.gameMap}, ${msg.turns.length} turns to catch up`);
     const c = msg.info.config;
     const lobby = this.lobby;
     let realm = await loadRealm({

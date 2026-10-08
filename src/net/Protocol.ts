@@ -96,8 +96,9 @@ export interface LobbyView {
 
 export type ServerMessage =
   | { type: "welcome"; clientID: string; secret: string; version: string }
-  | { type: "lobby"; lobby: LobbyView }
-  | { type: "lobbies"; games: PublicGame[]; running: number; online: number }
+  | { type: "lobby"; lobby: LobbyView; now: number }
+  /** `now` is the server clock, so countdowns don't depend on the player's clock being right. */
+  | { type: "lobbies"; games: PublicGame[]; running: number; online: number; now: number }
   | { type: "left" }
   | {
       type: "start";

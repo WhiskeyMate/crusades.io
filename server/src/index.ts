@@ -188,7 +188,7 @@ class Lobby {
     });
     client.lobby = this;
     this.emptySince = null;
-    this.broadcast({ type: "lobby", lobby: this.view() });
+    this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
     if (this.kind === "public") {
       if (this.members.size >= PUBLIC_FULL) this.start();
       else broadcastHall();
@@ -204,7 +204,7 @@ class Lobby {
     if (this.status === "open") {
       this.members.delete(client.clientID);
       if (this.kind === "public") {
-        this.broadcast({ type: "lobby", lobby: this.view() });
+        this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
         broadcastHall();
         return;
       }
@@ -219,7 +219,7 @@ class Lobby {
       this.pending.push({ type: "mark_disconnected", isDisconnected: true, clientID: client.clientID });
     }
     if ([...this.members.values()].every((x) => x.client === null)) this.emptySince = Date.now();
-    this.broadcast({ type: "lobby", lobby: this.view() });
+    this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
   }
 
   /** A member came back on a new connection. */
@@ -228,19 +228,38 @@ class Lobby {
     client.lobby = this;
     client.name = m.name;
     this.emptySince = null;
-    send(client, { type: "lobby", lobby: this.view() });
+    send(client, { type: "lobby", lobby: this.view(), now: Date.now() });
     if (this.status === "running" && this.info) {
       this.pending.push({ type: "mark_disconnected", isDisconnected: false, clientID: client.clientID });
       send(client, { type: "start", info: this.info, realmHash: this.hash, turns: this.turns });
     }
-    this.broadcast({ type: "lobby", lobby: this.view() });
+    this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
   }
 
   start() {
     if (this.status !== "open") return;
+    try {
+      this.begin();
+    } catch (e) {
+      // Nothing was sent to the players yet: put the lobby back the way it was.
+      this.status = "open";
+      this.info = null;
+      this.realm = null;
+      log(`lobby ${this.code}: FAILED TO START: ${e instanceof Error ? e.stack ?? e.message : e}`);
+      this.broadcast({ type: "error", message: "The game could not be started; the server has logged why." });
+      if (this.kind === "public") this.startsAt = Date.now() + PUBLIC_WAIT_MS;
+      this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
+      broadcastHall();
+    }
+  }
+
+  private begin() {
+    const c = this.config;
+    // Load first: if the realm can't be built nothing else has changed.
+    this.realm = loadRealmFromDisk(c.map, c.seed, c.kingdoms);
+    this.hash = realmHash(this.realm);
     this.status = "running";
     this.startedAt = Date.now();
-    const c = this.config;
     this.info = {
       gameID: randomID(8),
       lobbyCreatedAt: this.startedAt,
@@ -265,11 +284,9 @@ class Lobby {
         clanTag: null,
       })),
     };
-    this.realm = loadRealmFromDisk(c.map, c.seed, c.kingdoms);
-    this.hash = realmHash(this.realm!);
     log(`lobby ${this.code}: started, ${this.members.size} players, realm ${c.map}/${c.seed} ${this.hash}`);
-    this.broadcast({ type: "lobby", lobby: this.view() });
-    this.broadcast({ type: "start", info: this.info, realmHash: this.hash, turns: [] });
+    this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
+    this.broadcast({ type: "start", info: this.info!, realmHash: this.hash, turns: [] });
     this.clock = setInterval(() => this.tick(), TURN_MS);
     if (this.kind === "public") {
       ensurePublicGame();
@@ -368,6 +385,7 @@ function hallMessage(): ServerMessage {
     games: openPublicGames().map((l) => l.summary()),
     running: [...lobbies.values()].filter((l) => l.status === "running").length,
     online: clients.size,
+    now: Date.now(),
   };
 }
 
@@ -564,7 +582,7 @@ function handle(client: Client, msg: ClientMessage) {
       const l = client.lobby;
       if (!l || l.owner !== client.clientID || l.status !== "open") return;
       l.config = msg.config;
-      l.broadcast({ type: "lobby", lobby: l.view() });
+      l.broadcast({ type: "lobby", lobby: l.view(), now: Date.now() });
       break;
     }
     case "start": {
@@ -680,6 +698,13 @@ ensurePublicGame();
 http.listen(PORT, HOST, () => {
   log(`crusades.io game server listening on ${HOST}:${PORT}`);
   log(ADMIN_TOKEN ? "dashboard at /admin?token=… (token in ADMIN_TOKEN)" : "dashboard at /admin, from this machine only (set ADMIN_TOKEN to open it remotely)");
+});
+
+process.on("uncaughtException", (e) => {
+  log(`UNCAUGHT: ${e.stack ?? e.message}`);
+});
+process.on("unhandledRejection", (e) => {
+  log(`UNHANDLED REJECTION: ${e instanceof Error ? (e.stack ?? e.message) : String(e)}`);
 });
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
