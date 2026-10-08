@@ -6,3 +6,7 @@ tools/preview-*.png
 .env.*
 !.env.example
 .netlify
+
+# PowerShell transcripts from install runs
+install-output.txt
+*.transcript.txt
