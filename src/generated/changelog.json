@@ -1,8 +1,13 @@
 {
-  "version": "0.1.21",
-  "builtAt": "2026-10-08",
-  "commits": 21,
+  "version": "0.1.22",
+  "builtAt": "2026-10-09",
+  "commits": 22,
   "entries": [
+    {
+      "hash": "12c9031",
+      "date": "2026-10-09",
+      "subject": "HUD: player strip beside the attack slider, chronicle on the right, blast rings, merged rings"
+    },
     {
       "hash": "b529643",
       "date": "2026-10-08",

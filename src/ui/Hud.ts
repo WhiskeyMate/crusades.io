@@ -156,7 +156,7 @@ export class Hud {
       b.dataset.type = type;
       b.innerHTML =
         `<span class="key">${(i + 1) % 10}</span><span class="glyph">${lore.glyph}</span>` +
-        `<span class="name">${lore.name}</span><span class="cost">—</span>` +
+        `<span class="name">${lore.name}</span><span class="cost">—</span><span class="count" hidden></span>` +
         `<span class="tip"><b>${lore.name}</b><br>${lore.blurb}</span>`;
       b.onclick = () => this.place(this.placing === type ? null : type);
       bar.appendChild(b);
@@ -331,9 +331,15 @@ export class Hud {
     }
 
     const owned = new Set<UnitType>();
+    // How many of each the player has: buildings standing or going up,
+    // galleys afloat, sorceries in flight.
+    const counts = new Map<UnitType, number>();
     if (me) {
       for (const unit of state.units.values()) {
-        if (unit.ownerID === me.smallID && !unit.underConstruction) owned.add(unit.type);
+        if (unit.ownerID !== me.smallID) continue;
+        if (!unit.underConstruction) owned.add(unit.type);
+        const type = unit.type === UnitType.MIRVWarhead ? UnitType.MIRV : unit.type;
+        counts.set(type, (counts.get(type) ?? 0) + 1);
       }
     }
     for (const b of Array.from(el("build").children) as HTMLElement[]) {
@@ -347,6 +353,11 @@ export class Hud {
           ? "—"
           : `${fmt(cost)} ⛃`;
       b.classList.toggle("poor", lacks || !me || (cost !== undefined && me.gold < cost));
+      const have = counts.get(type) ?? 0;
+      const badge = b.querySelector(".count") as HTMLElement;
+      badge.hidden = have === 0;
+      badge.textContent = `×${have}`;
+      badge.title = `You have ${have}`;
     }
 
     const ranked = [...state.players.values()]
