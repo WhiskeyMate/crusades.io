@@ -1,12 +1,12 @@
-// The realms crusades.io can be played on. Unlike the upstream project these are
-// not shipped as files: each is generated from a seed at game start (see
-// src/worldgen/RealmGen.ts), so this list only names the layouts.
+// The realms crusades.io is played on. Terrain for each lives in
+// public/maps/<id>/ (see src/worldgen/RealmGen.ts); the seats of the
+// kingdoms and their names come from the game's seed.
 
 export enum GameMapType {
-  Aldermark = "Aldermark",
-  SunderedIsles = "Sundered Isles",
-  TwinCrowns = "Twin Crowns",
-  Middenmere = "Middenmere",
+  Earth = "Earth",
+  Europe = "Europe",
+  Mediterranean = "Mediterranean",
+  Greece = "Greece",
 }
 
 export type GameMapName = keyof typeof GameMapType;
@@ -116,53 +116,22 @@ export interface MapLayer {
   nukeable?: boolean;
 }
 
+const entry = (id: GameMapName, type: GameMapType, categories: MapCategory[]): MapInfo => ({
+  id,
+  type,
+  translationKey: `map.${id.toLowerCase()}`,
+  categories,
+  multiplayerFrequency: 1,
+  ffaFrequency: -1,
+  teamFrequency: -1,
+  specialFrequency: -1,
+  defaultNationCount: 12,
+  themes: ["default"],
+});
+
 export const maps: readonly MapInfo[] = [
-  {
-    id: "Aldermark",
-    type: GameMapType.Aldermark,
-    translationKey: "map.aldermark",
-    categories: ["fictional"],
-    multiplayerFrequency: 1,
-    ffaFrequency: -1,
-    teamFrequency: -1,
-    specialFrequency: -1,
-    defaultNationCount: 12,
-    themes: ["default"],
-  },
-  {
-    id: "SunderedIsles",
-    type: GameMapType.SunderedIsles,
-    translationKey: "map.sunderedisles",
-    categories: ["fictional"],
-    multiplayerFrequency: 1,
-    ffaFrequency: -1,
-    teamFrequency: -1,
-    specialFrequency: -1,
-    defaultNationCount: 12,
-    themes: ["default"],
-  },
-  {
-    id: "TwinCrowns",
-    type: GameMapType.TwinCrowns,
-    translationKey: "map.twincrowns",
-    categories: ["fictional"],
-    multiplayerFrequency: 1,
-    ffaFrequency: -1,
-    teamFrequency: -1,
-    specialFrequency: -1,
-    defaultNationCount: 12,
-    themes: ["default"],
-  },
-  {
-    id: "Middenmere",
-    type: GameMapType.Middenmere,
-    translationKey: "map.middenmere",
-    categories: ["fictional"],
-    multiplayerFrequency: 1,
-    ffaFrequency: -1,
-    teamFrequency: -1,
-    specialFrequency: -1,
-    defaultNationCount: 12,
-    themes: ["default"],
-  },
+  entry("Earth", GameMapType.Earth, ["world"]),
+  entry("Europe", GameMapType.Europe, ["continental", "europe"]),
+  entry("Mediterranean", GameMapType.Mediterranean, ["europe", "africa"]),
+  entry("Greece", GameMapType.Greece, ["europe"]),
 ];

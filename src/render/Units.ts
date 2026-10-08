@@ -7,6 +7,7 @@ import { UnitType } from "@crusades/engine-api/game/GameTypes";
 import { GameState, UnitState } from "../client/GameState";
 import { RGB } from "../client/Heraldry";
 import { Dragon, Effects } from "./Effects";
+import { LevelTags } from "./LevelTags";
 import { MODELS, Pool } from "./Models";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
@@ -32,6 +33,7 @@ interface Memo {
 
 export class Units {
   private pools: Record<string, Pool> = {};
+  private tags: LevelTags;
   private memo = new Map<number, Memo>();
   private dragons = new Map<number, Dragon>();
   private m = new THREE.Matrix4();
@@ -49,6 +51,7 @@ export class Units {
     private effects: Effects,
   ) {
     stage.scene.add(this.group);
+    this.tags = new LevelTags(this.group);
     const cap: Record<string, number> = {
       town: 1500, keep: 1500, harbour: 800, market: 800, mageTower: 600,
       ballistaTower: 800, scaffold: 400, galley: 600, longship: 600, cog: 900,
@@ -173,6 +176,9 @@ export class Units {
   update(alpha: number, dt: number, time: number) {
     for (const pool of Object.values(this.pools)) pool.begin();
     const S = this.stage.unitScale;
+    // Level numbers are readable only so far out; beyond that they'd be clutter.
+    const showTags = this.stage.distance < 420;
+    this.tags.begin(this.stage.camera, 1.6 * Math.pow(S, 0.6));
     // Buildings grow only a little with distance, so they shrink on screen
     // as the camera pulls back instead of crowding the map.
     const structScale = 1.35 * Math.pow(S, 0.4);
@@ -198,6 +204,10 @@ export class Units {
           this.put(this.pools.scaffold, wx, wy, wz, memo.yaw, structScale * rise, color);
         } else {
           this.put(this.pools[structure], wx, wy, wz, memo.yaw, structScale * grow * rise, color);
+          if (showTags) {
+            const top = structure === "mageTower" ? 9 : structure === "keep" ? 6 : 4.2;
+            this.tags.add(wx, wy + top * structScale * grow + 1.2 * Math.pow(S, 0.6), wz, u.level);
+          }
           const pips = Math.min(5, u.level - 1);
           for (let i = 0; i < pips; i++) {
             const a = memo.yaw + 2.2 + i * 0.5;
@@ -284,6 +294,7 @@ export class Units {
       memo.seen = true;
     }
     for (const pool of Object.values(this.pools)) pool.end();
+    this.tags.end();
   }
 
   /** Flight of a fireball, dragon, rising star or falling star. */

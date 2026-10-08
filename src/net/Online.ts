@@ -3,7 +3,7 @@
 
 import { GameStartInfo, Intent, Turn } from "@crusades/engine-api/Schemas";
 import { MapManifest } from "@crusades/engine-api/game/MapFiles";
-import { generateRealm, Realm } from "../worldgen/RealmGen";
+import { loadRealm, Realm } from "../worldgen/RealmGen";
 import { realmHash } from "../worldgen/RealmHash";
 import { ClientMessage, LobbyConfig, LobbyView, PublicGame, ServerMessage } from "./Protocol";
 import { SocketTransport } from "./SocketTransport";
@@ -181,7 +181,7 @@ export class Online {
     this.pendingStart = msg;
     const c = msg.info.config;
     const lobby = this.lobby;
-    let realm = generateRealm({
+    let realm = await loadRealm({
       map: c.gameMap,
       seed: lobby?.config.seed ?? 1,
       kingdoms: typeof c.nations === "number" ? c.nations : lobby?.config.kingdoms ?? 12,

@@ -59,7 +59,7 @@ and never contacts your machine.
 | Logs | `C:\crusades\logs\server.log`, `caddy.log` |
 | Who is online | `http://127.0.0.1:8765/health` on the machine, or the `/health` page over https |
 | Restart | `C:\crusades\bin\nssm.exe restart CrusadesServer` |
-| Update after a code change | `git pull`, then re-run the install script (it rebuilds and restarts) |
+| Update after a code change | `git pull`, then re-run the install script (it rebuilds, copies the maps and restarts) |
 | Remove | `nssm remove CrusadesServer confirm`, same for `CrusadesCaddy` |
 | Change the public countdown | `nssm set CrusadesServer AppEnvironmentExtra PORT=8765 HOST=127.0.0.1 PUBLIC_WAIT_SECONDS=60`, then restart |
 

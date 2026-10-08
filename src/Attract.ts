@@ -12,7 +12,7 @@ import { Stage } from "./render/Stage";
 import { Terrain } from "./render/Terrain";
 import { Units } from "./render/Units";
 
-const REALMS = [GameMapType.Aldermark, GameMapType.TwinCrowns, GameMapType.SunderedIsles];
+const REALMS = [GameMapType.Europe, GameMapType.Mediterranean, GameMapType.Greece, GameMapType.Earth];
 
 export class Attract {
   private session: Session;
@@ -28,8 +28,9 @@ export class Attract {
   private stopped = false;
   private paletteDirty = true;
 
-  constructor() {
-    this.session = soloSession({
+  /** The realm has to be fetched first, so construction is async. */
+  static async create(): Promise<Attract> {
+    const session = await soloSession({
       name: "",
       map: REALMS[(Math.random() * REALMS.length) | 0],
       seed: 1 + ((Math.random() * 99999) | 0),
@@ -39,6 +40,11 @@ export class Attract {
       sandbox: false,
       spectate: true,
     });
+    return new Attract(session);
+  }
+
+  private constructor(session: Session) {
+    this.session = session;
     const state = this.session.state;
     this.terrain = new Terrain(this.session.realm, state);
     this.stage = new Stage(this.terrain, false);

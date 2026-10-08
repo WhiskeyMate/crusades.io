@@ -33,7 +33,10 @@ import {
   ServerMessage,
   TURN_MS,
 } from "../../src/net/Protocol";
-import { generateRealm, Realm } from "../../src/worldgen/RealmGen";
+import { buildRealm, MAP_DIR, MapInfoFile, Realm } from "../../src/worldgen/RealmGen";
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { realmHash } from "../../src/worldgen/RealmHash";
 
 const PORT = Number(process.env.PORT ?? 8765);
@@ -50,11 +53,35 @@ const PUBLIC_WAIT_MS = Number(process.env.PUBLIC_WAIT_SECONDS ?? 90) * 1000;
 /** A public game starts as soon as this many have joined. */
 const PUBLIC_FULL = 40;
 const PUBLIC_REALMS = [
-  GameMapType.Aldermark,
-  GameMapType.TwinCrowns,
-  GameMapType.SunderedIsles,
-  GameMapType.Middenmere,
+  GameMapType.Europe,
+  GameMapType.Mediterranean,
+  GameMapType.Greece,
+  GameMapType.Earth,
 ];
+
+/**
+ * Where the map terrain lives: MAPS_DIR, else ./maps beside the bundle (the
+ * installed layout), else the repository's public/maps (running from source).
+ */
+function mapsDir(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  for (const d of [process.env.MAPS_DIR, join(here, "maps"), join(here, "..", "..", "public", "maps")]) {
+    if (d && existsSync(d)) return d;
+  }
+  throw new Error("No maps directory found; set MAPS_DIR");
+}
+
+const realmCache = new Map<string, Realm>();
+function loadRealmFromDisk(map: GameMapType, seed: number, kingdoms: number): Realm {
+  const dir = join(mapsDir(), MAP_DIR[map]);
+  const info = JSON.parse(readFileSync(join(dir, "info.json"), "utf8")) as MapInfoFile;
+  return buildRealm(
+    { map, seed, kingdoms },
+    info,
+    new Uint8Array(readFileSync(join(dir, "main.bin"))),
+    new Uint8Array(readFileSync(join(dir, "mini.bin"))),
+  );
+}
 let publicRotation = 0;
 
 const ID_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -231,8 +258,8 @@ class Lobby {
         clanTag: null,
       })),
     };
-    this.realm = generateRealm({ map: c.map, seed: c.seed, kingdoms: c.kingdoms });
-    this.hash = realmHash(this.realm);
+    this.realm = loadRealmFromDisk(c.map, c.seed, c.kingdoms);
+    this.hash = realmHash(this.realm!);
     log(`lobby ${this.code}: started, ${this.members.size} players, realm ${c.map}/${c.seed} ${this.hash}`);
     this.broadcast({ type: "lobby", lobby: this.view() });
     this.broadcast({ type: "start", info: this.info, realmHash: this.hash, turns: [] });
@@ -531,6 +558,7 @@ setInterval(() => {
   }
 }, 30_000);
 
+mapsDir();
 ensurePublicGame();
 http.listen(PORT, HOST, () => log(`crusades.io game server listening on ${HOST}:${PORT}`));
 

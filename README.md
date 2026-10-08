@@ -47,7 +47,7 @@ prints the standings: a quick check that the engine still runs after a change.
 ```
 packages/           the simulation (from OpenFront, modified)
 resources/          name lists the simulation reads
-src/worldgen/       realm generator: terrain, coasts, kingdoms, all from a seed
+src/worldgen/       realm loader: terrain from public/maps, kingdom seats from the seed
 src/client/         session, state mirror, names, heraldry
 src/net/            turn sources (local clock, game server), the wire protocol
 server/             the game server (lobbies + turn relay) and Windows install script
@@ -61,7 +61,7 @@ docs/               DEPLOY.md (Netlify, Supabase, Stripe), SERVER.md (game serve
 tools/              headless smoke run
 ```
 
-Realms are generated at game start, so there are no map files. Every model is
+Map terrain lives in `public/maps/` (OpenFront map data, CC BY-SA 4.0, see NOTICE.md); the kingdoms' seats and names come from the game's seed. Every model is
 built from primitives in `src/render/Models.ts`; there are no art assets.
 
 Accounts are off unless `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are

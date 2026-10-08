@@ -17,7 +17,13 @@ that the notice "© OpenFront and Contributors" stays visible to players (it is
 in the main menu footer) and that this project does not present itself as
 OpenFront or as endorsed by it.
 
-No OpenFront artwork, maps, flags, sounds or proprietary assets are included.
+The map terrain in `public/maps/` (Earth, Europe, Mediterranean, Greece) is
+derived from OpenFront map data, © OpenFront and Contributors, licensed under
+Creative Commons Attribution-ShareAlike 4.0 (https://creativecommons.org/licenses/by-sa/4.0/).
+It is used at half resolution with the kingdom seats and names replaced.
+Those files remain under CC BY-SA 4.0.
+
+No other OpenFront artwork, flags, sounds or proprietary assets are included.
 
 If you host crusades.io for other people to play, the AGPL requires you to offer
 them the source of the version you are running. Set `SOURCE_URL` in

@@ -12,7 +12,7 @@ import {
 } from "@crusades/engine-api/game/GameTypes";
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import { Intent } from "@crusades/engine-api/Schemas";
-import { PlayerState, TickDelta } from "../client/GameState";
+import { PlayerState, TickDelta, UnitState } from "../client/GameState";
 import { css, shieldSVG } from "../client/Heraldry";
 import {
   BUILD_ORDER,
@@ -399,7 +399,7 @@ export class Hud {
   }
 
   /** The little card that follows the cursor. */
-  hover(tile: TileRef | null, clientX: number, clientY: number) {
+  hover(tile: TileRef | null, clientX: number, clientY: number, unit?: UnitState) {
     const tip = el("tip");
     if (tile === null || !el("menu-ctx").hidden) {
       tip.hidden = true;
@@ -420,6 +420,10 @@ export class Hud {
     } else {
       tip.hidden = true;
       return;
+    }
+    if (unit) {
+      const lore = UNIT_LORE[unit.type];
+      text += `<span>${lore.glyph} ${lore.name} · level ${unit.level}${unit.underConstruction ? " (building)" : ""}</span>`;
     }
     if (map.hasFallout(tile)) text += "<span>Scorched earth</span>";
     tip.innerHTML = text;

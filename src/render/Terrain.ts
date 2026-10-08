@@ -47,6 +47,9 @@ uniform float uTime;
 uniform int uHover;
 uniform float uSpawnPulse;
 uniform vec4 uBlasts[4];
+// Range rings: x, z, radius (tiles), kind (0 keep, 1 ballista, 2 market, 3 spacing).
+uniform vec4 uRings[16];
+uniform int uRingCount;
 varying vec3 vWorld;
 
 ivec2 stateAt(ivec2 t) {
@@ -140,6 +143,25 @@ void main() {
   lit += vec3(1.0, 0.42, 0.08) * glow * 0.9;
   if (uSpawnPulse > 0.0 && h > 0.0 && o == 0) {
     lit += vec3(0.25, 0.22, 0.08) * uSpawnPulse * (0.5 + 0.5 * sin(uTime * 3.0));
+  }
+  for (int i = 0; i < 16; i++) {
+    if (i >= uRingCount) break;
+    vec4 r = uRings[i];
+    float d = distance(vWorld.xz, r.xy);
+    float fw = max(fwidth(tile.x), fwidth(tile.y));
+    float line = 1.0 - smoothstep(0.0, max(0.7, fw * 1.6), abs(d - r.z));
+    float inside = 1.0 - step(r.z, d);
+    vec3 rc = r.w < 0.5 ? vec3(1.0, 0.5, 0.3)
+            : r.w < 1.5 ? vec3(0.45, 0.8, 1.0)
+            : r.w < 2.5 ? vec3(1.0, 0.85, 0.4)
+            : vec3(1.0, 1.0, 1.0);
+    if (r.w > 2.5) {
+      // Spacing ring: dashed, so it reads as a limit rather than a reach.
+      float ang = atan(vWorld.z - r.y, vWorld.x - r.x);
+      line *= step(0.5, fract(ang * 6.0 / 3.14159));
+    }
+    lit = mix(lit, rc, line * 0.9);
+    lit += rc * inside * (r.w > 2.5 ? 0.0 : 0.07);
   }
   for (int i = 0; i < 4; i++) {
     vec4 b = uBlasts[i];
@@ -306,6 +328,10 @@ export class Terrain {
       uBlasts: {
         value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 1, 0)),
       },
+      uRings: {
+        value: Array.from({ length: 16 }, () => new THREE.Vector4(0, 0, 1, 0)),
+      },
+      uRingCount: { value: 0 },
     };
 
     const sx = w >> 1;
