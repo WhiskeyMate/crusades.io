@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vassal.io</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 26'><path d='M2 2h20v10c0 7-5 10-10 12C7 22 2 19 2 12z' fill='%23c71a21' stroke='%231b1410' stroke-width='1.6'/><path d='M12 2v22M2 11h20' stroke='%23e8d9a0' stroke-width='3'/></svg>" />
+    <link rel="stylesheet" href="/src/ui/style.css" />
+  </head>
+  <body>
+    <canvas id="stage"></canvas>
+    <div id="labels"></div>
+
+    <div id="hud" hidden>
+      <div id="me" class="panel">
+        <div id="me-name"></div>
+        <div class="stat"><span title="Gold">⛃ Gold</span><b id="me-gold">0</b></div>
+        <div class="stat"><span title="Levies">⚔ Levies</span><b id="me-troops">0</b></div>
+        <div id="me-bar"><i></i></div>
+        <div class="stat"><span>⛰ Of the realm</span><b id="me-land">0%</b></div>
+      </div>
+
+      <div id="banner" class="panel" hidden></div>
+
+      <div id="right">
+        <div id="controls" class="panel">
+          <button id="btn-pause" title="Pause (Space)">❚❚</button>
+          <button id="btn-x1">1×</button>
+          <button id="btn-x2">2×</button>
+          <button id="btn-x4">4×</button>
+          <button id="btn-help" title="How to play">?</button>
+          <button id="btn-quit" title="Leave this realm">✕</button>
+        </div>
+        <div id="side" class="panel">
+          <table>
+            <thead>
+              <tr><th></th><th>Realm</th><th>Land</th><th>Levies</th><th>Gold</th></tr>
+            </thead>
+            <tbody id="ranks"></tbody>
+          </table>
+          <div id="alive"></div>
+        </div>
+        <div id="offers"></div>
+      </div>
+
+      <div id="left">
+        <div id="wars" class="panel" hidden></div>
+        <div id="chronicle"></div>
+      </div>
+
+      <div id="bottom">
+        <div id="hint" class="panel" hidden></div>
+        <div id="ratio-box" class="panel">
+          <span id="ratio-text"></span>
+          <input type="range" id="ratio" min="1" max="100" />
+        </div>
+        <div id="build" class="panel"></div>
+      </div>
+
+      <div id="tip" hidden></div>
+      <div id="menu-ctx" class="panel" hidden></div>
+
+      <div id="help" hidden>
+        <div class="panel sheet">
+          <h2>How to rule</h2>
+          <p><b>Click</b> unclaimed land or a neighbour to march on it with the share of your levies set on the slider. Click land across the water to send longships.</p>
+          <p><b>Right-click</b> any realm for diplomacy: pacts, gifts, trade bans.</p>
+          <p><b>Build</b> with the bar below or keys <b>1</b>–<b>0</b>, then click the map. Click an existing building of the same kind to enlarge it.</p>
+          <p>Towns raise your levy cap. Keeps harden your borders. Harbours and markets bring gold. A mage tower lets you hurl fireballs, loose a dragon or call down a starfall; ballista towers shoot them out of the sky.</p>
+          <p><b>Camera:</b> drag to pan, wheel to zoom, right-drag or Q/E/R/F to turn and tilt, WASD to move, C to return home. Space pauses. [ and ] change the slider.</p>
+          <p>Hold four fifths of the realm to win.</p>
+          <p class="dim">Click anywhere to close.</p>
+        </div>
+      </div>
+
+      <div id="endgame" hidden>
+        <div class="panel sheet">
+          <h1 id="end-title"></h1>
+          <p id="end-text"></p>
+          <div class="row">
+            <button id="end-watch">Keep watching</button>
+            <button id="end-quit" class="primary">Return to the hall</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="landing">
+      <header class="hero">
+        <nav>
+          <span class="mark">vassal<span>.io</span></span>
+          <a href="#l-features">The game</a>
+          <a href="#l-build">What you build</a>
+          <a href="#l-multiplayer">Multiplayer</a>
+          <button id="account-open" class="ghost-btn" hidden>Sign in</button>
+          <button class="primary play">Play</button>
+        </nav>
+        <div class="front">
+          <div class="pitch">
+            <h1>vassal<span>.io</span></h1>
+            <p class="tag">Raise your banner. Break your neighbours. Take the realm.</p>
+            <p class="lede">
+              A free 3D strategy game of land, levies and betrayal. It runs in
+              your browser: nothing to download, no account needed to play.
+            </p>
+            <a class="ghost" href="#l-features">See what's in it</a>
+          </div>
+
+          <div id="hall" class="panel">
+            <label class="house">Your house
+              <input id="opt-name" maxlength="24" value="House Lionhart" autocomplete="off" />
+            </label>
+            <div id="public-games">
+              <div class="hall-head">
+                <span>Public games</span>
+                <span id="hall-online" class="dim"></span>
+              </div>
+              <div id="public-list"><p class="dim small">Reaching the server…</p></div>
+            </div>
+            <div class="hall-row">
+              <button id="hall-host" class="hall-btn"><b>Create a lobby</b><span>Invite friends with a link</span></button>
+              <button id="hall-solo" class="hall-btn"><b>Play solo</b><span>Against the AI, your rules</span></button>
+            </div>
+            <div class="hall-join">
+              <input id="online-code" maxlength="6" placeholder="Game code" autocapitalize="characters" />
+              <button id="online-join">Join</button>
+            </div>
+            <p id="online-status" class="small" hidden></p>
+          </div>
+        </div>
+        <p class="live"><i></i> Live behind this page: a realm at war, played by the game's own lords.</p>
+      </header>
+
+      <main>
+        <section id="l-features">
+          <h2>The war is on the map</h2>
+          <p class="intro">No battle screens and no menus full of numbers. Everything that happens, happens on the land in front of you.</p>
+          <div class="cards">
+            <article><b>⚔</b><h3>Watch the line move</h3><p>Send a share of your levies at a neighbour and companies of spearmen form up on the border, push it forward tile by tile, and meet the defenders coming the other way.</p></article>
+            <article><b>🏰</b><h3>Build a realm, not a blob</h3><p>Towns raise your levy cap, keeps harden a border, harbours and markets fill your purse. Roads appear between your holdings and caravans walk them.</p></article>
+            <article><b>🐉</b><h3>Sorcery for the endgame</h3><p>Raise a mage tower and you can hurl fireballs, loose a dragon on a province, or pull down a starfall. Ballista towers are how your rivals answer.</p></article>
+            <article><b>🤝</b><h3>Pacts, and breaking them</h3><p>Swear a pact, lend levies, send gold, ban trade. Break your word and every lord in the realm will know you for an oathbreaker.</p></article>
+            <article><b>🗺</b><h3>A new realm every game</h3><p>Continents, island chains, twin shores or a ring around an inland sea. Each is generated fresh from a seed you can share.</p></article>
+            <article><b>⛵</b><h3>The sea matters</h3><p>Longships carry an invasion to any coast. War galleys sink them, and seize the merchant cogs that make your rivals rich.</p></article>
+          </div>
+        </section>
+
+        <section id="l-how">
+          <h2>How a game goes</h2>
+          <ol class="steps">
+            <li><h3>Raise your banner</h3><p>Pick any unclaimed land. A dozen kingdoms and a hundred clans are doing the same.</p></li>
+            <li><h3>Push the line</h3><p>Take the wilds, then the clans, then choose which neighbour to trust and which to break.</p></li>
+            <li><h3>Take the crown</h3><p>Hold four fifths of the realm and it is yours.</p></li>
+          </ol>
+        </section>
+
+        <section id="l-build">
+          <h2>What you build</h2>
+          <div id="lore" class="lore"></div>
+        </section>
+
+        <section id="l-multiplayer" class="split">
+          <div>
+            <h2>Against people</h2>
+            <p>Today you play against lords run by the game: they expand, ally, betray and cast as a player would, at four levels of ruthlessness.</p>
+            <p>Multiplayer is being built. Every player's game will run the same simulation in step, so many banners can share one realm without a heavy server.</p>
+          </div>
+          <div>
+            <h2>Free and open</h2>
+            <p>vassal.io is free to play, and free software under the GNU AGPL v3.</p>
+            <p>Its simulation is built on the OpenFront engine.<span id="source-link"></span></p>
+          </div>
+        </section>
+
+        <section class="last">
+          <h2>The realm is waiting</h2>
+          <button class="primary play big">Play now</button>
+        </section>
+      </main>
+
+      <footer>
+        vassal.io is free software under the GNU AGPL v3. Its simulation is
+        built on the OpenFront engine.<br />© OpenFront and Contributors
+      </footer>
+    </div>
+
+    <div id="menu" hidden>
+      <div class="panel sheet">
+        <button id="menu-close" class="close" title="Back">✕</button>
+        <h2 id="menu-title">Play solo</h2>
+        <p id="menu-sub" class="sub">You against rival kingdoms and clans run by the game.</p>
+        <div class="field-label">The realm</div>
+        <div id="opt-maps"></div>
+        <div class="grid">
+          <label>Seed
+            <span class="inline"><input id="opt-seed" inputmode="numeric" /><button id="opt-dice" title="A new realm">🎲</button></span>
+          </label>
+          <label>Rival lords
+            <select id="opt-difficulty">
+              <option value="Easy">Squires (easy)</option>
+              <option value="Medium" selected>Knights (medium)</option>
+              <option value="Hard">Barons (hard)</option>
+              <option value="Impossible">Tyrants (brutal)</option>
+            </select>
+          </label>
+          <label>Kingdoms <b id="opt-kingdoms-v"></b>
+            <input id="opt-kingdoms" type="range" min="0" max="24" value="12" />
+          </label>
+          <label>Clans <b id="opt-clans-v"></b>
+            <input id="opt-clans" type="range" min="0" max="300" step="10" value="120" />
+          </label>
+        </div>
+        <label id="opt-sandbox-row" class="check"><input id="opt-sandbox" type="checkbox" /> Sandbox: endless gold, instant building</label>
+        <label id="opt-players-row" hidden>Seats <b id="opt-players-v"></b>
+          <input id="opt-players" type="range" min="2" max="64" value="16" />
+        </label>
+        <button id="opt-start" class="primary">Enter the realm</button>
+        <p id="opt-error" class="bad" hidden></p>
+              </div>
+    </div>
+    <div id="lobby" hidden>
+      <div class="panel sheet">
+        <h2 id="lobby-title">Gathering the lords</h2>
+        <p class="sub">Game code <b id="lobby-code" class="code"></b></p>
+        <p id="lobby-countdown" class="countdown" hidden></p>
+        <div id="lobby-invite" class="inline"><input id="lobby-link" readonly /><button id="lobby-copy">Copy link</button></div>
+        <p id="lobby-config" class="dim small"></p>
+        <ul id="lobby-members"></ul>
+        <p id="lobby-wait" class="dim">Waiting for the host to start…</p>
+        <div class="row">
+          <button id="lobby-leave">Leave</button>
+          <button id="lobby-start" class="primary">Start the game</button>
+        </div>
+      </div>
+    </div>
+    <div id="account" hidden>
+      <div class="panel sheet">
+        <button id="acct-close" class="close" title="Close">✕</button>
+        <h2>Your account</h2>
+        <p id="acct-note" class="note" hidden></p>
+
+        <div id="acct-out">
+          <p class="sub">The game is free without one. An account is for premium: your own arms and colours.</p>
+          <form id="acct-form">
+            <label>Email
+              <input id="acct-mail" type="email" autocomplete="email" required placeholder="you@example.com" />
+            </label>
+            <button class="primary wide" type="submit">Email me a sign-in link</button>
+          </form>
+          <p class="dim small">No password. We email you a link that signs you in.</p>
+        </div>
+
+        <div id="acct-in" hidden>
+          <div class="who">
+            <span id="acct-email"></span>
+            <span id="acct-tier" class="tier"></span>
+            <button id="acct-signout">Sign out</button>
+          </div>
+          <button id="acct-upgrade" class="primary wide">Go premium</button>
+          <button id="acct-billing" class="wide" hidden>Manage billing</button>
+
+          <h3>Your arms</h3>
+          <p id="acct-lock" class="dim small">Premium players choose the colour and arms their realm flies. Preview below.</p>
+          <div id="acct-editor">
+            <div id="acct-preview"></div>
+            <div class="controls">
+              <div class="field-label">Field</div>
+              <div id="acct-colors" class="row-wrap"></div>
+              <div class="field-label">Division</div>
+              <div id="acct-divisions" class="row-wrap"></div>
+              <div class="field-label">Charge</div>
+              <div id="acct-charges" class="row-wrap"></div>
+            </div>
+          </div>
+          <button id="acct-save" class="primary wide">Save my arms</button>
+        </div>
+      </div>
+    </div>
+    <div id="loading" hidden><div class="panel">Surveying the realm…</div></div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

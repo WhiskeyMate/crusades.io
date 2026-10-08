@@ -1,0 +1,19 @@
+# Caddy in front of the game server: takes HTTPS/WSS from the internet,
+# fetches and renews the certificate itself, and passes connections to Node
+# on localhost:8765.
+#
+# Replace play.example.com with the hostname whose DNS A record points at
+# this machine (40.160.26.142). Caddy cannot get a certificate for a bare IP
+# address, so a hostname is required for browsers to connect from the
+# https site.
+
+play.example.com {
+	reverse_proxy 127.0.0.1:8765
+	encode gzip
+	log {
+		output file C:\vassal\logs\caddy-access.log {
+			roll_size 10mb
+			roll_keep 5
+		}
+	}
+}

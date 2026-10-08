@@ -1,0 +1,203 @@
+// The hall: pick a house, a realm and rivals, then start a game.
+
+import { Difficulty, GameMapType } from "@vassal/engine-api/game/GameTypes";
+import { account } from "./account/Account";
+import { initAccountPanel } from "./account/Panel";
+import { Attract } from "./Attract";
+import { setLiege } from "./client/Heraldry";
+import { BUILD_ORDER, UNIT_LORE } from "./client/Lexicon";
+import { Game } from "./Game";
+import { Session, soloSession } from "./client/Session";
+import { initOnline, leaveOnline } from "./ui/Lobby";
+
+/** Where this build's source can be fetched (the AGPL asks for it). */
+const SOURCE_URL = "";
+
+const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+
+const REALMS: { map: GameMapType; blurb: string }[] = [
+  { map: GameMapType.Aldermark, blurb: "One great land" },
+  { map: GameMapType.SunderedIsles, blurb: "Isles and straits" },
+  { map: GameMapType.TwinCrowns, blurb: "Two shores, one sea" },
+  { map: GameMapType.Middenmere, blurb: "Around the inland sea" },
+];
+
+let chosen = GameMapType.Aldermark;
+let game: Game | null = null;
+let attract: Attract | null = null;
+
+/** The war behind the landing page. Fails quietly where WebGL can't run. */
+async function startAttract() {
+  if (attract || game) return;
+  try {
+    attract = new Attract();
+    (window as unknown as { attract: Attract }).attract = attract;
+    await attract.start();
+    el("landing").classList.remove("no-gl");
+  } catch (e) {
+    console.warn("No live backdrop:", e);
+    attract?.stop();
+    attract = null;
+    el("landing").classList.add("no-gl");
+  }
+}
+
+function stopAttract() {
+  attract?.stop();
+  attract = null;
+}
+
+function drawRealms() {
+  const box = el("opt-maps");
+  box.innerHTML = "";
+  for (const r of REALMS) {
+    const b = document.createElement("button");
+    b.innerHTML = `${r.map}<small>${r.blurb}</small>`;
+    b.dataset.map = r.map;
+    b.classList.toggle("on", r.map === chosen);
+    b.onclick = () => {
+      chosen = r.map;
+      drawRealms();
+    };
+    box.appendChild(b);
+  }
+}
+
+function bindRange(id: string) {
+  const input = el<HTMLInputElement>(id);
+  const out = el(`${id}-v`);
+  const show = () => (out.textContent = input.value);
+  input.oninput = show;
+  show();
+}
+
+const rollSeed = () => (el<HTMLInputElement>("opt-seed").value = String(1 + ((Math.random() * 99999) | 0)));
+
+function houseName(): string {
+  const name =
+    el<HTMLInputElement>("opt-name").value.replace(/[^ _.\-a-zA-Z0-9À-ÿ]/g, "").trim().slice(0, 24) ||
+    "Nameless House";
+  return name.length < 3 ? `${name} House` : name;
+}
+
+/** Hide the hall, show the world. The session is already built. */
+async function launch(session: Session) {
+  if (game) return;
+  const error = el("opt-error");
+  error.hidden = true;
+  el("menu").hidden = true;
+  el("lobby").hidden = true;
+  el("landing").hidden = true;
+  el("loading").hidden = false;
+  stopAttract();
+  await new Promise((r) => setTimeout(r, 30));
+  try {
+    setLiege(houseName(), account.skin);
+    game = new Game(session, quit);
+    await game.start();
+    (window as unknown as { vassal: Game }).vassal = game;
+  } catch (e) {
+    console.error(e);
+    game?.stop();
+    game = null;
+    el("landing").hidden = false;
+    el("menu").hidden = false;
+    void startAttract();
+    error.textContent = `The realm could not be raised: ${e instanceof Error ? e.message : e}`;
+    error.hidden = false;
+  }
+  el("loading").hidden = true;
+}
+
+async function begin() {
+  if (game) return;
+  const options = {
+    name: houseName(),
+    map: chosen,
+    seed: Math.abs(Number(el<HTMLInputElement>("opt-seed").value) | 0) || 1,
+    difficulty: el<HTMLSelectElement>("opt-difficulty").value as Difficulty,
+    kingdoms: Number(el<HTMLInputElement>("opt-kingdoms").value),
+    clans: Number(el<HTMLInputElement>("opt-clans").value),
+    sandbox: el<HTMLInputElement>("opt-sandbox").checked,
+  };
+  el("loading").hidden = false;
+  el("menu").hidden = true;
+  // Let the loading card paint before the realm is generated.
+  await new Promise((r) => setTimeout(r, 30));
+  let session: Session;
+  try {
+    session = soloSession(options);
+  } catch (e) {
+    el("loading").hidden = true;
+    el("menu").hidden = false;
+    el("opt-error").textContent = `The realm could not be raised: ${e instanceof Error ? e.message : e}`;
+    el("opt-error").hidden = false;
+    return;
+  }
+  await launch(session);
+}
+
+function quit() {
+  leaveOnline();
+  game?.stop();
+  game = null;
+  el("landing").hidden = false;
+  void startAttract();
+}
+
+drawRealms();
+bindRange("opt-kingdoms");
+bindRange("opt-clans");
+bindRange("opt-players");
+rollSeed();
+el("opt-dice").onclick = rollSeed;
+/** The setup dialog serves two purposes: a solo game, or the settings of a lobby to host. */
+let menuMode: "solo" | "host" = "solo";
+function openMenu(mode: "solo" | "host") {
+  menuMode = mode;
+  el("menu-title").textContent = mode === "solo" ? "Play solo" : "Create a lobby";
+  el("menu-sub").textContent =
+    mode === "solo"
+      ? "You against rival kingdoms and clans run by the game."
+      : "Choose the realm, then share the code or link with your friends.";
+  el("opt-sandbox-row").hidden = mode === "host";
+  el("opt-players-row").hidden = mode === "solo";
+  el("opt-start").textContent = mode === "solo" ? "Enter the realm" : "Open the lobby";
+  el("opt-error").hidden = true;
+  el("menu").hidden = false;
+}
+el("opt-start").onclick = () => {
+  if (menuMode === "solo") void begin();
+  else hostLobby();
+};
+el("hall-solo").onclick = () => openMenu("solo");
+el("hall-host").onclick = () => openMenu("host");
+for (const b of Array.from(document.querySelectorAll<HTMLElement>(".play"))) {
+  b.onclick = () => {
+    el("landing").scrollTo({ top: 0, behavior: "smooth" });
+    el("opt-name").focus();
+  };
+}
+el("menu-close").onclick = () => (el("menu").hidden = true);
+el("lore").innerHTML = BUILD_ORDER.map((t) => {
+  const l = UNIT_LORE[t];
+  return `<div><i>${l.glyph}</i><p><b>${l.name}</b><span>${l.blurb}</span></p></div>`;
+}).join("");
+if (SOURCE_URL) {
+  el("source-link").innerHTML = ` <a href="${SOURCE_URL}" target="_blank" rel="noopener">Read the source.</a>`;
+}
+void initAccountPanel();
+const { hostLobby } = initOnline({
+  name: () => houseName(),
+  begin: (session) => void launch(session),
+  lobbyConfig: () => ({
+    map: chosen,
+    seed: Math.abs(Number(el<HTMLInputElement>("opt-seed").value) | 0) || 1,
+    difficulty: el<HTMLSelectElement>("opt-difficulty").value as Difficulty,
+    kingdoms: Number(el<HTMLInputElement>("opt-kingdoms").value),
+    clans: Number(el<HTMLInputElement>("opt-clans").value),
+    maxPlayers: Number(el<HTMLInputElement>("opt-players").value),
+  }),
+});
+// Let the page paint before generating a realm for the backdrop.
+window.setTimeout(() => void startAttract(), 150);

@@ -1,0 +1,52 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable",
+      "WebWorker"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "resources/*": [
+        "./resources/*"
+      ],
+      "@vassal/engine/*": [
+        "./packages/engine/src/*"
+      ],
+      "@vassal/engine-api/*": [
+        "./packages/engine-api/src/*"
+      ],
+      "@vassal/engine-lib/*": [
+        "./packages/engine-lib/src/*"
+      ],
+      "@vassal/zbin": [
+        "./packages/zbin/src/index.ts"
+      ],
+      "@vassal/zbin/*": [
+        "./packages/zbin/src/*"
+      ]
+    },
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "useDefineForClassFields": false,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src",
+    "tools",
+    "netlify",
+    "server"
+  ]
+}

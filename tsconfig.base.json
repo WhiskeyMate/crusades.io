@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "paths": {
+      "resources/*": ["./resources/*"]
+    },
+    "allowUnusedLabels": false,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": true,
+    "useDefineForClassFields": false,
+    "strictPropertyInitialization": false,
+    "skipLibCheck": true
+  }
+}

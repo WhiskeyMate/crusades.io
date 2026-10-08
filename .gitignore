@@ -1,0 +1,8 @@
+node_modules
+dist
+server/dist
+tools/preview-*.png
+.env
+.env.*
+!.env.example
+.netlify

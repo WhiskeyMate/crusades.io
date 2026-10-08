@@ -1,0 +1,168 @@
+// The realms vassal.io can be played on. Unlike the upstream project these are
+// not shipped as files: each is generated from a seed at game start (see
+// src/worldgen/RealmGen.ts), so this list only names the layouts.
+
+export enum GameMapType {
+  Aldermark = "Aldermark",
+  SunderedIsles = "Sundered Isles",
+  TwinCrowns = "Twin Crowns",
+  Middenmere = "Middenmere",
+}
+
+export type GameMapName = keyof typeof GameMapType;
+
+export type MapCategory =
+  | "featured"
+  | "new"
+  | "world"
+  | "continental"
+  | "europe"
+  | "asia"
+  | "north_america"
+  | "africa"
+  | "south_america"
+  | "oceania"
+  | "antarctica"
+  | "countries"
+  | "cosmic"
+  | "fictional"
+  | "arcade"
+  | "tournament";
+
+// Category display order in the map picker.
+export const mapCategoryOrder: readonly MapCategory[] = [
+  "featured",
+  "new",
+  "world",
+  "continental",
+  "europe",
+  "asia",
+  "north_america",
+  "africa",
+  "south_america",
+  "oceania",
+  "antarctica",
+  "countries",
+  "cosmic",
+  "fictional",
+  "arcade",
+  "tournament",
+];
+
+export type SpecialModifierKey =
+  | "isRandomSpawn"
+  | "isCompact"
+  | "isCrowded"
+  | "isHardNations"
+  | "startingGold1M"
+  | "startingGold5M"
+  | "startingGold25M"
+  | "goldMultiplier"
+  | "isAlliancesDisabled"
+  | "isNukesDisabled"
+  | "isSAMsDisabled"
+  | "isPeaceTime"
+  | "isWaterNukes"
+  | "isDoomsdayClock";
+
+export interface MapInfo {
+  /** GameMapType enum key — the UpperCamelCase folder name. */
+  id: GameMapName;
+  /** Canonical map name (wire format) — the GameMapType enum value. */
+  type: GameMapType;
+  /** Key of the map's display name in resources/lang/en.json. */
+  translationKey: string;
+  /** Map picker categories. */
+  categories: MapCategory[];
+  /** How many times the map appears in the multiplayer playlist (fallback). */
+  multiplayerFrequency: number;
+  /** FFA lobby rotation weight. -1 = use multiplayerFrequency. */
+  ffaFrequency: number;
+  /** Team lobby rotation weight. -1 = use multiplayerFrequency. */
+  teamFrequency: number;
+  /** Special lobby rotation weight. -1 = use multiplayerFrequency. */
+  specialFrequency: number;
+  /** Position in the featured grid (1 = first); unranked featured maps sort last. */
+  featuredRank?: number;
+  /** Preferred team count in team/special games (see MapPlaylist). */
+  specialTeamCount?: number;
+  /** Modifiers that should never be rolled for this map in special games. */
+  disabledModifiers?: SpecialModifierKey[];
+  /** Modifiers forced on for this map. Plain key or "key:percentage" (e.g. "goldMultiplier:75"). */
+  forcedModifiers?: string[];
+  /** Tribe name theme(s) (keys in tribeNameThemes.json). */
+  themes?: string[];
+  /** Custom tribe entry: a string (random spawn) or an object with name and coordinates. */
+  customTribes?: CustomTribe[];
+  /** Map layers rendered between terrain and territory. */
+  layers?: MapLayer[];
+  /** Default nation count defined in the map's manifest/info. */
+  defaultNationCount: number;
+}
+
+export interface CustomTribe {
+  name: string;
+  coordinates?: [number, number];
+}
+
+export type LayerPlacement = "land" | "water";
+
+export interface MapLayer {
+  /** Unique identifier — also the PNG filename (without extension). */
+  id: string;
+  /** Whether the layer sits on land or water tiles. */
+  placement: LayerPlacement;
+  /** If true, the layer is permanently destroyed in nuke impact radii. */
+  nukeable?: boolean;
+}
+
+export const maps: readonly MapInfo[] = [
+  {
+    id: "Aldermark",
+    type: GameMapType.Aldermark,
+    translationKey: "map.aldermark",
+    categories: ["fictional"],
+    multiplayerFrequency: 1,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 12,
+    themes: ["default"],
+  },
+  {
+    id: "SunderedIsles",
+    type: GameMapType.SunderedIsles,
+    translationKey: "map.sunderedisles",
+    categories: ["fictional"],
+    multiplayerFrequency: 1,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 12,
+    themes: ["default"],
+  },
+  {
+    id: "TwinCrowns",
+    type: GameMapType.TwinCrowns,
+    translationKey: "map.twincrowns",
+    categories: ["fictional"],
+    multiplayerFrequency: 1,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 12,
+    themes: ["default"],
+  },
+  {
+    id: "Middenmere",
+    type: GameMapType.Middenmere,
+    translationKey: "map.middenmere",
+    categories: ["fictional"],
+    multiplayerFrequency: 1,
+    ffaFrequency: -1,
+    teamFrequency: -1,
+    specialFrequency: -1,
+    defaultNationCount: 12,
+    themes: ["default"],
+  },
+];
