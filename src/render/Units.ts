@@ -250,7 +250,10 @@ export class Units {
                 ? this.pools.longship
                 : this.pools.cog;
           const hurt = u.type === UnitType.Warship && u.health !== undefined && u.health < 500 ? 0.6 : 1;
-          this.put(pool, pos.x, bob + 0.05, pos.z, memo.yaw, shipScale, color, hurt, Math.sin(time * 1.1 + u.id) * 0.04, roll);
+          // Galleys are the big ships; cogs are little merchantmen beside them.
+          const size =
+            u.type === UnitType.Warship ? shipScale * 0.8 : u.type === UnitType.TradeShip ? shipScale * 0.45 : shipScale;
+          this.put(pool, pos.x, bob + 0.05, pos.z, memo.yaw, size, color, hurt, Math.sin(time * 1.1 + u.id) * 0.04, roll);
           if (hurt < 1 && Math.random() < 0.15) {
             this.effects.trail(this.p.set(pos.x, 2 * shipScale, pos.z), 0.5 * shipScale);
           }
