@@ -1,10 +1,10 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   GameMode,
   PlayerType,
   Team,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   doomsdayClockDrain,
   doomsdayClockRequiredTiles,
@@ -13,12 +13,12 @@ import {
   ROT_NOISE_SCALE,
   rotFrontNoise,
   rotSpeckleNoise,
-} from "@vassal/engine-lib/game/DoomsdayClock";
+} from "@crusades/engine-lib/game/DoomsdayClock";
 import {
   zInt,
   zPlayerRef,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

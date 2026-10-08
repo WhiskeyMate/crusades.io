@@ -1,4 +1,4 @@
--- vassal.io accounts. Run once in the Supabase SQL editor.
+-- crusades.io accounts. Run once in the Supabase SQL editor.
 --
 -- profiles: who has paid. Players can read their own row and change nothing;
 --           only the Stripe webhook (service role) writes it.

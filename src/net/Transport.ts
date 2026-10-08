@@ -4,7 +4,7 @@
 // (LocalTransport); multiplayer will take it from a relay server over a
 // socket. Session talks to this interface and does not care which.
 
-import { Intent, Turn } from "@vassal/engine-api/Schemas";
+import { Intent, Turn } from "@crusades/engine-api/Schemas";
 
 export interface Transport {
   /** Each turn, in order. Set by the session before start(). */

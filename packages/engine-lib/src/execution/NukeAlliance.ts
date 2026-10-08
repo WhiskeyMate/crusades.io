@@ -1,6 +1,6 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
-import { Structures } from "@vassal/engine-api/game/GameTypes";
-import { GameLike } from "@vassal/engine-api/game/ReadViews";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
+import { Structures } from "@crusades/engine-api/game/GameTypes";
+import { GameLike } from "@crusades/engine-api/game/ReadViews";
 import { NukeMagnitude } from "../configuration/Config";
 
 export interface NukeBlastParams {

@@ -1,12 +1,12 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { TerraNullius } from "@vassal/engine-api/game/GameTypes";
-import { AllPlayersStats, ClientID } from "@vassal/engine-api/Schemas";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { TerraNullius } from "@crusades/engine-api/game/GameTypes";
+import { AllPlayersStats, ClientID } from "@crusades/engine-api/Schemas";
 import {
   BoatUnitType,
   NukeType,
   OtherUnitType,
   PlayerStats,
-} from "@vassal/engine-api/StatsSchemas";
+} from "@crusades/engine-api/StatsSchemas";
 import { Player } from "./Game";
 
 export interface Stats {

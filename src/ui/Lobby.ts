@@ -85,7 +85,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       hooks.begin(session);
     };
     o.onDesync = () => {
-      const game = (window as unknown as { vassal?: { hud?: { toast(t: string, k: string): void } } }).vassal;
+      const game = (window as unknown as { crusades?: { hud?: { toast(t: string, k: string): void } } }).crusades;
       game?.hud?.toast("Your game has diverged from the others. Leave and rejoin to resync.", "bad");
     };
     status("");

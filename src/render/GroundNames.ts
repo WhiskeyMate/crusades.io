@@ -3,7 +3,7 @@
 // of names, so hundreds of them cost a single draw call.
 
 import * as THREE from "three";
-import { PlayerType } from "@vassal/engine-api/game/GameTypes";
+import { PlayerType } from "@crusades/engine-api/game/GameTypes";
 import { GameState } from "../client/GameState";
 import { Terrain } from "./Terrain";
 

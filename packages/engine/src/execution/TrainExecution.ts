@@ -1,12 +1,12 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { TrainType, UnitType } from "@vassal/engine-api/game/GameTypes";
-import { MotionPlanRecord } from "@vassal/engine-lib/game/MotionPlans";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { TrainType, UnitType } from "@crusades/engine-api/game/GameTypes";
+import { MotionPlanRecord } from "@crusades/engine-lib/game/MotionPlans";
 import {
   zInt,
   zPlayerRef,
   zRef,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player, Unit } from "../game/Game";
 import { RailNetwork } from "../game/RailNetwork";

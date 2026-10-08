@@ -1,5 +1,5 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
-import { Cell, TerrainType } from "@vassal/engine-api/game/GameTypes";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
+import { Cell, TerrainType } from "@crusades/engine-api/game/GameTypes";
 import { z } from "zod";
 import { snapshotType, zBytes, zInt, zTiles } from "../snapshot/SnapshotType";
 

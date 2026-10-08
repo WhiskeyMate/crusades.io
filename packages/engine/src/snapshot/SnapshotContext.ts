@@ -1,11 +1,11 @@
-import type { TileRef } from "@vassal/engine-api/game/GameMap";
-import type { TerraNullius } from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+import type { TileRef } from "@crusades/engine-api/game/GameMap";
+import type { TerraNullius } from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   SnapshotError,
   SnapshotType,
   Versioned,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import type {
   Attack,
   Execution,

@@ -1,4 +1,4 @@
-// The realms vassal.io can be played on. Unlike the upstream project these are
+// The realms crusades.io can be played on. Unlike the upstream project these are
 // not shipped as files: each is generated from a seed at game start (see
 // src/worldgen/RealmGen.ts), so this list only names the layouts.
 

@@ -1,4 +1,4 @@
-import { GameMap } from "@vassal/engine-api/game/GameMap";
+import { GameMap } from "@crusades/engine-api/game/GameMap";
 import { DebugSpan } from "../../utilities/DebugSpan";
 import { PathFinder } from "../types";
 import { AStar, AStarAdapter } from "./AStar";

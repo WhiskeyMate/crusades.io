@@ -1,10 +1,10 @@
-import { PlayerType } from "@vassal/engine-api/game/GameTypes";
+import { PlayerType } from "@crusades/engine-api/game/GameTypes";
 import {
   snapshotType,
   zInt,
   zNum,
   zPlayerRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Game, Player } from "../../game/Game";
 import type {

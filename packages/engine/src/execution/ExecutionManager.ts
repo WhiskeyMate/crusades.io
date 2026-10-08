@@ -3,9 +3,9 @@ import {
   GameID,
   StampedIntent,
   Turn,
-} from "@vassal/engine-api/Schemas";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
-import { simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-api/Schemas";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
+import { simpleHash } from "@crusades/engine-lib/Util";
 import { Execution, Game } from "../game/Game";
 import { AllianceExtensionExecution } from "./alliance/AllianceExtensionExecution";
 import { AllianceRejectExecution } from "./alliance/AllianceRejectExecution";

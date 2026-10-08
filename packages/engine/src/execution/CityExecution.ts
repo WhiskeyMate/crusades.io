@@ -1,5 +1,5 @@
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
-import { zRef } from "@vassal/engine-lib/snapshot/SnapshotType";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { zRef } from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Unit } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

@@ -1,10 +1,10 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { Tick, UnitType } from "@vassal/engine-api/game/GameTypes";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { Tick, UnitType } from "@crusades/engine-api/game/GameTypes";
 import {
   zInt,
   zPlayerRef,
   zRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player, Unit } from "../game/Game";
 import { UnitTypeSchema } from "../snapshot/CommonSchemas";

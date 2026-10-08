@@ -1,10 +1,10 @@
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   zInt,
   zRandom,
   zRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Unit } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

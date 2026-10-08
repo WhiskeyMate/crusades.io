@@ -1,5 +1,5 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import { Game } from "../game/Game";
 import { PathFinder } from "./types";
 

@@ -1,4 +1,4 @@
-# vassal.io
+# crusades.io
 
 A medieval territory-conquest game in 3D. Raise a banner, push your borders
 out with levies you can see fighting on the line, build towns, keeps and
@@ -30,7 +30,7 @@ prints the standings: a quick check that the engine still runs after a change.
 - Drag to pan, wheel to zoom, right-drag or Q/E/R/F to turn and tilt, C to go
   home, Space to pause.
 
-| In vassal.io   | What it does                                         |
+| In crusades.io   | What it does                                         |
 | -------------- | ---------------------------------------------------- |
 | Town           | Raises your levy cap                                 |
 | Keep           | Makes nearby land much harder to take                |

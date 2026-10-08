@@ -5,9 +5,9 @@ import {
   Tick,
   UnitInfo,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { PlayerLike } from "@vassal/engine-api/game/ReadViews";
-import { GameConfig } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { PlayerLike } from "@crusades/engine-api/game/ReadViews";
+import { GameConfig } from "@crusades/engine-api/Schemas";
 import { pow } from "../DetMath";
 import { DoomsdayClockSpeed } from "../game/DoomsdayClock";
 import { assertNever } from "../Util";

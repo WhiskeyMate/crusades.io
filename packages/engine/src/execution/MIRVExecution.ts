@@ -1,10 +1,10 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   MessageType,
   TerraNullius,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   zInt,
   zNum,
@@ -13,8 +13,8 @@ import {
   zRef,
   zTile,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { simpleHash } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Execution, Game, Player, Unit } from "../game/Game";
 import { UniversalPathFinding } from "../pathfinding/PathFinder";

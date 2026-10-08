@@ -1,19 +1,19 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   MessageType,
   PlayerType,
   TerraNullius,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { renderTroops } from "@vassal/engine-lib/Format";
-import { MotionPlanRecord } from "@vassal/engine-lib/game/MotionPlans";
+} from "@crusades/engine-api/game/GameTypes";
+import { renderTroops } from "@crusades/engine-lib/Format";
+import { MotionPlanRecord } from "@crusades/engine-lib/game/MotionPlans";
 import {
   zInt,
   zNum,
   zPlayerRef,
   zRef,
   zTile,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player, Unit } from "../game/Game";
 import { targetTransportTile } from "../game/TransportShipUtils";

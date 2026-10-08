@@ -1,5 +1,5 @@
-import { ClientID } from "@vassal/engine-api/Schemas";
-import { TerraNullius } from "@vassal/engine-api/game/GameTypes";
+import { ClientID } from "@crusades/engine-api/Schemas";
+import { TerraNullius } from "@crusades/engine-api/game/GameTypes";
 
 export class TerraNulliusImpl implements TerraNullius {
   constructor() {}

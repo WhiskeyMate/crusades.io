@@ -1,18 +1,18 @@
-﻿import { TileRef } from "@vassal/engine-api/game/GameMap";
+﻿import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Cell,
   GameMapSize,
   PlayerInfo,
   PlayerType,
-} from "@vassal/engine-api/game/GameTypes";
-import { type CustomTribe } from "@vassal/engine-api/game/Maps.gen";
-import { GameID } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { type CustomTribe } from "@crusades/engine-api/game/Maps.gen";
+import { GameID } from "@crusades/engine-api/Schemas";
 import {
   type TribeNameData,
   resolveTribeNameData,
-} from "@vassal/engine-lib/execution/utils/TribeNames";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
-import { simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/execution/utils/TribeNames";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
+import { simpleHash } from "@crusades/engine-lib/Util";
 import { Game } from "../game/Game";
 import { SpawnExecution } from "./SpawnExecution";
 

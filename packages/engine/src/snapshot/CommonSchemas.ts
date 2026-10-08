@@ -4,7 +4,7 @@ import {
   PlayerInfo,
   PlayerType,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import { z } from "zod";
 import type { SnapshotReader } from "./SnapshotContext";
 

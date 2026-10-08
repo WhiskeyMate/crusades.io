@@ -2,16 +2,16 @@
 // spawns and attacks, print what happened. `npm run sim -- [map] [seed] [ticks]`
 import { writeFileSync } from "node:fs";
 import { deflateSync } from "node:zlib";
-import { createGameRunner } from "@vassal/engine/GameRunner";
+import { createGameRunner } from "@crusades/engine/GameRunner";
 import {
   Difficulty,
   GameMapSize,
   GameMapType,
   GameMode,
   GameType,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameUpdateType } from "@vassal/engine-api/game/GameUpdates";
-import { GameStartInfo } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
+import { GameStartInfo } from "@crusades/engine-api/Schemas";
 import { generateRealm } from "../src/worldgen/RealmGen";
 
 function png(w: number, h: number, rgb: Uint8Array): Buffer {

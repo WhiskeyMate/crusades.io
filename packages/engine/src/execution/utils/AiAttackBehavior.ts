@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Cell,
   Difficulty,
@@ -11,20 +11,20 @@ import {
   Structures,
   TerraNullius,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   readVersioned,
   snapshotType,
   Versioned,
   zNum,
   zRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import {
   assertNever,
   boundingBoxCenter,
   calculateBoundingBoxCenter,
-} from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Attack, Game, Player, Unit } from "../../game/Game";
 import {

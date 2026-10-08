@@ -1,5 +1,5 @@
-import { PlayerID } from "@vassal/engine-api/game/GameTypes";
-import { zPlayerRef } from "@vassal/engine-lib/snapshot/SnapshotType";
+import { PlayerID } from "@crusades/engine-api/game/GameTypes";
+import { zPlayerRef } from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player } from "../../game/Game";
 import { execSnapshotType } from "../../snapshot/ExecutionSnapshot";

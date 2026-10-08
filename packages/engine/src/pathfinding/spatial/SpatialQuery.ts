@@ -1,5 +1,5 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { TerraNullius } from "@vassal/engine-api/game/GameTypes";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { TerraNullius } from "@crusades/engine-api/game/GameTypes";
 import { Game, Player } from "../../game/Game";
 import {
   bumpTraversalGeneration,

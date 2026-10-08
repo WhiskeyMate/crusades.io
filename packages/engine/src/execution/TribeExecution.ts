@@ -1,12 +1,12 @@
-﻿import { Structures } from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+﻿import { Structures } from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   VersionedSchema,
   zNum,
   zPlayerRef,
   zRandom,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { simpleHash } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Execution, Game, Player } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

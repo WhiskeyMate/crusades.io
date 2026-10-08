@@ -1,7 +1,7 @@
 // Every player-facing name. The engine keeps its own identifiers for unit
 // types; this is where they turn into the medieval world the player sees.
 
-import { MessageType, UnitType } from "@vassal/engine-api/game/GameTypes";
+import { MessageType, UnitType } from "@crusades/engine-api/game/GameTypes";
 
 export interface UnitLore {
   name: string;

@@ -1,4 +1,4 @@
-# Netlify build for vassal.io: a static site (the game runs entirely in the
+# Netlify build for crusades.io: a static site (the game runs entirely in the
 # browser) plus three small functions for accounts and payments.
 [build]
   command = "npm run build"

@@ -4,7 +4,7 @@ import {
   PlayerType,
   RankedType,
   Team,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import { z } from "zod";
 import { Execution, Game } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

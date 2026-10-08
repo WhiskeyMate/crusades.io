@@ -5,8 +5,8 @@ import {
   Nukes,
   Structures,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameUpdateType } from "@vassal/engine-api/game/GameUpdates";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import { TickDelta, UnitState } from "./client/GameState";
 import { UNIT_LORE } from "./client/Lexicon";
 import { Session } from "./client/Session";

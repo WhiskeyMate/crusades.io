@@ -7,8 +7,8 @@ import {
   Quads,
   Team,
   Trios,
-} from "@vassal/engine-api/game/GameTypes";
-import { ClientID, TeamCountConfig } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { ClientID, TeamCountConfig } from "@crusades/engine-api/Schemas";
 import { PseudoRandom } from "../PseudoRandom";
 import { simpleHash } from "../Util";
 

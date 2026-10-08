@@ -8,7 +8,7 @@
  * to store real per-tick positions.
  */
 
-import type { MotionPlanRecord } from "@vassal/engine-lib/game/MotionPlans";
+import type { MotionPlanRecord } from "@crusades/engine-lib/game/MotionPlans";
 
 export interface GridMotionPlan {
   planId: number;

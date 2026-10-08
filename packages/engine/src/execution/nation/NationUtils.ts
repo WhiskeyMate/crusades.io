@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Cell,
   Difficulty,
@@ -6,9 +6,9 @@ import {
   PlayerType,
   Structures,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
-import { assertNever, calculateBoundingBox } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
+import { assertNever, calculateBoundingBox } from "@crusades/engine-lib/Util";
 import { Game, Player } from "../../game/Game";
 
 export function randTerritoryTileArray(

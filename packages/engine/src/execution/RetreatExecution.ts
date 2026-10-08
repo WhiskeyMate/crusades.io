@@ -1,4 +1,4 @@
-import { zInt, zPlayerRef } from "@vassal/engine-lib/snapshot/SnapshotType";
+import { zInt, zPlayerRef } from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

@@ -1,4 +1,4 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Difficulty,
   MessageType,
@@ -7,9 +7,9 @@ import {
   TerrainType,
   TerraNullius,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { renderTroops } from "@vassal/engine-lib/Format";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { renderTroops } from "@crusades/engine-lib/Format";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   zInt,
   zNum,
@@ -18,8 +18,8 @@ import {
   zRef,
   zTile,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { assertNever } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { assertNever } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { AttackLogicInput } from "../configuration/EngineConfig";
 import { Attack, Execution, Game, Player } from "../game/Game";

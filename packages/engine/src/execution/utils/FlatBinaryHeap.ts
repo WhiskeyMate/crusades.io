@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 
 /**
  * Lightweight min-heap specialised for (priority:number, tile:TileRef) pairs.

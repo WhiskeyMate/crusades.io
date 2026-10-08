@@ -1,4 +1,4 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Cell,
   ColoredTeams,
@@ -21,29 +21,29 @@ import {
   Tick,
   Trios,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   GameUpdate,
   GameUpdateType,
-} from "@vassal/engine-api/game/GameUpdates";
-import { UnitPredicate } from "@vassal/engine-api/game/ReadViews";
+} from "@crusades/engine-api/game/GameUpdates";
+import { UnitPredicate } from "@crusades/engine-api/game/ReadViews";
 import {
   AllPlayersStats,
   ClientID,
   Winner,
-} from "@vassal/engine-api/Schemas";
-import { ATTACK_INDEX_SENT } from "@vassal/engine-api/StatsSchemas";
-import { renderNumber } from "@vassal/engine-lib/Format";
+} from "@crusades/engine-api/Schemas";
+import { ATTACK_INDEX_SENT } from "@crusades/engine-api/StatsSchemas";
+import { renderNumber } from "@crusades/engine-lib/Format";
 import {
   MotionPlanRecord,
   packMotionPlans,
-} from "@vassal/engine-lib/game/MotionPlans";
+} from "@crusades/engine-lib/game/MotionPlans";
 import {
   assignTeams,
   resolveTeamsList,
-} from "@vassal/engine-lib/game/TeamAssignment";
-import { TerraNulliusImpl } from "@vassal/engine-lib/game/TerraNulliusImpl";
-import { UnitGrid } from "@vassal/engine-lib/game/UnitGrid";
+} from "@crusades/engine-lib/game/TeamAssignment";
+import { TerraNulliusImpl } from "@crusades/engine-lib/game/TerraNulliusImpl";
+import { UnitGrid } from "@crusades/engine-lib/game/UnitGrid";
 import {
   readVersioned,
   snapshotType,
@@ -51,8 +51,8 @@ import {
   zInt,
   zPlayerRef,
   zRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { simpleHash } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { EngineConfig } from "../configuration/EngineConfig";
 import {

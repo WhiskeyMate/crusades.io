@@ -12,7 +12,7 @@ Your machine: **40.160.26.142**, Windows.
 1. **A hostname.** Browsers on the https site will only open secure
    WebSocket (`wss://`) connections, and a certificate can only be issued for
    a name, not a bare IP. In your domain's DNS add an A record, for example
-   `play.vassal.io → 40.160.26.142`. Wait until `nslookup play.vassal.io`
+   `play.crusades.io → 40.160.26.142`. Wait until `nslookup play.crusades.io`
    answers with that address.
 2. **Ports 80 and 443 reachable from the internet.** If the machine is
    behind a router, forward both TCP ports to it. 80 is only used to prove
@@ -26,15 +26,15 @@ In an **elevated** PowerShell, in the project folder:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
-.\server\install-windows.ps1 -Hostname play.vassal.io
+.\server\install-windows.ps1 -Hostname play.crusades.io
 ```
 
-The script builds the server, copies it to `C:\vassal`, downloads NSSM
+The script builds the server, copies it to `C:\crusades`, downloads NSSM
 (a service wrapper) and Caddy (the HTTPS front door), registers both as
 Windows services that start on boot and restart on a crash, and opens the
 firewall. It ends by checking the server answers.
 
-Then check from the outside: open `https://play.vassal.io/health` in a
+Then check from the outside: open `https://play.crusades.io/health` in a
 browser on another network (your phone off wifi). It should show
 `{"ok":true,...}`. The first visit can take a few seconds while Caddy
 fetches the certificate.
@@ -44,7 +44,7 @@ fetches the certificate.
 In Netlify, **Site configuration > Environment variables**, add:
 
 ```
-VITE_GAME_SERVER = wss://play.vassal.io
+VITE_GAME_SERVER = wss://play.crusades.io
 ```
 
 and redeploy. The setup dialog then shows "Host a game" and "Join" under the
@@ -55,13 +55,13 @@ and never contacts your machine.
 
 | Task | How |
 | --- | --- |
-| See it running | `services.msc`: VassalServer and VassalCaddy |
-| Logs | `C:\vassal\logs\server.log`, `caddy.log` |
+| See it running | `services.msc`: CrusadesServer and CrusadesCaddy |
+| Logs | `C:\crusades\logs\server.log`, `caddy.log` |
 | Who is online | `http://127.0.0.1:8765/health` on the machine, or the `/health` page over https |
-| Restart | `C:\vassal\bin\nssm.exe restart VassalServer` |
+| Restart | `C:\crusades\bin\nssm.exe restart CrusadesServer` |
 | Update after a code change | `git pull`, then re-run the install script (it rebuilds and restarts) |
-| Remove | `nssm remove VassalServer confirm`, same for `VassalCaddy` |
-| Change the public countdown | `nssm set VassalServer AppEnvironmentExtra PORT=8765 HOST=127.0.0.1 PUBLIC_WAIT_SECONDS=60`, then restart |
+| Remove | `nssm remove CrusadesServer confirm`, same for `CrusadesCaddy` |
+| Change the public countdown | `nssm set CrusadesServer AppEnvironmentExtra PORT=8765 HOST=127.0.0.1 PUBLIC_WAIT_SECONDS=60`, then restart |
 
 A restart drops every running game; players see "Lost the server". Do it
 when `/health` shows `running: 0`.

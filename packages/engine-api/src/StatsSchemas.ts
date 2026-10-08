@@ -1,4 +1,4 @@
-import { zb, ZbEncodeError } from "@vassal/zbin";
+import { zb, ZbEncodeError } from "@crusades/zbin";
 import { z } from "zod";
 import { UnitType } from "./game/GameTypes";
 

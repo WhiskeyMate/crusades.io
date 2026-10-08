@@ -1,5 +1,5 @@
 {
-  "name": "@vassal/engine-api",
+  "name": "@crusades/engine-api",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@vassal/zbin": "0.0.0",
+    "@crusades/zbin": "0.0.0",
     "zod": "^4.4.2"
   }
 }

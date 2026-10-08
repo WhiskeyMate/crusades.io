@@ -5,16 +5,16 @@ import {
   PlayerType,
   Relation,
   Tick,
-} from "@vassal/engine-api/game/GameTypes";
-import { flattenedEmojiTable } from "@vassal/engine-api/Schemas";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { flattenedEmojiTable } from "@crusades/engine-api/Schemas";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   readVersioned,
   snapshotType,
   Versioned,
   zInt,
   zPlayerRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Game, Player } from "../../game/Game";
 import type {

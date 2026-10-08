@@ -1,6 +1,6 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { PlayerType, TerraNullius } from "@vassal/engine-api/game/GameTypes";
-import { AllPlayersStats, ClientID } from "@vassal/engine-api/Schemas";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { PlayerType, TerraNullius } from "@crusades/engine-api/game/GameTypes";
+import { AllPlayersStats, ClientID } from "@crusades/engine-api/Schemas";
 import {
   ALLIANCE_INDEX_BROKEN_BY_OTHER,
   ALLIANCE_INDEX_EXPIRED,
@@ -49,8 +49,8 @@ import {
   unitTypeToBoatUnit,
   unitTypeToBombUnit,
   unitTypeToOtherUnit,
-} from "@vassal/engine-api/StatsSchemas";
-import { snapshotType } from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-api/StatsSchemas";
+import { snapshotType } from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Player } from "./Game";
 import { Stats } from "./Stats";

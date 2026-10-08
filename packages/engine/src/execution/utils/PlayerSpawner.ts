@@ -1,5 +1,5 @@
-import { PlayerType } from "@vassal/engine-api/game/GameTypes";
-import { GameID } from "@vassal/engine-api/Schemas";
+import { PlayerType } from "@crusades/engine-api/game/GameTypes";
+import { GameID } from "@crusades/engine-api/Schemas";
 import { Game } from "../../game/Game";
 import { SpawnExecution } from "../SpawnExecution";
 

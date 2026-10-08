@@ -1,13 +1,13 @@
-import { Tick } from "@vassal/engine-api/game/GameTypes";
+import { Tick } from "@crusades/engine-api/game/GameTypes";
 import {
   AllianceRequestUpdate,
   GameUpdateType,
-} from "@vassal/engine-api/game/GameUpdates";
+} from "@crusades/engine-api/game/GameUpdates";
 import {
   snapshotType,
   zInt,
   zPlayerRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import type {
   SnapshotReader,

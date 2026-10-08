@@ -1,7 +1,7 @@
 import {
   ErrorUpdate,
   GameUpdateViewData,
-} from "@vassal/engine-api/game/GameUpdates";
+} from "@crusades/engine-api/game/GameUpdates";
 import {
   AttackClusteredPositionsResultMessage,
   InitErrorMessage,
@@ -16,7 +16,7 @@ import {
   SnapshotResultMessage,
   TransportShipSpawnResultMessage,
   WorkerMessage,
-} from "@vassal/engine-api/worker/WorkerMessages";
+} from "@crusades/engine-api/worker/WorkerMessages";
 import {
   createGameRunner,
   createGameRunnerFromSnapshot,

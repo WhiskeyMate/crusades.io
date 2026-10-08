@@ -1,6 +1,6 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
-import { ReadonlyTileSet } from "@vassal/engine-api/game/ReadViews";
-import { euclDistFN } from "@vassal/engine-lib/game/GameMapImpl";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
+import { ReadonlyTileSet } from "@crusades/engine-api/game/ReadViews";
+import { euclDistFN } from "@crusades/engine-lib/game/GameMapImpl";
 import { Game, Player } from "../game/Game";
 
 export function getSpawnTiles(

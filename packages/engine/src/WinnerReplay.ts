@@ -2,14 +2,14 @@ import {
   ErrorUpdate,
   GameUpdateType,
   WinUpdate,
-} from "@vassal/engine-api/game/GameUpdates";
-import { MapFiles } from "@vassal/engine-api/game/MapFiles";
+} from "@crusades/engine-api/game/GameUpdates";
+import { MapFiles } from "@crusades/engine-api/game/MapFiles";
 import {
   AllPlayersStats,
   GameStartInfo,
   Turn,
   Winner,
-} from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/Schemas";
 import { createGameRunner } from "./GameRunner";
 
 export interface ReplayedWinner {

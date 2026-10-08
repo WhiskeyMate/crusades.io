@@ -1,7 +1,7 @@
 // Colours and coats of arms, all derived from a player's id and name so the
 // game ships no flag artwork.
 
-import { PlayerType } from "@vassal/engine-api/game/GameTypes";
+import { PlayerType } from "@crusades/engine-api/game/GameTypes";
 
 export type RGB = [number, number, number];
 

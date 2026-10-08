@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Difficulty,
   GameMode,
@@ -8,16 +8,16 @@ import {
   Relation,
   TerrainType,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameID } from "@vassal/engine-api/Schemas";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameID } from "@crusades/engine-api/Schemas";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   VersionedSchema,
   zNum,
   zPlayerRef,
   zRandom,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { assertNever, simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { assertNever, simpleHash } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Execution, Game, Player } from "../game/Game";
 import {

@@ -1,11 +1,11 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
-import { GameUpdateType } from "@vassal/engine-api/game/GameUpdates";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import {
   snapshotType,
   zInt,
   zRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { PathFinding } from "../pathfinding/PathFinder";
 import type {

@@ -2,16 +2,16 @@
 // standings, the build bar, the chronicle, wars, pact offers and the
 // right-click menu.
 
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   BuildableUnit,
   PlayerActions,
   PlayerType,
   TerrainType,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameUpdateType } from "@vassal/engine-api/game/GameUpdates";
-import { Intent } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
+import { Intent } from "@crusades/engine-api/Schemas";
 import { PlayerState, TickDelta } from "../client/GameState";
 import { css, shieldSVG } from "../client/Heraldry";
 import {

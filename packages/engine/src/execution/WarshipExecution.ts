@@ -1,6 +1,6 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   zInt,
   zNum,
@@ -8,8 +8,8 @@ import {
   zRandom,
   zRef,
   zTile,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { findMinimumBy } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { findMinimumBy } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import {
   Execution,

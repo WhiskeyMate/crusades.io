@@ -11,7 +11,7 @@ play.example.com {
 	reverse_proxy 127.0.0.1:8765
 	encode gzip
 	log {
-		output file C:\vassal\logs\caddy-access.log {
+		output file C:\crusades\logs\caddy-access.log {
 			roll_size 10mb
 			roll_keep 5
 		}

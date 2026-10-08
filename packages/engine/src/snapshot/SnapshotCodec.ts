@@ -1,4 +1,4 @@
-import { ByteReader } from "@vassal/zbin";
+import { ByteReader } from "@crusades/zbin";
 
 /**
  * Self-describing binary encoding for snapshot data.

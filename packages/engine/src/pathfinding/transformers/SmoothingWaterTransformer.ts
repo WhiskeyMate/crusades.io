@@ -1,4 +1,4 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
 import { DebugSpan } from "../../utilities/DebugSpan";
 import {
   AStarWaterBounded,

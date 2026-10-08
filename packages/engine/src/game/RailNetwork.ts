@@ -1,5 +1,5 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
 import { Unit } from "./Game";
 import { StationManager } from "./RailNetworkImpl";
 import { TrainStation } from "./TrainStation";

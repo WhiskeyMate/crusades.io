@@ -1,12 +1,12 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { MessageType, UnitType } from "@vassal/engine-api/game/GameTypes";
-import { NukeType } from "@vassal/engine-api/StatsSchemas";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { MessageType, UnitType } from "@crusades/engine-api/game/GameTypes";
+import { NukeType } from "@crusades/engine-api/StatsSchemas";
 import {
   zNum,
   zPlayerRef,
   zRef,
   zTile,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, Player, Unit } from "../game/Game";
 import { PathFinding } from "../pathfinding/PathFinder";

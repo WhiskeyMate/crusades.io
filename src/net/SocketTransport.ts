@@ -2,7 +2,7 @@
 // socket and hands turns here; this just queues them until the session is
 // listening and forwards intents the other way.
 
-import { Intent, Turn } from "@vassal/engine-api/Schemas";
+import { Intent, Turn } from "@crusades/engine-api/Schemas";
 import { Transport, TURN_MS } from "./Transport";
 
 export class SocketTransport implements Transport {

@@ -1,5 +1,5 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { TerraNullius } from "@vassal/engine-api/game/GameTypes";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { TerraNullius } from "@crusades/engine-api/game/GameTypes";
 import {
   snapshotType,
   zInt,
@@ -7,7 +7,7 @@ import {
   zPlayerRef,
   zTile,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import type {
   SnapshotReader,

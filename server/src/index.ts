@@ -1,4 +1,4 @@
-// The vassal.io game server: lobbies and a turn relay.
+// The crusades.io game server: lobbies and a turn relay.
 //
 // It never runs the simulation. Ten times a second it bundles the intents
 // players sent into a numbered turn and broadcasts it; every browser feeds
@@ -20,8 +20,8 @@ import {
   GameMapType,
   GameMode,
   GameType,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameStartInfo, StampedIntent, Turn } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameStartInfo, StampedIntent, Turn } from "@crusades/engine-api/Schemas";
 import {
   ClientMessage,
   ClientMessageSchema,
@@ -532,7 +532,7 @@ setInterval(() => {
 }, 30_000);
 
 ensurePublicGame();
-http.listen(PORT, HOST, () => log(`vassal.io game server listening on ${HOST}:${PORT}`));
+http.listen(PORT, HOST, () => log(`crusades.io game server listening on ${HOST}:${PORT}`));
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {

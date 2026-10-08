@@ -7,18 +7,18 @@ import {
   TerraNullius,
   Tick,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { PlayerLike } from "@vassal/engine-api/game/ReadViews";
-import { TeamCountConfig } from "@vassal/engine-api/Schemas";
-import { NukeType } from "@vassal/engine-api/StatsSchemas";
-import { Config } from "@vassal/engine-lib/configuration/Config";
-import { exp, log, pow2 } from "@vassal/engine-lib/DetMath";
+} from "@crusades/engine-api/game/GameTypes";
+import { PlayerLike } from "@crusades/engine-api/game/ReadViews";
+import { TeamCountConfig } from "@crusades/engine-api/Schemas";
+import { NukeType } from "@crusades/engine-api/StatsSchemas";
+import { Config } from "@crusades/engine-lib/configuration/Config";
+import { exp, log, pow2 } from "@crusades/engine-lib/DetMath";
 import {
   assertNever,
   sigmoid,
   toInt,
   within,
-} from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/Util";
 import type { EngineUnitInfo, Game, Player, Unit } from "../game/Game";
 
 export interface AttackLogicInput {

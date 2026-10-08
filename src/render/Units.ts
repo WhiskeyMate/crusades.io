@@ -3,7 +3,7 @@
 // starfall) with their arcs through the sky.
 
 import * as THREE from "three";
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
 import { GameState, UnitState } from "../client/GameState";
 import { RGB } from "../client/Heraldry";
 import { Dragon, Effects } from "./Effects";

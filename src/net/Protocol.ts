@@ -10,13 +10,13 @@ import { z } from "zod";
 import {
   Difficulty,
   GameMapType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   GameStartInfo,
   IntentSchema,
   Turn,
   UsernameSchema,
-} from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/Schemas";
 
 export const LOBBY_CODE = /^[A-Z2-9]{6}$/;
 

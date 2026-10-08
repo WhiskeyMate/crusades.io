@@ -1,13 +1,13 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { MessageType, UnitType } from "@vassal/engine-api/game/GameTypes";
-import { renderNumber } from "@vassal/engine-lib/Format";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { MessageType, UnitType } from "@crusades/engine-api/game/GameTypes";
+import { renderNumber } from "@crusades/engine-lib/Format";
 import {
   zInt,
   zPlayerRef,
   zRef,
   zTile,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { findClosestBy } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { findClosestBy } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Execution, Game, Player, Unit } from "../game/Game";
 import { WaterPathFinder } from "../pathfinding/PathFinder";

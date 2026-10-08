@@ -1,22 +1,22 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   MessageType,
   Structures,
   TerraNullius,
   TrajectoryTile,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { NukeType } from "@vassal/engine-api/StatsSchemas";
-import { atan2 } from "@vassal/engine-lib/DetMath";
-import { listNukeBreakAlliance } from "@vassal/engine-lib/execution/NukeAlliance";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { NukeType } from "@crusades/engine-api/StatsSchemas";
+import { atan2 } from "@crusades/engine-lib/DetMath";
+import { listNukeBreakAlliance } from "@crusades/engine-lib/execution/NukeAlliance";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   zInt,
   zNum,
   zPlayerRef,
   zRef,
   zTile,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { Execution, Game, isUnit, Player, Unit } from "../game/Game";
 import { UniversalPathFinding } from "../pathfinding/PathFinder";

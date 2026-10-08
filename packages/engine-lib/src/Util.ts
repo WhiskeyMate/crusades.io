@@ -1,6 +1,6 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
-import { Cell } from "@vassal/engine-api/game/GameTypes";
-import { UnitLike } from "@vassal/engine-api/game/ReadViews";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
+import { Cell } from "@crusades/engine-api/game/GameTypes";
+import { UnitLike } from "@crusades/engine-api/game/ReadViews";
 import { exp } from "./DetMath";
 import { TileSet } from "./game/TileSet";
 

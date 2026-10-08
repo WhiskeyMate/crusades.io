@@ -1,5 +1,5 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
-import { within } from "@vassal/engine-lib/Util";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
+import { within } from "@crusades/engine-lib/Util";
 import { DistanceBasedBezierCurve } from "../utilities/Line";
 import { PathResult, PathStatus, SteppingPathFinder } from "./types";
 

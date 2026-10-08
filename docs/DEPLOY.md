@@ -1,4 +1,4 @@
-# Deploying vassal.io
+# Deploying crusades.io
 
 The game is a static site: everything, including the simulation, runs in the
 player's browser. Netlify serves it. Accounts and payments are optional and
@@ -49,7 +49,7 @@ Checkout, and can then choose the colour and arms their realm flies.
 ### Stripe
 
 1. Create a Stripe account. Stay in **test mode** until everything works.
-2. **Product catalogue**: add a product "vassal.io Premium" with one price.
+2. **Product catalogue**: add a product "crusades.io Premium" with one price.
    A recurring price makes premium a subscription; a one-time price makes it
    a single purchase. The code handles either. Copy the price id (`price_...`).
 3. **Developers > Webhooks > Add endpoint**:

@@ -2,7 +2,7 @@
 // each frame where the engine says the name fits.
 
 import * as THREE from "three";
-import { PlayerType } from "@vassal/engine-api/game/GameTypes";
+import { PlayerType } from "@crusades/engine-api/game/GameTypes";
 import { GameState, PlayerState } from "../client/GameState";
 import { shieldSVG } from "../client/Heraldry";
 import { fmtTroops } from "../client/Lexicon";

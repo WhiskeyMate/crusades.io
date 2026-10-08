@@ -1,5 +1,5 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
 import { SpatialQuery } from "../pathfinding/spatial/SpatialQuery";
 import { Game, Player } from "./Game";
 

@@ -1,5 +1,5 @@
-import { Cell, NameViewData } from "@vassal/engine-api/game/GameTypes";
-import { calculateBoundingBox } from "@vassal/engine-lib/Util";
+import { Cell, NameViewData } from "@crusades/engine-api/game/GameTypes";
+import { calculateBoundingBox } from "@crusades/engine-lib/Util";
 import { Game, Player } from "./Game";
 
 export interface Point {

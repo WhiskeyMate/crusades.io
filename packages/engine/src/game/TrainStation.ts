@@ -1,12 +1,12 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { UnitType } from "@vassal/engine-api/game/GameTypes";
-import { GameUpdateType } from "@vassal/engine-api/game/GameUpdates";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   snapshotType,
   zInt,
   zRef,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { TrainExecution } from "../execution/TrainExecution";
 import type {

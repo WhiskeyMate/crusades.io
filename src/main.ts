@@ -1,6 +1,6 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
-import { Difficulty, GameMapType } from "@vassal/engine-api/game/GameTypes";
+import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { account } from "./account/Account";
 import { initAccountPanel } from "./account/Panel";
 import { Attract } from "./Attract";
@@ -11,7 +11,7 @@ import { Session, soloSession } from "./client/Session";
 import { initOnline, leaveOnline } from "./ui/Lobby";
 
 /** Where this build's source can be fetched (the AGPL asks for it). */
-const SOURCE_URL = "https://github.com/WhiskeyMate/vassal.io";
+const SOURCE_URL = "https://github.com/WhiskeyMate/crusades.io";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -95,7 +95,7 @@ async function launch(session: Session) {
     setLiege(houseName(), account.skin);
     game = new Game(session, quit);
     await game.start();
-    (window as unknown as { vassal: Game }).vassal = game;
+    (window as unknown as { crusades: Game }).crusades = game;
   } catch (e) {
     console.error(e);
     game?.stop();

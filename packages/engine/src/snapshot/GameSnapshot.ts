@@ -1,20 +1,20 @@
-import { GameMap } from "@vassal/engine-api/game/GameMap";
+import { GameMap } from "@crusades/engine-api/game/GameMap";
 import {
   Nation,
   TeamGameSpawnAreas,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameConfig, GameConfigSchema } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameConfig, GameConfigSchema } from "@crusades/engine-api/Schemas";
 import {
   GameMapImpl,
   GameMapSnapshot,
-} from "@vassal/engine-lib/game/GameMapImpl";
+} from "@crusades/engine-lib/game/GameMapImpl";
 import {
   readVersioned,
   SnapshotError,
   SnapshotType,
   Versioned,
   VersionedSchema,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { EngineConfig } from "../configuration/EngineConfig";
 import { AllianceImpl, AllianceSnapshot } from "../game/AllianceImpl";
@@ -45,7 +45,7 @@ import {
   SnapshotWriter,
 } from "./SnapshotContext";
 
-export const SNAPSHOT_MAGIC = "VassalGameSnapshot";
+export const SNAPSHOT_MAGIC = "CrusadesGameSnapshot";
 
 /**
  * Version of the root layout below. Everything inside it carries its own

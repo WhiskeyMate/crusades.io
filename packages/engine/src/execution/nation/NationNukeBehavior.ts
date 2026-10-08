@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   Difficulty,
   GameMode,
@@ -8,17 +8,17 @@ import {
   Structures,
   Tick,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { euclDistFN } from "@vassal/engine-lib/game/GameMapImpl";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { euclDistFN } from "@crusades/engine-lib/game/GameMapImpl";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   readVersioned,
   snapshotType,
   Versioned,
   zInt,
   zTile,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { assertNever, boundingBoxTiles } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { assertNever, boundingBoxTiles } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Game, Player, Unit } from "../../game/Game";
 import { UniversalPathFinding } from "../../pathfinding/PathFinder";

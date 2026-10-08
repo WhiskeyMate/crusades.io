@@ -1,12 +1,12 @@
 // The client's copy of the game: tiles, players and units, rebuilt each tick
 // from what the engine worker sends. The renderer and HUD only read this.
 
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   PlayerType,
   UnitType,
   WarshipState,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   AllianceView,
   ATTACK_DELTA_OUTGOING,
@@ -15,11 +15,11 @@ import {
   GameUpdateViewData,
   PlayerUpdate,
   UnitUpdate,
-} from "@vassal/engine-api/game/GameUpdates";
-import { GameConfig } from "@vassal/engine-api/Schemas";
-import { Config } from "@vassal/engine-lib/configuration/Config";
-import { GameMapImpl } from "@vassal/engine-lib/game/GameMapImpl";
-import { unpackMotionPlans } from "@vassal/engine-lib/game/MotionPlans";
+} from "@crusades/engine-api/game/GameUpdates";
+import { GameConfig } from "@crusades/engine-api/Schemas";
+import { Config } from "@crusades/engine-lib/configuration/Config";
+import { GameMapImpl } from "@crusades/engine-lib/game/GameMapImpl";
+import { unpackMotionPlans } from "@crusades/engine-lib/game/MotionPlans";
 import { Realm } from "../worldgen/RealmGen";
 import { MotionPlanResolver } from "./MotionPlanResolver";
 import { playerColor, RGB } from "./Heraldry";

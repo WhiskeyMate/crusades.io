@@ -1,4 +1,4 @@
-import { zb } from "@vassal/zbin";
+import { zb } from "@crusades/zbin";
 import quickChatData from "resources/QuickChat.json";
 import { z } from "zod";
 import {

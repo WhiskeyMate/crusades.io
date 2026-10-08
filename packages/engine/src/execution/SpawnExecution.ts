@@ -1,14 +1,14 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   GameType,
   PlayerInfo,
   PlayerType,
   SpawnArea,
-} from "@vassal/engine-api/game/GameTypes";
-import { GameID } from "@vassal/engine-api/Schemas";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
-import { zNum, zRandom } from "@vassal/engine-lib/snapshot/SnapshotType";
-import { simpleHash } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-api/game/GameTypes";
+import { GameID } from "@crusades/engine-api/Schemas";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
+import { zNum, zRandom } from "@crusades/engine-lib/snapshot/SnapshotType";
+import { simpleHash } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Execution, Game, Player } from "../game/Game";
 import {

@@ -1,4 +1,4 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
 import { PathFinder } from "../types";
 import { MinHeap } from "./PriorityQueue";
 

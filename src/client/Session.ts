@@ -2,7 +2,7 @@
 // turns feeding it (from a local clock or from the server) and the GameState
 // mirror the renderer reads.
 
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   BuildableUnit,
   Difficulty,
@@ -12,17 +12,17 @@ import {
   GameType,
   PlayerActions,
   PlayerBuildableUnitType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   ErrorUpdate,
   GameUpdateType,
   GameUpdateViewData,
-} from "@vassal/engine-api/game/GameUpdates";
-import { GameStartInfo, Intent } from "@vassal/engine-api/Schemas";
+} from "@crusades/engine-api/game/GameUpdates";
+import { GameStartInfo, Intent } from "@crusades/engine-api/Schemas";
 import {
   MainThreadMessage,
   WorkerMessage,
-} from "@vassal/engine-api/worker/WorkerMessages";
+} from "@crusades/engine-api/worker/WorkerMessages";
 import { LocalTransport, Transport } from "../net/Transport";
 import { generateRealm, Realm } from "../worldgen/RealmGen";
 import { GameState, TickDelta } from "./GameState";

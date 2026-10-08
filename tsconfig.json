@@ -14,19 +14,19 @@
       "resources/*": [
         "./resources/*"
       ],
-      "@vassal/engine/*": [
+      "@crusades/engine/*": [
         "./packages/engine/src/*"
       ],
-      "@vassal/engine-api/*": [
+      "@crusades/engine-api/*": [
         "./packages/engine-api/src/*"
       ],
-      "@vassal/engine-lib/*": [
+      "@crusades/engine-lib/*": [
         "./packages/engine-lib/src/*"
       ],
-      "@vassal/zbin": [
+      "@crusades/zbin": [
         "./packages/zbin/src/index.ts"
       ],
-      "@vassal/zbin/*": [
+      "@crusades/zbin/*": [
         "./packages/zbin/src/*"
       ]
     },

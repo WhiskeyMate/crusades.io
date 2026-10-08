@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   MessageType,
   NukeState,
@@ -10,12 +10,12 @@ import {
   TransportShipState,
   UnitType,
   WarshipState,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   GameUpdateType,
   UnitUpdate,
-} from "@vassal/engine-api/game/GameUpdates";
-import { maxHealthWithVeterancy } from "@vassal/engine-lib/game/Veterancy";
+} from "@crusades/engine-api/game/GameUpdates";
+import { maxHealthWithVeterancy } from "@crusades/engine-lib/game/Veterancy";
 import {
   snapshotType,
   zBytes,
@@ -25,8 +25,8 @@ import {
   zRef,
   zTile,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { simpleHash, toInt, withinInt } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { simpleHash, toInt, withinInt } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { UnitTypeSchema } from "../snapshot/CommonSchemas";
 import type {

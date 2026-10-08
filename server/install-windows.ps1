@@ -1,4 +1,4 @@
-# Installs the vassal.io game server and Caddy as Windows services.
+# Installs the crusades.io game server and Caddy as Windows services.
 # Run from an elevated PowerShell in the project folder:
 #
 #   Set-ExecutionPolicy -Scope Process Bypass
@@ -6,9 +6,9 @@
 #
 # What it does:
 #   1. builds the server bundle (npm run build:server)
-#   2. copies it, Node's dependencies and a Caddyfile to C:\vassal
-#   3. downloads NSSM and Caddy if they are not already in C:\vassal\bin
-#   4. registers two services, VassalServer and VassalCaddy, that start
+#   2. copies it, Node's dependencies and a Caddyfile to C:\crusades
+#   3. downloads NSSM and Caddy if they are not already in C:\crusades\bin
+#   4. registers two services, CrusadesServer and CrusadesCaddy, that start
 #      with Windows and restart if they crash
 #   5. opens TCP 80 and 443 in Windows Firewall (80 only for the
 #      certificate challenge; the game itself is on 443)
@@ -17,7 +17,7 @@
 
 param(
     [Parameter(Mandatory = $true)][string]$Hostname,
-    [string]$Root = "C:\vassal",
+    [string]$Root = "C:\crusades",
     [int]$Port = 8765
 )
 
@@ -43,7 +43,7 @@ foreach ($d in "$Root", "$Root\bin", "$Root\logs", "$Root\app") {
 Write-Host "Copying the server to $Root\app..."
 Copy-Item "$project\server\dist\server.mjs" "$Root\app\server.mjs" -Force
 # The bundle keeps ws and zod external; give it a tiny package of its own.
-$pkg = @{ name = "vassal-server"; private = $true; type = "module"; dependencies = @{} }
+$pkg = @{ name = "crusades-server"; private = $true; type = "module"; dependencies = @{} }
 foreach ($dep in "ws", "zod") {
     $v = (Get-Content "$project\node_modules\$dep\package.json" | ConvertFrom-Json).version
     $pkg.dependencies[$dep] = $v
@@ -84,19 +84,19 @@ function Service($name, $exe, $args, $log) {
 }
 
 $node = (Get-Command node).Source
-Service "VassalServer" $node "`"$Root\app\server.mjs`"" "server.log"
-& $nssm set VassalServer AppEnvironmentExtra "PORT=$Port" "HOST=127.0.0.1" | Out-Null
-Service "VassalCaddy" $caddy "run --config `"$Root\Caddyfile`"" "caddy.log"
+Service "CrusadesServer" $node "`"$Root\app\server.mjs`"" "server.log"
+& $nssm set CrusadesServer AppEnvironmentExtra "PORT=$Port" "HOST=127.0.0.1" | Out-Null
+Service "CrusadesCaddy" $caddy "run --config `"$Root\Caddyfile`"" "caddy.log"
 
 Write-Host "Opening the firewall..."
 foreach ($p in 80, 443) {
-    if (-not (Get-NetFirewallRule -DisplayName "vassal.io $p" -ErrorAction SilentlyContinue)) {
-        New-NetFirewallRule -DisplayName "vassal.io $p" -Direction Inbound -Protocol TCP -LocalPort $p -Action Allow | Out-Null
+    if (-not (Get-NetFirewallRule -DisplayName "crusades.io $p" -ErrorAction SilentlyContinue)) {
+        New-NetFirewallRule -DisplayName "crusades.io $p" -Direction Inbound -Protocol TCP -LocalPort $p -Action Allow | Out-Null
     }
 }
 
-& $nssm start VassalServer | Out-Null
-& $nssm start VassalCaddy | Out-Null
+& $nssm start CrusadesServer | Out-Null
+& $nssm start CrusadesCaddy | Out-Null
 Start-Sleep 2
 try {
     $h = Invoke-RestMethod "http://127.0.0.1:$Port/health"
@@ -106,4 +106,4 @@ try {
 }
 Write-Host ""
 Write-Host "Done. The site should be built with VITE_GAME_SERVER=wss://$Hostname"
-Write-Host "Logs: $Root\logs    Services: VassalServer, VassalCaddy (services.msc)"
+Write-Host "Logs: $Root\logs    Services: CrusadesServer, CrusadesCaddy (services.msc)"

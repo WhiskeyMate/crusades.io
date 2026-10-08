@@ -1,4 +1,4 @@
-import { GameStartInfo } from "@vassal/engine-api/Schemas";
+import { GameStartInfo } from "@crusades/engine-api/Schemas";
 import {
   Cell,
   GameMapSize,
@@ -8,12 +8,12 @@ import {
   Nation,
   PlayerInfo,
   PlayerType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   AdditionalNation,
   Nation as ManifestNation,
-} from "@vassal/engine-api/game/MapFiles";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/MapFiles";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 
 /**
  * Creates the nations array for a game.

@@ -2,9 +2,9 @@ import {
   MessageType,
   PlayerID,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
-import { wouldNukeBreakAlliance } from "@vassal/engine-lib/execution/NukeAlliance";
-import { zPlayerRef, zRef } from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-api/game/GameTypes";
+import { wouldNukeBreakAlliance } from "@crusades/engine-lib/execution/NukeAlliance";
+import { zPlayerRef, zRef } from "@crusades/engine-lib/snapshot/SnapshotType";
 import { z } from "zod";
 import { AllianceRequest, Execution, Game, Player } from "../../game/Game";
 import { execSnapshotType } from "../../snapshot/ExecutionSnapshot";

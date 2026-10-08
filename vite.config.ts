@@ -7,10 +7,10 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /^resources\//, replacement: path.resolve(__dirname, "resources") + "/" },
-      { find: /^@vassal\/engine-api\//, replacement: pkg("engine-api") + "/" },
-      { find: /^@vassal\/engine-lib\//, replacement: pkg("engine-lib") + "/" },
-      { find: /^@vassal\/engine\//, replacement: pkg("engine") + "/" },
-      { find: /^@vassal\/zbin$/, replacement: pkg("zbin") + "/index.ts" },
+      { find: /^@crusades\/engine-api\//, replacement: pkg("engine-api") + "/" },
+      { find: /^@crusades\/engine-lib\//, replacement: pkg("engine-lib") + "/" },
+      { find: /^@crusades\/engine\//, replacement: pkg("engine") + "/" },
+      { find: /^@crusades\/zbin$/, replacement: pkg("zbin") + "/index.ts" },
     ],
   },
   worker: { format: "es" },

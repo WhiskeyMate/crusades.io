@@ -3,14 +3,14 @@ import {
   GameMode,
   PlayerType,
   Relation,
-} from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   readVersioned,
   snapshotType,
   Versioned,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { assertNever } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { assertNever } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Game, Player } from "../../game/Game";
 import type {

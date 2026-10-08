@@ -1,4 +1,4 @@
-import { GameMap, TileRef } from "@vassal/engine-api/game/GameMap";
+import { GameMap, TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   AllianceInfo,
   AllPlayers,
@@ -27,21 +27,21 @@ import {
   UnitInfo,
   UnitType,
   WarshipState,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   GameUpdate,
   PlayerUpdate,
   UnitUpdate,
-} from "@vassal/engine-api/game/GameUpdates";
+} from "@crusades/engine-api/game/GameUpdates";
 import {
   GameLike,
   PlayerLike,
   ReadonlyTileSet,
   UnitLike,
   UnitPredicate,
-} from "@vassal/engine-api/game/ReadViews";
-import { AllPlayersStats, ClientID } from "@vassal/engine-api/Schemas";
-import { MotionPlanRecord } from "@vassal/engine-lib/game/MotionPlans";
+} from "@crusades/engine-api/game/ReadViews";
+import { AllPlayersStats, ClientID } from "@crusades/engine-api/Schemas";
+import { MotionPlanRecord } from "@crusades/engine-lib/game/MotionPlans";
 import type { EngineConfig } from "../configuration/EngineConfig";
 import { AbstractGraph } from "../pathfinding/algorithms/AbstractGraph";
 import { PathFinder } from "../pathfinding/types";

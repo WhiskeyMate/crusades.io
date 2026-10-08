@@ -8,12 +8,12 @@
 import {
   GameMapSize,
   GameMapType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   MapFiles,
   MapManifest,
   Nation,
-} from "@vassal/engine-api/game/MapFiles";
+} from "@crusades/engine-api/game/MapFiles";
 
 export type RealmStyle = "continent" | "isles" | "twin" | "inland";
 

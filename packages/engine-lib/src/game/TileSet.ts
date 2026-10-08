@@ -1,5 +1,5 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
-import { ReadonlyTileSet } from "@vassal/engine-api/game/ReadViews";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
+import { ReadonlyTileSet } from "@crusades/engine-api/game/ReadViews";
 
 // Deleted dense slots hold this sentinel. Tile refs are grid indices and map
 // coordinates are capped at 65535, so the largest possible ref is

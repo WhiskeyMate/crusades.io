@@ -17,7 +17,7 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
  * the skin kept in localStorage, so the editor can be worked on offline.
  */
 const DEV_PREVIEW = import.meta.env.DEV && new URLSearchParams(location.search).has("premium");
-const DEV_SKIN_KEY = "vassal.dev.skin";
+const DEV_SKIN_KEY = "crusades.dev.skin";
 
 export const accountsEnabled = Boolean(URL && KEY) || DEV_PREVIEW;
 

@@ -1,8 +1,8 @@
 // The client's side of the game server: one socket, the lobby you are in,
 // and the handover to a Session when the game starts.
 
-import { GameStartInfo, Intent, Turn } from "@vassal/engine-api/Schemas";
-import { MapManifest } from "@vassal/engine-api/game/MapFiles";
+import { GameStartInfo, Intent, Turn } from "@crusades/engine-api/Schemas";
+import { MapManifest } from "@crusades/engine-api/game/MapFiles";
 import { generateRealm, Realm } from "../worldgen/RealmGen";
 import { realmHash } from "../worldgen/RealmHash";
 import { ClientMessage, LobbyConfig, LobbyView, PublicGame, ServerMessage } from "./Protocol";
@@ -13,7 +13,7 @@ export const GAME_SERVER: string | undefined =
   (import.meta.env.VITE_GAME_SERVER as string | undefined) ||
   (import.meta.env.DEV ? "ws://localhost:8765" : undefined);
 
-const SEAT_KEY = "vassal.seat";
+const SEAT_KEY = "crusades.seat";
 
 export interface GameHandoff {
   realm: Realm;

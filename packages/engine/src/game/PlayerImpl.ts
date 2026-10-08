@@ -1,4 +1,4 @@
-import { TileRef } from "@vassal/engine-api/game/GameMap";
+import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   AllianceInfo,
   AllPlayers,
@@ -22,7 +22,7 @@ import {
   TerraNullius,
   Tick,
   UnitType,
-} from "@vassal/engine-api/game/GameTypes";
+} from "@crusades/engine-api/game/GameTypes";
 import {
   AllianceView,
   ATTACK_DELTA_INCOMING,
@@ -30,12 +30,12 @@ import {
   AttackUpdate,
   GameUpdateType,
   PlayerUpdate,
-} from "@vassal/engine-api/game/GameUpdates";
-import { ReadonlyTileSet } from "@vassal/engine-api/game/ReadViews";
-import { ClientID } from "@vassal/engine-api/Schemas";
-import { andFN, manhattanDistFN } from "@vassal/engine-lib/game/GameMapImpl";
-import { TileSet } from "@vassal/engine-lib/game/TileSet";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameUpdates";
+import { ReadonlyTileSet } from "@crusades/engine-api/game/ReadViews";
+import { ClientID } from "@crusades/engine-api/Schemas";
+import { andFN, manhattanDistFN } from "@crusades/engine-lib/game/GameMapImpl";
+import { TileSet } from "@crusades/engine-lib/game/TileSet";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   snapshotType,
   zInt,
@@ -45,7 +45,7 @@ import {
   zRef,
   zTile,
   zTiles,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
 import {
   assertNever,
   findClosestBy,
@@ -53,7 +53,7 @@ import {
   simpleHash,
   toInt,
   within,
-} from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import {
   newPlayerInfo,

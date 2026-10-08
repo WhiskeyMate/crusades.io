@@ -3,13 +3,13 @@ import {
   Gold,
   PlayerID,
   PlayerType,
-} from "@vassal/engine-api/game/GameTypes";
-import { PseudoRandom } from "@vassal/engine-lib/PseudoRandom";
+} from "@crusades/engine-api/game/GameTypes";
+import { PseudoRandom } from "@crusades/engine-lib/PseudoRandom";
 import {
   zPlayerRef,
   zRandom,
-} from "@vassal/engine-lib/snapshot/SnapshotType";
-import { assertNever, toInt } from "@vassal/engine-lib/Util";
+} from "@crusades/engine-lib/snapshot/SnapshotType";
+import { assertNever, toInt } from "@crusades/engine-lib/Util";
 import { z } from "zod";
 import { Execution, Game, Player } from "../game/Game";
 import { execSnapshotType } from "../snapshot/ExecutionSnapshot";

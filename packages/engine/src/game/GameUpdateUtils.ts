@@ -1,4 +1,4 @@
-import type { EmojiMessage } from "@vassal/engine-api/game/GameTypes";
+import type { EmojiMessage } from "@crusades/engine-api/game/GameTypes";
 import {
   ATTACK_DELTA_INCOMING,
   ATTACK_DELTA_OUTGOING,
@@ -6,7 +6,7 @@ import {
   AttackUpdate,
   GameUpdateType,
   PlayerUpdate,
-} from "@vassal/engine-api/game/GameUpdates";
+} from "@crusades/engine-api/game/GameUpdates";
 
 /**
  * Build a partial PlayerUpdate containing only fields whose value differs
