@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RGB } from "../client/Heraldry";
 
-interface Part {
+export interface Part {
   g: THREE.BufferGeometry;
   team: boolean;
 }
@@ -18,7 +18,7 @@ export interface Model {
 
 const tmpColor = new THREE.Color();
 
-function paint(g: THREE.BufferGeometry, hex: number): THREE.BufferGeometry {
+export function paint(g: THREE.BufferGeometry, hex: number): THREE.BufferGeometry {
   const out = g.index ? g.toNonIndexed() : g;
   out.deleteAttribute("uv");
   const n = out.attributes.position.count;
@@ -37,7 +37,7 @@ function paint(g: THREE.BufferGeometry, hex: number): THREE.BufferGeometry {
 const TEAM = 0xffffff;
 
 /** A box standing on y. */
-function box(
+export function box(
   w: number, h: number, d: number,
   x: number, y: number, z: number,
   color: number, team = false, ry = 0, rx = 0, rz = 0,
@@ -51,7 +51,7 @@ function box(
   return { g: paint(g, team ? TEAM : color), team };
 }
 
-function cyl(
+export function cyl(
   rTop: number, rBot: number, h: number,
   x: number, y: number, z: number,
   color: number, seg = 8, team = false,
@@ -62,7 +62,7 @@ function cyl(
 }
 
 /** A cylinder lying along z, centred on (x, y, z). */
-function log(
+export function log(
   r: number, len: number,
   x: number, y: number, z: number,
   color: number, seg = 8, team = false, alongX = false,
@@ -74,7 +74,7 @@ function log(
   return { g: paint(g, team ? TEAM : color), team };
 }
 
-function cone(
+export function cone(
   r: number, h: number,
   x: number, y: number, z: number,
   color: number, seg = 4, team = false,
@@ -86,7 +86,7 @@ function cone(
 }
 
 /** A cone pointing along +z (or -z), for prows. */
-function prow(
+export function prow(
   r: number, len: number, sy: number,
   x: number, y: number, z: number,
   color: number, back = false,
@@ -100,7 +100,7 @@ function prow(
 }
 
 /** A gable roof with its ridge along z. */
-function gable(
+export function gable(
   w: number, h: number, d: number,
   x: number, y: number, z: number,
   color: number, team = false, ry = 0,
@@ -123,7 +123,7 @@ function gable(
   return { g: paint(g, team ? TEAM : color), team };
 }
 
-function blob(
+export function blob(
   r: number, x: number, y: number, z: number, color: number, sy = 1,
 ): Part {
   const g = new THREE.IcosahedronGeometry(r, 0);
@@ -132,7 +132,7 @@ function blob(
   return { g: paint(g, color), team: false };
 }
 
-function build(parts: Part[], scale = 1): Model {
+export function build(parts: Part[], scale = 1): Model {
   const body = parts.filter((p) => !p.team).map((p) => p.g);
   const team = parts.filter((p) => p.team).map((p) => p.g);
   const b = mergeGeometries(body, false)!;
@@ -286,7 +286,7 @@ function ballistaTower(): Model {
   return build(parts);
 }
 
-function hull(w: number, h: number, len: number, color: number): Part[] {
+export function hull(w: number, h: number, len: number, color: number): Part[] {
   return [
     box(w, h, len, 0, 0, 0, color),
     prow(w * 0.707, len * 0.36, h / w, 0, h / 2, len / 2, color),
@@ -517,7 +517,7 @@ const ships = () => ({ galley: galley(), longship: longship(), cog: cog() });
  * variant falls back to the plain one in MODELS.
  */
 export const VARIANTS: Record<string, Model> = {};
-function register(tag: string, models: Record<string, Model>) {
+export function register(tag: string, models: Record<string, Model>) {
   for (const [name, m] of Object.entries(models)) VARIANTS[`${name}:${tag}`] = m;
 }
 // Grey stone: pale ashlar walls.

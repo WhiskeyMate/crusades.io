@@ -1,8 +1,13 @@
 {
-  "version": "0.1.25",
+  "version": "0.1.29",
   "builtAt": "2026-10-09",
-  "commits": 25,
+  "commits": 29,
   "entries": [
+    {
+      "hash": "ec253b0",
+      "date": "2026-10-09",
+      "subject": "Store: Crown packs, cosmetics for territory, banner, ships, buildings and troops, bundles, reserved house names"
+    },
     {
       "hash": "5d65897",
       "date": "2026-10-09",

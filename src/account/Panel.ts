@@ -1,8 +1,11 @@
-// The store and account dialog: sign in, buy Crowns, spend them on the
-// catalogue, reserve a house name, design your arms, and choose what to wear.
+// The store: sign in, buy Crowns, browse the catalogue with live previews,
+// reserve a house name, design your arms, and choose what to wear.
 
-import { CHARGES, DIVISION_COUNT, hexToRGB, shieldSVG, Skin } from "../client/Heraldry";
-import { BUNDLES, Item, ITEMS, NAME_COST, PACKS, Slot, SLOT_NAMES, defaultItem } from "../store/Catalog";
+import { CHARGES, DIVISION_COUNT, DIVISION_NAMES, hexToRGB, shieldSVG, Skin } from "../client/Heraldry";
+import {
+  BUNDLES, Bundle, defaultItem, Item, ITEMS, itemById, NAME_COST, PACKS, rarityOf, Slot, SLOT_NAMES,
+} from "../store/Catalog";
+import { previewURL } from "../store/Preview";
 import { account, accountsEnabled } from "./Account";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -10,24 +13,26 @@ const esc = (s: string) =>
   s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 const SWATCHES = [
-  "#c71a21", "#d9632b", "#d9a521", "#7c9a2e", "#2f8a4a", "#1f8a86",
-  "#2c6fb3", "#3b46a8", "#6a3fa6", "#a8358f", "#5b4636", "#2b2b33",
+  "#c71a21", "#e0452f", "#d9632b", "#e08a1e", "#d9a521", "#c9c22b", "#7c9a2e", "#2f8a4a", "#1f8a86", "#2aa3c4",
+  "#2c6fb3", "#3b46a8", "#6a3fa6", "#a8358f", "#d0498a", "#8a2f2f", "#5b4636", "#3f4a55", "#2b2b33", "#e9e4d4",
 ];
+const METALS = ["#e8d9a0", "#f1efe6", "#d9a521", "#c0c4ca", "#1b1410", "#c71a21", "#2c6fb3", "#2f8a4a", "#6a3fa6"];
 const DEFAULT: Skin = { color: SWATCHES[0], division: 4, charge: 3 };
 
-type Tab = "packs" | "bundles" | Slot | "name";
-const TABS: { id: Tab; label: string }[] = [
-  { id: "packs", label: "Crowns" },
-  { id: "bundles", label: "Bundles" },
-  { id: "territory", label: "Territory" },
-  { id: "banner", label: "Banner" },
-  { id: "ships", label: "Ships" },
-  { id: "buildings", label: "Buildings" },
-  { id: "troops", label: "Troops" },
-  { id: "name", label: "House name" },
+type Tab = "featured" | "crowns" | Slot | "name";
+const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: "featured", label: "Featured", icon: "✦" },
+  { id: "troops", label: "Troops", icon: "⚔" },
+  { id: "ships", label: "Ships", icon: "⛵" },
+  { id: "buildings", label: "Buildings", icon: "🏰" },
+  { id: "territory", label: "Territory", icon: "▦" },
+  { id: "banner", label: "Your arms", icon: "⛨" },
+  { id: "name", label: "House name", icon: "✒" },
+  { id: "crowns", label: "Get Crowns", icon: "♛" },
 ];
 
-let tab: Tab = "packs";
+let tab: Tab = "featured";
+let filter: "all" | "owned" | "New models" | "Meme" = "all";
 let draft: Skin = { ...DEFAULT };
 let note = "";
 
@@ -39,42 +44,105 @@ function say(text: string, bad = false) {
   n.classList.toggle("bad", bad);
 }
 
-const crownsText = (n: number) => `${n.toLocaleString("en-US")} ♛`;
+const crowns = (n: number) => `<span class="cr">${n.toLocaleString("en-US")} ♛</span>`;
 
-/** A little picture for an item: the slot's glyph on a swatch that hints at the variant. */
-function thumb(item: Item): string {
-  const glyph = { territory: "▦", banner: "⛨", ships: "⛵", buildings: "🏰", troops: "⚔" }[item.slot];
-  const tone: Record<string, string> = {
-    plain: "#8a2f2f", stripes: "repeating-linear-gradient(0deg,#8a2f2f 0 6px,#e8d9a0 6px 12px)",
-    checks: "repeating-conic-gradient(#8a2f2f 0 25%,#e8d9a0 0 50%) 0 0/16px 16px",
-    chevrons: "repeating-linear-gradient(135deg,#8a2f2f 0 6px,#e8d9a0 6px 12px)",
-    lozenges: "repeating-linear-gradient(45deg,#8a2f2f 0 6px,#e8d9a0 6px 12px),repeating-linear-gradient(-45deg,transparent 0 6px,rgba(0,0,0,.25) 6px 12px)",
-    custom: "linear-gradient(135deg,#c71a21,#2c6fb3)",
-    default: "#6b4a2e", black: "#1b1816", gilt: "linear-gradient(135deg,#8a6a2a,#e8c860)",
-    slate: "#5d6470", brick: "#9a4a36", mail: "#8a8f96", crusader: "#f1efe6",
-  };
-  return `<div class="thumb" style="background:${tone[item.variant] ?? "#6b4a2e"}"><span>${glyph}</span></div>`;
+/** The colour previews are drawn in: the player's chosen field, or crimson. */
+const myColor = () => (account.skin ?? account.state?.skin ?? DEFAULT).color;
+
+function picture(item: Item): string {
+  const url = previewURL(item, myColor(), item.id === "banner-custom" ? draft : null);
+  return url
+    ? `<div class="shot ${item.slot}"><img src="${url}" alt="" loading="lazy" /></div>`
+    : `<div class="shot none"><span>${{ territory: "▦", banner: "⛨", ships: "⛵", buildings: "🏰", troops: "⚔" }[item.slot]}</span></div>`;
 }
 
-function drawTabs() {
-  el("store-tabs").innerHTML = TABS.map(
-    (t) => `<button class="${t.id === tab ? "on" : ""}" data-tab="${t.id}">${t.label}</button>`,
-  ).join("");
-  for (const b of Array.from(el("store-tabs").querySelectorAll<HTMLButtonElement>("button"))) {
-    b.onclick = () => {
-      tab = b.dataset.tab as Tab;
-      draw();
-    };
-  }
+function card(item: Item): string {
+  const s = account.state!;
+  const owned = account.owns(item.id);
+  const worn = (s.equipped[item.slot] ?? defaultItem(item.slot).id) === item.id;
+  const rarity = rarityOf(item.crowns);
+  const short = s.crowns < item.crowns;
+  return (
+    `<div class="card ${rarity}${worn ? " worn" : ""}${owned ? " owned" : ""}">` +
+    picture(item) +
+    (item.tag ? `<i class="kind ${item.tag === "Meme" ? "meme" : item.tag === "New models" ? "model" : ""}">${item.tag}</i>` : "") +
+    `<div class="meta"><b>${esc(item.name)}</b><p>${esc(item.blurb)}</p>` +
+    (worn
+      ? `<span class="pill worn">Wearing</span>`
+      : owned
+        ? `<button data-equip="${item.id}" data-slot="${item.slot}">Wear</button>`
+        : `<button class="primary${short ? " short" : ""}" data-buy="${item.id}" title="${short ? "Not enough Crowns" : ""}">${crowns(item.crowns)}</button>`) +
+    `</div></div>`
+  );
+}
+
+function bundleCard(b: Bundle): string {
+  const s = account.state!;
+  const items = b.items.map((i) => itemById(i)!).filter(Boolean);
+  const ownedAll = items.every((i) => account.owns(i.id));
+  const single = items.reduce((n, i) => n + i.crowns, 0);
+  const hero = items.find((i) => i.slot !== "territory" && i.slot !== "banner") ?? items[0];
+  return (
+    `<div class="bundle ${rarityOf(b.crowns)}">${picture(hero)}` +
+    `<div class="meta"><b>${esc(b.name)}</b><p>${esc(b.blurb)}</p>` +
+    `<ul>${items.map((i) => `<li class="${account.owns(i.id) ? "have" : ""}">${esc(i.name)} <span>${SLOT_NAMES[i.slot]}</span></li>`).join("")}</ul>` +
+    `<div class="row"><span class="save">Save ${Math.round((1 - b.crowns / single) * 100)}%</span>` +
+    (ownedAll
+      ? `<span class="pill owned">Owned</span>`
+      : `<button class="primary${s.crowns < b.crowns ? " short" : ""}" data-bundle="${b.id}">${crowns(b.crowns)} <s>${single.toLocaleString("en-US")}</s></button>`) +
+    `</div></div></div>`
+  );
+}
+
+function loadout(): string {
+  const s = account.state!;
+  return (
+    `<div class="loadout"><span>Wearing</span>` +
+    (Object.keys(SLOT_NAMES) as Slot[])
+      .filter((slot) => slot !== "banner")
+      .map((slot) => {
+        const item = itemById(s.equipped[slot] ?? "") ?? defaultItem(slot);
+        return `<button class="lo" data-go="${slot}" title="${SLOT_NAMES[slot]}: ${esc(item.name)}"><i>${SLOT_NAMES[slot]}</i>${esc(item.name)}</button>`;
+      })
+      .join("") +
+    `</div>`
+  );
+}
+
+function drawSlot(slot: Slot): string {
+  let list = ITEMS.filter((i) => i.slot === slot);
+  if (filter === "owned") list = list.filter((i) => account.owns(i.id));
+  else if (filter !== "all") list = list.filter((i) => i.tag === filter);
+  else list = list.filter((i) => !i.unlisted || i.crowns === 0);
+  list = [...list].sort((a, b) => a.crowns - b.crowns);
+  const chips = (["all", "owned", "New models", "Meme"] as const)
+    .filter((f) => f === "all" || f === "owned" || ITEMS.some((i) => i.slot === slot && i.tag === f))
+    .map((f) => `<button class="chip${filter === f ? " on" : ""}" data-filter="${f}">${f === "all" ? "All" : f === "owned" ? "Owned" : f}</button>`)
+    .join("");
+  return (
+    `<div class="chips">${chips}<span class="count">${list.length} item${list.length === 1 ? "" : "s"}</span></div>` +
+    (list.length ? `<div class="cards${slot === "territory" ? " dense" : ""}">${list.map(card).join("")}</div>` : `<p class="dim">Nothing here yet.</p>`) +
+    (slot === "banner" ? drawArms() : "")
+  );
+}
+
+function drawFeatured(): string {
+  const picks = ["troops-cavalry", "ships-norse", "build-desert", "ships-duck", "troops-skeleton", "terr-g-dragons", "troops-chicken", "build-eastern"]
+    .map((id) => itemById(id)!)
+    .filter(Boolean);
+  return (
+    `<h3>Bundles</h3><div class="bundles">${BUNDLES.map(bundleCard).join("")}</div>` +
+    `<h3>Featured</h3><div class="cards">${picks.map(card).join("")}</div>`
+  );
 }
 
 function drawPacks(): string {
   return (
-    `<p class="sub">Crowns buy everything in the store. Paid through Stripe; Google Pay and Apple Pay appear on the payment page where your device supports them.</p>` +
+    `<p class="sub">Crowns buy everything in the store. Card, Google Pay and Apple Pay are offered on the payment page.</p>` +
     `<div class="packs">` +
     PACKS.map(
       (p) =>
-        `<div class="pack tier${p.tier}">${p.bonus ? `<i class="ribbon">+${p.bonus} bonus</i>` : ""}` +
+        `<div class="pack tier${p.tier}">${p.bonus ? `<i class="ribbon">+${p.bonus.toLocaleString("en-US")} bonus</i>` : ""}` +
         `<b>${p.name}</b><div class="crown-art">♛</div><div class="amount">${(p.crowns + p.bonus).toLocaleString("en-US")}</div>` +
         `<div class="sub">Crowns</div><div class="price">${p.price}</div>` +
         `<button class="primary" data-pack="${p.id}">Buy</button></div>`,
@@ -83,101 +151,74 @@ function drawPacks(): string {
   );
 }
 
-function drawBundles(): string {
-  return (
-    `<div class="bundles">` +
-    BUNDLES.map((b) => {
-      const owned = b.items.every((i) => account.owns(i));
-      const single = b.items.reduce((n, i) => n + (ITEMS.find((x) => x.id === i)?.crowns ?? 0), 0);
-      return (
-        `<div class="bundle"><b>${esc(b.name)}</b><p>${esc(b.blurb)}</p>` +
-        `<div class="items">${b.items.map((i) => { const it = ITEMS.find((x) => x.id === i)!; return `${thumb(it)}<span>${esc(it.name)}</span>`; }).join("")}</div>` +
-        `<div class="row"><span class="price">${crownsText(b.crowns)} <s>${crownsText(single)}</s></span>` +
-        (owned ? `<span class="tag owned">Owned</span>` : `<button class="primary" data-bundle="${b.id}">Buy bundle</button>`) +
-        `</div></div>`
-      );
-    }).join("") +
-    `</div>`
-  );
-}
-
-function drawSlot(slot: Slot): string {
-  const s = account.state!;
-  const worn = s.equipped[slot] ?? defaultItem(slot).id;
-  const list = ITEMS.filter((i) => i.slot === slot && (!i.unlisted || i.crowns === 0));
-  let html = `<div class="items-grid">`;
-  for (const item of list) {
-    const owned = account.owns(item.id);
-    const equipped = worn === item.id;
-    html +=
-      `<div class="item${equipped ? " worn" : ""}">${thumb(item)}<b>${esc(item.name)}</b><p>${esc(item.blurb)}</p>` +
-      (equipped
-        ? `<span class="tag worn">Wearing</span>`
-        : owned
-          ? `<button data-equip="${item.id}" data-slot="${slot}">Wear</button>`
-          : `<button class="primary" data-buy="${item.id}">${crownsText(item.crowns)}</button>`) +
-      `</div>`;
-  }
-  html += `</div>`;
-  if (slot === "banner") html += drawArms();
-  return html;
-}
-
 function drawArms(): string {
   const locked = !account.mayCustomiseArms();
   return (
-    `<h3>Your arms</h3>` +
-    (locked ? `<p class="dim small">Buy “Your own arms” to choose the field, division and charge your realm flies.</p>` : "") +
-    `<div id="acct-editor" class="${locked ? "locked" : ""}"><div id="acct-preview"></div><div class="controls">` +
+    `<h3>Design your arms</h3>` +
+    (locked ? `<p class="dim small">Buy “Your own arms” above to save a design. You can try the editor first.</p>` : "") +
+    `<div id="acct-editor"><div class="arms-left"><div id="acct-preview"></div>` +
+    `<button id="acct-random">🎲 Surprise me</button>` +
+    `<button id="acct-save" class="primary" ${locked ? "disabled" : ""}>Save my arms</button></div>` +
+    `<div class="controls">` +
     `<div class="field-label">Field</div><div id="acct-colors" class="row-wrap"></div>` +
+    `<div class="field-label">Second tincture</div><div id="acct-metals" class="row-wrap"></div>` +
     `<div class="field-label">Division</div><div id="acct-divisions" class="row-wrap"></div>` +
-    `<div class="field-label">Charge</div><div id="acct-charges" class="row-wrap"></div></div></div>` +
-    `<button id="acct-save" class="primary wide" ${locked ? "disabled" : ""}>Save my arms</button>`
+    `<div class="field-label">Charge</div><div id="acct-charges" class="row-wrap charges"></div>` +
+    `</div></div>`
   );
 }
 
 function wireArms() {
   if (!document.getElementById("acct-editor")) return;
-  const locked = !account.mayCustomiseArms();
-  const preview = () => (el("acct-preview").innerHTML = shieldSVG("preview", hexToRGB(draft.color), 96, draft));
+  const preview = () => (el("acct-preview").innerHTML = shieldSVG("preview", hexToRGB(draft.color), 150, draft));
   preview();
   el("acct-colors").innerHTML =
     SWATCHES.map((c) => `<button class="swatch${c === draft.color ? " on" : ""}" data-c="${c}" style="background:${c}"></button>`).join("") +
-    `<input type="color" id="acct-custom" value="${draft.color}" title="Any colour" ${locked ? "disabled" : ""} />`;
+    `<input type="color" id="acct-custom" value="${draft.color}" title="Any colour" />`;
+  const second = draft.second ?? METALS[0];
+  el("acct-metals").innerHTML =
+    METALS.map((c) => `<button class="swatch${c === second ? " on" : ""}" data-m="${c}" style="background:${c}"></button>`).join("") +
+    `<input type="color" id="acct-custom2" value="${second}" title="Any colour" />`;
   el("acct-divisions").innerHTML = Array.from({ length: DIVISION_COUNT }, (_, i) =>
-    `<button class="pick${i === draft.division ? " on" : ""}" data-d="${i}">${shieldSVG("preview", hexToRGB(draft.color), 26, { ...draft, division: i })}</button>`,
+    `<button class="pick${i === draft.division ? " on" : ""}" data-d="${i}" title="${DIVISION_NAMES[i]}">${shieldSVG("preview", hexToRGB(draft.color), 30, { ...draft, division: i, charge: 12 })}</button>`,
   ).join("");
   el("acct-charges").innerHTML = CHARGES.map(
-    (c, i) => `<button class="pick glyph${i === draft.charge ? " on" : ""}" data-g="${i}">${c}</button>`,
+    (c, i) => `<button class="pick glyph${i === draft.charge ? " on" : ""}" data-g="${i}">${c || "∅"}</button>`,
   ).join("");
-  for (const b of Array.from(el("acct-editor").querySelectorAll<HTMLButtonElement>("button"))) {
-    b.disabled = locked;
+  for (const b of Array.from(el("acct-editor").querySelectorAll<HTMLButtonElement>(".controls button"))) {
     b.onclick = () => {
       if (b.dataset.c) draft.color = b.dataset.c;
+      if (b.dataset.m) draft.second = b.dataset.m;
       if (b.dataset.d) draft.division = Number(b.dataset.d);
       if (b.dataset.g) draft.charge = Number(b.dataset.g);
       wireArms();
     };
   }
-  const custom = el<HTMLInputElement>("acct-custom");
-  custom.oninput = () => {
-    draft.color = custom.value;
-    preview();
+  const c1 = el<HTMLInputElement>("acct-custom");
+  c1.oninput = () => { draft.color = c1.value; preview(); };
+  c1.onchange = wireArms;
+  const c2 = el<HTMLInputElement>("acct-custom2");
+  c2.oninput = () => { draft.second = c2.value; preview(); };
+  c2.onchange = wireArms;
+  el("acct-random").onclick = () => {
+    const pick = <T,>(a: T[]) => a[(Math.random() * a.length) | 0];
+    draft = { color: pick(SWATCHES), second: pick(METALS), division: (Math.random() * DIVISION_COUNT) | 0, charge: (Math.random() * CHARGES.length) | 0 };
+    wireArms();
   };
-  custom.onchange = wireArms;
   el("acct-save").onclick = async () => {
     const err = await account.saveSkin({ ...draft });
     say(err ?? "Saved. Your next game flies these arms.", Boolean(err));
+    if (!err) draw();
   };
 }
 
 function drawName(): string {
   const s = account.state!;
   return (
-    `<p class="sub">A reserved house name is yours alone: nobody else can play under it, on any server. ${crownsText(NAME_COST)}; the same again to change it.</p>` +
+    `<div class="namebox"><p class="sub">A reserved house name is yours alone: nobody else can play under it, on any server.</p>` +
     (s.username ? `<p>Your house: <b class="gold">${esc(s.username)}</b></p>` : "") +
     `<label>House name<input id="acct-name" maxlength="24" placeholder="House Lionhart" value="${esc(s.username ?? "")}" /></label>` +
-    `<button id="acct-reserve" class="primary wide">${s.username ? "Change it" : "Reserve it"} for ${crownsText(NAME_COST)}</button>`
+    `<button id="acct-reserve" class="primary wide">${s.username ? "Change it" : "Reserve it"} for ${NAME_COST} ♛</button></div>`
   );
 }
 
@@ -186,48 +227,74 @@ function draw() {
   const open = el("account-open");
   open.hidden = !accountsEnabled;
   open.innerHTML = s
-    ? `${shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT)} ${crownsText(s.crowns)}`
+    ? `${shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT)} ${s.crowns.toLocaleString("en-US")} ♛ · Store`
     : "Sign in · Store";
   el("acct-out").hidden = s !== null;
   el("acct-in").hidden = s === null;
+  el("account").querySelector(".store")!.classList.toggle("signed-out", s === null);
   if (!s) return;
   el("acct-email").textContent = s.username ?? s.email;
-  el("acct-crowns").textContent = crownsText(s.crowns);
-  drawTabs();
+  el("acct-crowns").innerHTML = `${s.crowns.toLocaleString("en-US")} ♛`;
+  el("store-nav").innerHTML = TABS.map(
+    (t) => `<button class="${t.id === tab ? "on" : ""}${t.id === "crowns" ? " get" : ""}" data-tab="${t.id}"><i>${t.icon}</i>${t.label}</button>`,
+  ).join("");
+  for (const b of Array.from(el("store-nav").querySelectorAll<HTMLButtonElement>("button"))) {
+    b.onclick = () => {
+      tab = b.dataset.tab as Tab;
+      filter = "all";
+      draw();
+      el("store-body").scrollTop = 0;
+    };
+  }
   const body = el("store-body");
+  const keep = body.scrollTop;
   body.innerHTML =
-    tab === "packs" ? drawPacks()
-    : tab === "bundles" ? drawBundles()
-    : tab === "name" ? drawName()
-    : drawSlot(tab);
-  for (const b of Array.from(body.querySelectorAll<HTMLButtonElement>("button[data-pack]"))) {
-    b.onclick = async () => {
-      say("Taking you to the payment page…");
-      const err = await account.buyPack(b.dataset.pack!);
-      if (err) say(err, true);
-    };
-  }
-  for (const b of Array.from(body.querySelectorAll<HTMLButtonElement>("button[data-buy]"))) {
-    b.onclick = async () => {
-      const err = await account.buyItem(b.dataset.buy!);
-      say(err ?? "Bought. Wear it from this tab.", Boolean(err));
-      draw();
-    };
-  }
-  for (const b of Array.from(body.querySelectorAll<HTMLButtonElement>("button[data-bundle]"))) {
-    b.onclick = async () => {
-      const err = await account.buyBundle(b.dataset.bundle!);
-      say(err ?? "Bought. Wear the pieces from their tabs.", Boolean(err));
-      draw();
-    };
-  }
-  for (const b of Array.from(body.querySelectorAll<HTMLButtonElement>("button[data-equip]"))) {
-    b.onclick = async () => {
-      const err = await account.equip(b.dataset.slot as Slot, b.dataset.equip!);
-      say(err ?? "Worn. It shows in your next game.", Boolean(err));
-      draw();
-    };
-  }
+    loadout() +
+    (tab === "featured" ? drawFeatured()
+      : tab === "crowns" ? drawPacks()
+      : tab === "name" ? drawName()
+      : drawSlot(tab));
+  body.scrollTop = keep;
+
+  const on = (sel: string, fn: (b: HTMLButtonElement) => void) => {
+    for (const b of Array.from(body.querySelectorAll<HTMLButtonElement>(sel))) b.onclick = () => fn(b);
+  };
+  on("button[data-go]", (b) => { tab = b.dataset.go as Tab; filter = "all"; draw(); });
+  on("button[data-filter]", (b) => { filter = b.dataset.filter as typeof filter; draw(); });
+  on("button[data-pack]", async (b) => {
+    say("Taking you to the payment page…");
+    const err = await account.buyPack(b.dataset.pack!);
+    if (err) say(err, true);
+  });
+  on("button[data-buy]", async (b) => {
+    const item = itemById(b.dataset.buy!)!;
+    if (account.state!.crowns < item.crowns) {
+      say(`${item.name} costs ${item.crowns} ♛ and you have ${account.state!.crowns}.`, true);
+      tab = "crowns";
+      return draw();
+    }
+    const err = await account.buyItem(item.id);
+    if (!err) await account.equip(item.slot, item.id);
+    say(err ?? `${item.name} is yours, and you're wearing it.`, Boolean(err));
+    draw();
+  });
+  on("button[data-bundle]", async (b) => {
+    const bundle = BUNDLES.find((x) => x.id === b.dataset.bundle)!;
+    if (account.state!.crowns < bundle.crowns) {
+      say(`${bundle.name} costs ${bundle.crowns} ♛ and you have ${account.state!.crowns}.`, true);
+      tab = "crowns";
+      return draw();
+    }
+    const err = await account.buyBundle(bundle.id);
+    if (!err) for (const id of bundle.items) await account.equip(itemById(id)!.slot, id);
+    say(err ?? `${bundle.name} is yours, and you're wearing it.`, Boolean(err));
+    draw();
+  });
+  on("button[data-equip]", async (b) => {
+    const err = await account.equip(b.dataset.slot as Slot, b.dataset.equip!);
+    say(err ?? "Worn. It shows in your next game.", Boolean(err));
+    draw();
+  });
   const reserve = document.getElementById("acct-reserve");
   if (reserve) {
     reserve.onclick = async () => {
@@ -264,7 +331,11 @@ export async function initAccountPanel() {
   el("acct-signout").onclick = () => void account.signOut();
   account.onChange = () => {
     if (account.state?.skin && dialog.hidden) draft = { ...account.state.skin };
-    draw();
+    if (!dialog.hidden || !account.state) draw();
+    else {
+      const s = account.state;
+      el("account-open").innerHTML = `${shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT)} ${s.crowns.toLocaleString("en-US")} ♛ · Store`;
+    }
   };
   await account.init();
   draw();
@@ -275,7 +346,7 @@ export async function initAccountPanel() {
   const back = new URLSearchParams(location.search).get("checkout");
   if (back) {
     history.replaceState(null, "", location.pathname);
-    tab = "packs";
+    tab = "featured";
     dialog.hidden = false;
     draw();
     if (back === "success") {
@@ -286,6 +357,7 @@ export async function initAccountPanel() {
         await account.refresh();
       }
       say((account.state?.crowns ?? 0) > before ? "Your Crowns have arrived." : "Payment received; the Crowns can take a minute to show. Reload shortly.");
+      draw();
     } else {
       say("Checkout cancelled. Nothing was charged.");
     }

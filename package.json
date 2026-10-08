@@ -11,6 +11,7 @@
     "dev": "vite",
     "build": "tsx tools/changelog.ts && tsc --noEmit && vite build",
     "changelog": "tsx tools/changelog.ts",
+    "catalog-sql": "tsx tools/catalog-sql.ts",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "build:server": "esbuild server/src/index.ts --bundle --platform=node --format=esm --target=es2022 --external:ws --external:zod --log-level=warning --outfile=server/dist/server.mjs",

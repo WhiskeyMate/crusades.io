@@ -246,8 +246,15 @@
     </div>
     <div id="account" hidden>
       <div class="panel sheet store">
-        <button id="acct-close" class="close" title="Close">✕</button>
-        <h2>Store</h2>
+        <header class="store-head">
+          <h2>Store</h2>
+          <div class="who">
+            <span id="acct-email"></span>
+            <span id="acct-crowns" class="purse"></span>
+            <button id="acct-signout">Sign out</button>
+          </div>
+          <button id="acct-close" class="close" title="Close">✕</button>
+        </header>
         <p id="acct-note" class="note" hidden></p>
 
         <div id="acct-out">
@@ -262,12 +269,7 @@
         </div>
 
         <div id="acct-in" hidden>
-          <div class="who">
-            <span id="acct-email"></span>
-            <span id="acct-crowns" class="tier premium"></span>
-            <button id="acct-signout">Sign out</button>
-          </div>
-          <div id="store-tabs" class="store-tabs"></div>
+          <nav id="store-nav"></nav>
           <div id="store-body"></div>
         </div>
       </div>

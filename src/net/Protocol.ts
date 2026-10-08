@@ -74,7 +74,7 @@ export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 
 export interface WireCosmetic {
   equipped?: Record<string, string>;
-  skin?: { color: string; division: number; charge: number } | null;
+  skin?: { color: string; division: number; charge: number; second?: string } | null;
 }
 
 export interface LobbyMember {

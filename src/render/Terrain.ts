@@ -4,7 +4,9 @@
 
 import * as THREE from "three";
 import { GameState } from "../client/GameState";
+import { clothId } from "../store/Cloths";
 import { mulberry32, Noise, Realm } from "../worldgen/RealmGen";
+import { CLOTH_GLSL, glyphAtlas } from "./Cloth";
 
 const TERRAIN_VERT = /* glsl */ `
 varying vec3 vWorld;
@@ -34,6 +36,7 @@ float fbm2(vec2 p) {
 
 const TERRAIN_FRAG = /* glsl */ `
 ${COMMON}
+${CLOTH_GLSL}
 uniform sampler2D tState;
 uniform sampler2D tPalette;
 uniform sampler2D tHeight;
@@ -122,16 +125,9 @@ void main() {
     }
     float lum = dot(col, vec3(0.3, 0.55, 0.15));
     vec3 fill = pc.rgb * (0.55 + lum * 0.9);
-    // A bought cloth: the realm's colour, figured with a paler tincture.
+    // A bought cloth figures the realm's colour (see render/Cloth.ts).
     int pat = int(texelFetch(tPattern, ivec2(o & 63, o >> 6), 0).r * 255.0 + 0.5);
-    if (pat != 0) {
-      float m = 0.0;
-      if (pat == 1) m = step(0.5, fract(tile.y / 7.0));
-      else if (pat == 2) m = mod(floor(tile.x / 6.0) + floor(tile.y / 6.0), 2.0);
-      else if (pat == 3) m = step(0.5, fract((abs(fract(tile.x / 14.0) - 0.5) * 14.0 + tile.y) / 7.0));
-      else m = step(0.5, fract((abs(fract(tile.x / 12.0) - 0.5) + abs(fract(tile.y / 12.0) - 0.5)) * 2.0));
-      fill = mix(fill, fill * 0.55 + vec3(0.42, 0.39, 0.30), m * 0.55);
-    }
+    fill = cloth(pat, tile, fill);
     float mine = step(0.99, pc.a);
     float ally = step(0.7, pc.a) * (1.0 - mine);
     float amount = 0.46;
@@ -288,9 +284,6 @@ void main() {
   gl_FragColor = vec4(col, alpha);
 }`;
 
-/** Territory cloth variants, as the shader numbers them. */
-const PATTERNS: Record<string, number> = { plain: 0, stripes: 1, checks: 2, chevrons: 3, lozenges: 4 };
-
 export class Terrain {
   readonly width: number;
   readonly height: number;
@@ -381,6 +374,7 @@ export class Terrain {
       tRoads: { value: this.roadTex },
       tTerrain: { value: terrainTex },
       tPattern: { value: this.patternTex },
+      tGlyphs: { value: glyphAtlas() },
       uMap: { value: new THREE.Vector2(w, h) },
       uSun: { value: new THREE.Vector3(0.45, 0.72, 0.35).normalize() },
       uFog: { value: new THREE.Color(0.66, 0.76, 0.86) },
@@ -584,7 +578,7 @@ export class Terrain {
       this.palette[i + 2] = Math.round(p.color[2] * 255);
       this.palette[i + 3] =
         p === me ? 255 : me && me.allies.includes(p.smallID) ? 200 : 128;
-      this.pattern[p.smallID] = PATTERNS[p.look.territory] ?? 0;
+      this.pattern[p.smallID] = clothId(p.look.territory);
     }
     this.paletteTex.needsUpdate = true;
     this.patternTex.needsUpdate = true;

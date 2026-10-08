@@ -43,6 +43,8 @@ function worthShowing(subject: string): boolean {
   if (s.startsWith("merge ")) return false;
   if (/^(docs?|chore|ci|typo|lint|format)(\(.*\))?:/.test(s)) return false;
   if (s.includes("[skip changelog]")) return false;
+  // Payment plumbing is not news for players.
+  if (/stripe|checkout|payment|refund|webhook|billing/.test(s)) return false;
   return true;
 }
 
@@ -85,6 +87,7 @@ if (fresh && (!have || fresh.commits >= have.commits)) {
 } else {
   out = { version: "0.1.0", builtAt: new Date().toISOString().slice(0, 10), commits: 0, entries: [] };
 }
+out.entries = out.entries.filter((e) => worthShowing(e.subject));
 mkdirSync("src/generated", { recursive: true });
 writeFileSync(OUT, JSON.stringify(out, null, 2) + "\n");
 console.log(`changelog: v${out.version}, ${out.entries.length} entries shown of ${out.commits} commits`);

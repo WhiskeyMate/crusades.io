@@ -124,13 +124,20 @@ wearing and the arms editor all work, and nothing is charged. Clear
 ## Adding things to sell
 
 1. Add the item to `ITEMS` (or `BUNDLES`) in `src/store/Catalog.ts`, with a
-   `variant` name.
-2. Make the variant: a recolour is one `register(...)` line in
-   `src/render/Models.ts`; a new shape is a builder like `soldier("mail")`.
-   Territory cloths are a branch in the terrain shader plus an entry in
-   `PATTERNS` in `src/render/Terrain.ts`.
-3. Add the row to the `catalog` insert at the bottom of
-   `supabase/schema.sql` and re-run it.
+   `variant` name and a `tag`.
+2. Make the variant:
+   - a recolour is one `register(...)` line in `src/render/Models.ts`;
+   - a whole new set of models (troops, a fleet, an architecture) goes in
+     `src/render/Styles.ts`, registered under the variant name;
+   - a territory cloth is one line in `src/store/Cloths.ts`: a symbol or
+     emoji appended to `GLYPHS` (append only, the order is the atlas order),
+     or a `PROCEDURAL` entry plus its branch in `src/render/Cloth.ts`;
+   - arms charges are appended to `CHARGES` in `src/client/Heraldry.ts`.
+3. Run `npm run catalog-sql` to rewrite the price mirror at the bottom of
+   `supabase/schema.sql`, then re-run that file in Supabase.
+
+The store pictures are rendered from the real models and the real cloth
+shader (`src/store/Preview.ts`), so a new item needs no artwork.
 
 ## What to settle before taking real money
 

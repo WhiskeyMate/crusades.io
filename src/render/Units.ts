@@ -9,6 +9,7 @@ import { RGB } from "../client/Heraldry";
 import { Dragon, Effects } from "./Effects";
 import { LevelTags } from "./LevelTags";
 import { modelFor, MODELS, Pool } from "./Models";
+import "./Styles";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
 
