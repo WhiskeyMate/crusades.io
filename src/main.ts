@@ -11,7 +11,7 @@ import { Session, soloSession } from "./client/Session";
 import { initOnline, leaveOnline } from "./ui/Lobby";
 
 /** Where this build's source can be fetched (the AGPL asks for it). */
-const SOURCE_URL = "";
+const SOURCE_URL = "https://github.com/WhiskeyMate/vassal.io";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
