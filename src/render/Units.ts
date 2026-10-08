@@ -8,7 +8,7 @@ import { GameState, UnitState } from "../client/GameState";
 import { RGB } from "../client/Heraldry";
 import { Dragon, Effects } from "./Effects";
 import { LevelTags } from "./LevelTags";
-import { MODELS, Pool } from "./Models";
+import { modelFor, MODELS, Pool } from "./Models";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
 
@@ -60,6 +60,18 @@ export class Units {
     for (const [name, n] of Object.entries(cap)) {
       this.pools[name] = new Pool(MODELS[name as keyof typeof MODELS], n, this.group);
     }
+  }
+
+  /** The pool for a model in its owner's variant; variant pools are made on first use. */
+  private pool(name: keyof typeof MODELS, variantTag: string): Pool {
+    if (variantTag === "default") return this.pools[name];
+    const { key, model } = modelFor(name, variantTag);
+    let p = this.pools[key];
+    if (!p) {
+      p = this.pools[key] = new Pool(model, 400, this.group);
+      p.begin();
+    }
+    return p;
   }
 
   private color(ownerID: number): RGB {
@@ -188,6 +200,7 @@ export class Units {
 
     for (const u of this.state.units.values()) {
       const color = this.color(u.ownerID);
+      const look = this.state.players.get(u.ownerID)?.look;
       const memo = this.memoOf(u);
       const structure = STRUCTURES[u.type];
       if (structure) {
@@ -203,7 +216,7 @@ export class Units {
         if (u.underConstruction) {
           this.put(this.pools.scaffold, wx, wy, wz, memo.yaw, structScale * rise, color);
         } else {
-          this.put(this.pools[structure], wx, wy, wz, memo.yaw, structScale * grow * rise, color);
+          this.put(this.pool(structure, look?.buildings ?? "default"), wx, wy, wz, memo.yaw, structScale * grow * rise, color);
           if (showTags) {
             const top = structure === "mageTower" ? 9 : structure === "keep" ? 6 : 4.2;
             this.tags.add(wx, wy + top * structScale * grow + 1.2 * Math.pow(S, 0.6), wz, u.level);
@@ -243,12 +256,10 @@ export class Units {
         case UnitType.TradeShip: {
           const bob = Math.sin(time * 1.7 + u.id) * 0.08 * shipScale;
           const roll = Math.sin(time * 1.3 + u.id * 2.1) * 0.07;
-          const pool =
-            u.type === UnitType.Warship
-              ? this.pools.galley
-              : u.type === UnitType.TransportShip
-                ? this.pools.longship
-                : this.pools.cog;
+          const pool = this.pool(
+            u.type === UnitType.Warship ? "galley" : u.type === UnitType.TransportShip ? "longship" : "cog",
+            look?.ships ?? "default",
+          );
           const hurt = u.type === UnitType.Warship && u.health !== undefined && u.health < 500 ? 0.6 : 1;
           // Galleys are the big ships; cogs are little merchantmen beside them.
           const size =

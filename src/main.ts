@@ -6,7 +6,7 @@ import { initAccountPanel } from "./account/Panel";
 import { Attract } from "./Attract";
 import { DEFAULT_KINGDOMS } from "./worldgen/RealmGen";
 import changelog from "./generated/changelog.json";
-import { setLiege } from "./client/Heraldry";
+import { clearArms, setLiege } from "./client/Heraldry";
 import { BUILD_ORDER, UNIT_LORE } from "./client/Lexicon";
 import { Game } from "./Game";
 import { Session, soloSession } from "./client/Session";
@@ -99,6 +99,7 @@ async function launch(session: Session) {
   stopAttract();
   await new Promise((r) => setTimeout(r, 30));
   try {
+    clearArms();
     setLiege(houseName(), account.skin);
     game = new Game(session, quit);
     await game.start();
@@ -127,6 +128,7 @@ async function begin() {
     kingdoms: Number(el<HTMLInputElement>("opt-kingdoms").value),
     clans: Number(el<HTMLInputElement>("opt-clans").value),
     sandbox: el<HTMLInputElement>("opt-sandbox").checked,
+    cosmetic: account.state ? { equipped: account.state.equipped, skin: account.skin } : undefined,
   };
   el("loading").hidden = false;
   el("menu").hidden = true;

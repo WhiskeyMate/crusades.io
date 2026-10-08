@@ -245,13 +245,13 @@
       </div>
     </div>
     <div id="account" hidden>
-      <div class="panel sheet">
+      <div class="panel sheet store">
         <button id="acct-close" class="close" title="Close">✕</button>
-        <h2>Your account</h2>
+        <h2>Store</h2>
         <p id="acct-note" class="note" hidden></p>
 
         <div id="acct-out">
-          <p class="sub">The game is free without one. An account is for premium: your own arms and colours.</p>
+          <p class="sub">The game is free. An account keeps your Crowns, your house name and what you wear.</p>
           <form id="acct-form">
             <label>Email
               <input id="acct-mail" type="email" autocomplete="email" required placeholder="you@example.com" />
@@ -264,26 +264,11 @@
         <div id="acct-in" hidden>
           <div class="who">
             <span id="acct-email"></span>
-            <span id="acct-tier" class="tier"></span>
+            <span id="acct-crowns" class="tier premium"></span>
             <button id="acct-signout">Sign out</button>
           </div>
-          <button id="acct-upgrade" class="primary wide">Go premium</button>
-          <button id="acct-billing" class="wide" hidden>Manage billing</button>
-
-          <h3>Your arms</h3>
-          <p id="acct-lock" class="dim small">Premium players choose the colour and arms their realm flies. Preview below.</p>
-          <div id="acct-editor">
-            <div id="acct-preview"></div>
-            <div class="controls">
-              <div class="field-label">Field</div>
-              <div id="acct-colors" class="row-wrap"></div>
-              <div class="field-label">Division</div>
-              <div id="acct-divisions" class="row-wrap"></div>
-              <div class="field-label">Charge</div>
-              <div id="acct-charges" class="row-wrap"></div>
-            </div>
-          </div>
-          <button id="acct-save" class="primary wide">Save my arms</button>
+          <div id="store-tabs" class="store-tabs"></div>
+          <div id="store-body"></div>
         </div>
       </div>
     </div>

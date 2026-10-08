@@ -57,7 +57,8 @@ src/account/        optional sign-in, premium and custom arms
 src/Attract.ts      the AI-only game behind the landing page
 netlify/functions/  Stripe checkout, billing portal and webhook
 supabase/           database schema for accounts
-docs/               DEPLOY.md (Netlify, Supabase, Stripe), SERVER.md (game server), MULTIPLAYER.md
+src/store/          the catalogue: Crown packs, items, bundles
+docs/               DEPLOY.md (Netlify), SERVER.md (game server), STORE.md (Crowns, cosmetics), MULTIPLAYER.md
 tools/              headless smoke run
 ```
 

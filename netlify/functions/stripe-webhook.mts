@@ -1,7 +1,8 @@
-// Called by Stripe, not by players. The only thing that ever grants or
-// removes premium: the browser is never trusted to say it has paid.
+// Called by Stripe, not by players. The only thing that ever grants Crowns
+// or premium: the browser is never trusted to say it has paid.
 
 import type Stripe from "stripe";
+import { PACKS } from "../../src/store/Catalog";
 import { admin, json, stripe, webhookSecret } from "./_shared.mts";
 
 const LIVE = new Set(["active", "trialing", "past_due"]);
@@ -12,11 +13,7 @@ export default async (req: Request) => {
   let event: Stripe.Event;
   try {
     // The signature covers the exact bytes Stripe sent: read the raw body.
-    event = await stripe().webhooks.constructEventAsync(
-      await req.text(),
-      signature,
-      webhookSecret(),
-    );
+    event = await stripe().webhooks.constructEventAsync(await req.text(), signature, webhookSecret());
   } catch {
     return json({ error: "Bad signature" }, 400);
   }
@@ -27,15 +24,29 @@ export default async (req: Request) => {
       case "checkout.session.completed": {
         const s = event.data.object;
         if (s.payment_status !== "paid" && s.payment_status !== "no_payment_required") break;
-        if (!s.client_reference_id) break;
+        const uid = s.client_reference_id ?? s.metadata?.user;
+        if (!uid) break;
         const customer = typeof s.customer === "string" ? s.customer : s.customer?.id;
-        const { error } = await db.from("profiles").upsert({
-          id: s.client_reference_id,
-          premium: true,
-          stripe_customer_id: customer ?? null,
-          updated_at: new Date().toISOString(),
-        });
-        if (error) throw error;
+        if (customer) {
+          await db.from("profiles").update({ stripe_customer_id: customer }).eq("id", uid);
+        }
+        if (s.mode === "payment") {
+          // A Crown pack. The amount comes from the catalogue, not the
+          // session, so a tampered metadata field could not inflate it.
+          const pack = PACKS.find((p) => p.id === s.metadata?.pack);
+          if (!pack) throw new Error(`unknown pack in session ${s.id}: ${s.metadata?.pack}`);
+          const { error } = await db.rpc("add_crowns", {
+            uid,
+            amount: pack.crowns + pack.bonus,
+            session: s.id,
+          });
+          if (error) throw error;
+        } else {
+          const { error } = await db
+            .from("profiles")
+            .upsert({ id: uid, premium: true, stripe_customer_id: customer ?? null, updated_at: new Date().toISOString() });
+          if (error) throw error;
+        }
         break;
       }
       case "customer.subscription.updated":

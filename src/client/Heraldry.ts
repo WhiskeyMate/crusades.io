@@ -42,6 +42,16 @@ export function setLiege(name: string | null, skin: Skin | null) {
   liegeSkin = skin;
 }
 
+/** Arms chosen by other players in this game, by house name. */
+const armsByName = new Map<string, Skin>();
+export function setArms(name: string, skin: Skin | null) {
+  if (skin) armsByName.set(name, skin);
+  else armsByName.delete(name);
+}
+export function clearArms() {
+  armsByName.clear();
+}
+
 export function hexToRGB(hex: string): RGB {
   const n = parseInt(hex.replace("#", ""), 16);
   return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
@@ -82,7 +92,7 @@ export const CHARGES = ["✚", "♜", "⚜", "★", "♞", "☗", "❖", "♛", 
 export function shieldSVG(name: string, color: RGB, size = 18, skin?: Skin | null): string {
   const h = hash(name);
   // The local player's chosen arms replace the ones their name would give.
-  const worn = skin ?? (liegeSkin && name === liegeName ? liegeSkin : null);
+  const worn = skin ?? (liegeSkin && name === liegeName ? liegeSkin : (armsByName.get(name) ?? null));
   const metal = METALS[h % 2];
   const main = css(color);
   const dark = css(color, 0.55);

@@ -91,7 +91,15 @@ if (-not (Test-Path $tokenFile)) {
     -join ((48..57 + 65..90 + 97..122) | Get-Random -Count 32 | ForEach-Object { [char]$_ }) | Set-Content $tokenFile -NoNewline
 }
 $adminToken = (Get-Content $tokenFile -Raw).Trim()
-& $nssm set CrusadesServer AppEnvironmentExtra "PORT=$Port" "HOST=127.0.0.1" "ADMIN_TOKEN=$adminToken" | Out-Null
+# Optional settings, one KEY=VALUE per line, in C:\crusades\server.env
+# (SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PUBLIC_WAIT_SECONDS, ...).
+$extra = @()
+$envFile = "$Root\server.env"
+if (Test-Path $envFile) {
+    $extra = Get-Content $envFile | Where-Object { $_ -match '^[A-Z_][A-Z0-9_]*=' }
+    Write-Host "Using $($extra.Count) settings from $envFile"
+}
+& $nssm set CrusadesServer AppEnvironmentExtra "PORT=$Port" "HOST=127.0.0.1" "ADMIN_TOKEN=$adminToken" @extra | Out-Null
 Service "CrusadesCaddy" $caddy "run --config `"$Root\Caddyfile`"" "caddy.log"
 
 Write-Host "Opening the firewall..."

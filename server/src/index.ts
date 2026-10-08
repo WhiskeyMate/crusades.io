@@ -39,6 +39,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { realmHash } from "../../src/worldgen/RealmHash";
 import { AdminSnapshot, handleAdmin, recentLog, remember } from "./admin";
+import { Cosmetic, identify, identityEnabled, nameOwner } from "./identity";
 
 const PORT = Number(process.env.PORT ?? 8765);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -112,6 +113,13 @@ interface Client {
   greeted: boolean;
   from: string;
   connectedAt: number;
+  /** The signed-in account, if the player sent a valid token. */
+  uid: string | null;
+  cosmetic: Cosmetic | null;
+  /** Why the last name was refused, to repeat when they try to play. */
+  nameError: string | null;
+  /** Messages are handled one at a time per client, in order. */
+  queue: Promise<void>;
 }
 
 interface Member {
@@ -119,6 +127,7 @@ interface Member {
   secret: string;
   name: string;
   client: Client | null;
+  cosmetic: Cosmetic | null;
 }
 
 class Lobby {
@@ -200,6 +209,7 @@ class Lobby {
       secret: client.secret,
       name: client.name,
       client,
+      cosmetic: client.cosmetic,
     });
     client.lobby = this;
     this.emptySince = null;
@@ -208,6 +218,13 @@ class Lobby {
       if (this.members.size >= PUBLIC_FULL) this.start();
       else broadcastHall();
     }
+  }
+
+  /** What the signed-in members wear, by client id. */
+  private cosmetics(): Record<string, Cosmetic> {
+    const out: Record<string, Cosmetic> = {};
+    for (const m of this.members.values()) if (m.cosmetic) out[m.clientID] = m.cosmetic;
+    return out;
   }
 
   /** A member's connection went away. */
@@ -248,7 +265,7 @@ class Lobby {
     send(client, { type: "lobby", lobby: this.view(), now: Date.now() });
     if (this.status === "running" && this.info) {
       this.pending.push({ type: "mark_disconnected", isDisconnected: false, clientID: client.clientID });
-      send(client, { type: "start", info: this.info, realmHash: this.hash, turns: this.turns });
+      send(client, { type: "start", info: this.info, realmHash: this.hash, turns: this.turns, cosmetics: this.cosmetics() });
     }
     this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
   }
@@ -305,7 +322,7 @@ class Lobby {
       `lobby ${this.code}: started, ${this.members.size} players [${[...this.members.values()].map((m) => `${m.name}${m.client ? "" : " (away)"}`).join(", ")}], realm ${c.map}/${c.seed} hash ${this.hash}, ${this.realm.numLandTiles} land tiles`,
     );
     this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
-    this.broadcast({ type: "start", info: this.info!, realmHash: this.hash, turns: [] });
+    this.broadcast({ type: "start", info: this.info!, realmHash: this.hash, turns: [], cosmetics: this.cosmetics() });
     this.clock = setInterval(() => this.tick(), TURN_MS);
     if (this.kind === "public") {
       ensurePublicGame();
@@ -554,12 +571,40 @@ function findSeat(clientID: string, secret: string): { lobby: Lobby; member: Mem
   return null;
 }
 
-function handle(client: Client, msg: ClientMessage) {
+/**
+ * Sets the client's house name unless another account has reserved it.
+ * A signed-in player's own reserved name always wins over what they typed.
+ */
+async function claimName(client: Client, wanted: string) {
+  const owner = await nameOwner(wanted);
+  if (owner && owner !== client.uid) {
+    client.name = "";
+    client.nameError = `"${wanted}" is a reserved house name. Choose another.`;
+    log(`name "${wanted}" refused for ${client.clientID}: reserved by another account`);
+    fail(client, client.nameError);
+    return;
+  }
+  client.name = wanted;
+  client.nameError = null;
+}
+
+async function handle(client: Client, msg: ClientMessage) {
   switch (msg.type) {
     case "hello": {
       client.greeted = true;
-      client.name = msg.name ?? "";
-      log(`hello from ${client.clientID} (${client.from}): name "${client.name}"${msg.resume ? `, asks to resume seat ${msg.resume.clientID}` : ""}`);
+      const who = await identify(msg.token);
+      if (who) {
+        client.uid = who.uid;
+        client.cosmetic = who.cosmetic;
+      }
+      client.name = "";
+      const wanted = who?.username ?? msg.name ?? "";
+      if (wanted) await claimName(client, wanted);
+      log(
+        `hello from ${client.clientID} (${client.from}): name "${client.name}"` +
+          (who ? `, account ${who.uid.slice(0, 8)}${who.username ? " (reserved name)" : ""}, wears ${JSON.stringify(who.cosmetic.equipped ?? {})}` : msg.token ? ", token not accepted" : ", guest") +
+          (msg.resume ? `, asks to resume seat ${msg.resume.clientID}` : ""),
+      );
       const seat = msg.resume ? findSeat(msg.resume.clientID, msg.resume.secret) : null;
       if (seat) {
         client.clientID = seat.member.clientID;
@@ -574,14 +619,14 @@ function handle(client: Client, msg: ClientMessage) {
       break;
     }
     case "name":
-      client.name = msg.name;
+      await claimName(client, msg.name);
       break;
     case "list":
       send(client, hallMessage());
       break;
     case "create": {
       if (maintenance) return fail(client, "The server is closed for maintenance; back soon.");
-      if (client.name === "") return fail(client, "Choose a house name first.");
+      if (client.name === "") return fail(client, client.nameError ?? "Choose a house name first.");
       if (client.lobby) return fail(client, "Leave your current game first.");
       if (lobbies.size >= MAX_LOBBIES) return fail(client, "The server is full. Try again shortly.");
       const lobby = new Lobby(client, msg.config);
@@ -592,7 +637,7 @@ function handle(client: Client, msg: ClientMessage) {
     }
     case "join": {
       if (maintenance) return fail(client, "The server is closed for maintenance; back soon.");
-      if (client.name === "") return fail(client, "Choose a house name first.");
+      if (client.name === "") return fail(client, client.nameError ?? "Choose a house name first.");
       if (client.lobby) return fail(client, "Leave your current game first.");
       const lobby = lobbies.get(msg.lobby);
       if (!lobby) return fail(client, "No game with that code.");
@@ -684,6 +729,10 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
     greeted: false,
     from: String(req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "?"),
     connectedAt: Date.now(),
+    uid: null,
+    cosmetic: null,
+    nameError: null,
+    queue: Promise.resolve(),
   };
   clients.add(client);
   const from = req.headers["x-forwarded-for"] ?? req.socket.remoteAddress;
@@ -704,12 +753,14 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
     }
     if (verbose && r.data.type !== "ping" && r.data.type !== "intent" && r.data.type !== "hash") log(`<- ${client.name || client.clientID}: ${r.data.type}`);
     if (r.data.type !== "hello" && !client.greeted) return fail(client, "Say hello first.");
-    try {
-      handle(client, r.data);
-    } catch (e) {
-      console.error(e);
-      fail(client, "Server error.");
-    }
+    // One at a time per client: a name check must finish before the join after it.
+    const message = r.data;
+    client.queue = client.queue.then(() =>
+      handle(client, message).catch((e) => {
+        log(`error handling ${message.type} from ${client.name || client.clientID}: ${e instanceof Error ? (e.stack ?? e.message) : e}`);
+        fail(client, "Server error.");
+      }),
+    );
   });
   ws.on("pong", () => (client.alive = true));
   ws.on("close", (code, reason) => {
@@ -737,6 +788,7 @@ mapsDir();
 ensurePublicGame();
 http.listen(PORT, HOST, () => {
   log(`crusades.io game server listening on ${HOST}:${PORT}`);
+  log(identityEnabled ? "accounts: on (reserved names and cosmetics are checked with Supabase)" : "accounts: off (set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable)");
   log(ADMIN_TOKEN ? "dashboard at /admin?token=… (token in ADMIN_TOKEN)" : "dashboard at /admin, from this machine only (set ADMIN_TOKEN to open it remotely)");
 });
 

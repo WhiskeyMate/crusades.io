@@ -22,9 +22,18 @@ import { GameMapImpl } from "@crusades/engine-lib/game/GameMapImpl";
 import { unpackMotionPlans } from "@crusades/engine-lib/game/MotionPlans";
 import { Realm } from "../worldgen/RealmGen";
 import { MotionPlanResolver } from "./MotionPlanResolver";
-import { playerColor, RGB } from "./Heraldry";
+import { Equipped, Slot, variantsOf } from "../store/Catalog";
+import { hexToRGB, playerColor, RGB, setArms, Skin, validSkin } from "./Heraldry";
+
+/** What one human player wears, as the server (or the local account) says. */
+export interface Cosmetic {
+  equipped?: Equipped;
+  skin?: Skin | null;
+}
 
 export interface PlayerState {
+  /** Visual variants per slot (see store/Catalog). AI realms wear the defaults. */
+  look: Record<Slot, string>;
   id: string;
   smallID: number;
   name: string;
@@ -107,6 +116,8 @@ export class GameState {
     realm: Realm,
     gameConfig: GameConfig,
     private readonly clientID: string,
+    /** Cosmetics by client id, for the humans in this game. */
+    private readonly cosmetics: ReadonlyMap<string, Cosmetic> = new Map(),
   ) {
     this.map = new GameMapImpl(
       realm.width,
@@ -270,9 +281,18 @@ export class GameState {
         nameY: 0,
         nameSize: 0,
         color: [1, 1, 1],
+        look: variantsOf(null),
       };
       const mine = p.clientID !== null && p.clientID === this.clientID;
-      p.color = playerColor(p.smallID, p.type, mine, p.name);
+      const worn = p.clientID !== null ? this.cosmetics.get(p.clientID) : undefined;
+      p.look = variantsOf(worn?.equipped);
+      const arms = worn?.skin && validSkin(worn.skin) ? worn.skin : null;
+      if (arms) {
+        setArms(p.name, arms);
+        p.color = hexToRGB(arms.color);
+      } else {
+        p.color = playerColor(p.smallID, p.type, mine, p.name);
+      }
       this.players.set(p.smallID, p);
       this.playersByID.set(p.id, p);
       if (mine) this.me = p;

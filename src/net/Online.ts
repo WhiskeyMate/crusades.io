@@ -5,7 +5,7 @@ import { GameStartInfo, Intent, Turn } from "@crusades/engine-api/Schemas";
 import { MapManifest } from "@crusades/engine-api/game/MapFiles";
 import { loadRealm, Realm } from "../worldgen/RealmGen";
 import { realmHash } from "../worldgen/RealmHash";
-import { ClientMessage, LobbyConfig, LobbyView, PROTOCOL_VERSION, PublicGame, ServerMessage } from "./Protocol";
+import { ClientMessage, LobbyConfig, LobbyView, PROTOCOL_VERSION, PublicGame, ServerMessage, WireCosmetic } from "./Protocol";
 import { SocketTransport } from "./SocketTransport";
 
 /** The address of the game server, baked in at build time; none means no online play. */
@@ -16,6 +16,8 @@ export const GAME_SERVER: string | undefined =
 const SEAT_KEY = "crusades.seat";
 
 export interface GameHandoff {
+  /** What each signed-in player wears, by client id. */
+  cosmetics: Map<string, WireCosmetic>;
   realm: Realm;
   info: GameStartInfo;
   clientID: string;
@@ -52,7 +54,11 @@ export class Online {
   private realmWaiters: ((m: ServerMessage & { type: "realm" }) => void)[] = [];
   private pingTimer = 0;
 
-  constructor(private name: string) {}
+  constructor(
+    private name: string,
+    /** The signed-in account's access token, if any. */
+    private token: string | null = null,
+  ) {}
 
   /** The house name to play under. Sent now if connected, else with hello. */
   setName(name: string) {
@@ -83,7 +89,7 @@ export class Online {
         } catch {
           // No saved seat.
         }
-        this.post({ type: "hello", name: this.name || undefined, resume });
+        this.post({ type: "hello", name: this.name || undefined, token: this.token ?? undefined, resume });
       };
       ws.onmessage = (e) => {
         let msg: ServerMessage;
@@ -257,6 +263,7 @@ export class Online {
       clientID: this.clientID,
       transport,
       catchup: transport.queued,
+      cosmetics: new Map(Object.entries(msg.cosmetics ?? {})),
     });
   }
 }

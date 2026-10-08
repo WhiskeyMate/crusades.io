@@ -25,7 +25,7 @@ import {
 } from "@crusades/engine-api/worker/WorkerMessages";
 import { LocalTransport, Transport } from "../net/Transport";
 import { loadRealm, Realm } from "../worldgen/RealmGen";
-import { GameState, TickDelta } from "./GameState";
+import { Cosmetic, GameState, TickDelta } from "./GameState";
 
 export interface SessionOptions {
   name: string;
@@ -38,6 +38,8 @@ export interface SessionOptions {
   sandbox: boolean;
   /** No human player: just watch the AI realms fight. */
   spectate?: boolean;
+  /** What the player wears (from their account). */
+  cosmetic?: Cosmetic;
 }
 
 /** Everything a Session needs, however the game was arranged. */
@@ -49,6 +51,8 @@ export interface SessionSetup {
   transport: Transport;
   /** Turns already played, to replay when rejoining a game in progress. */
   catchup?: number;
+  /** What each human wears, by client id. */
+  cosmetics?: ReadonlyMap<string, Cosmetic>;
 }
 
 const SOLO_ID = "LIEGE001";
@@ -104,6 +108,7 @@ export async function soloSession(options: SessionOptions): Promise<Session> {
     info,
     clientID: options.spectate ? undefined : SOLO_ID,
     transport,
+    cosmetics: options.cosmetic ? new Map([[SOLO_ID, options.cosmetic]]) : undefined,
   });
   return session;
 }
@@ -137,7 +142,7 @@ export class Session {
     this.clientID = setup.clientID;
     this.transport = setup.transport;
     this.catchupLeft = setup.catchup ?? 0;
-    this.state = new GameState(this.realm, this.info.config, this.clientID ?? "");
+    this.state = new GameState(this.realm, this.info.config, this.clientID ?? "", setup.cosmetics);
     this.worker = new Worker(
       new URL("../../packages/engine/src/worker/Worker.worker.ts", import.meta.url),
       { type: "module" },

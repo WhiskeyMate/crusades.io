@@ -2,6 +2,7 @@
 // hosting a private lobby, joining by code, and the waiting room.
 
 import { Session } from "../client/Session";
+import { account } from "../account/Account";
 import { GAME_SERVER, Online } from "../net/Online";
 import { LobbyConfig, LobbyView, PublicGame } from "../net/Protocol";
 
@@ -48,7 +49,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
   /** Connect (once) and keep the hall's list fresh. Reconnects while in the hall. */
   async function connect(): Promise<Online | null> {
     if (online) return online;
-    const o = new Online(hooks.name());
+    const o = new Online(hooks.name(), await account.token().catch(() => null));
     try {
       await o.connect(GAME_SERVER!);
     } catch (e) {
@@ -93,6 +94,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
         clientID: g.clientID,
         transport: g.transport,
         catchup: g.catchup,
+        cosmetics: g.cosmetics,
       });
       session.onHash = (tick, hash) => o.reportHash(tick, hash);
       session.onGap = (expected, got) => {

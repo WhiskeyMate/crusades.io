@@ -144,12 +144,20 @@ function build(parts: Part[], scale = 1): Model {
   return { body: b, team: t };
 }
 
-const STONE = 0x9a958c;
-const STONE_DARK = 0x77736b;
-const WOOD = 0x6b4a2e;
-const WOOD_LIGHT = 0x9a7648;
-const PLASTER = 0xdccfae;
+// The materials every builder draws from. They are variables so a cosmetic
+// variant can be built by swapping a few of them and running the same
+// builder again (see `variant` below).
+let STONE = 0x9a958c;
+let STONE_DARK = 0x77736b;
+let WOOD = 0x6b4a2e;
+let WOOD_LIGHT = 0x9a7648;
+let PLASTER = 0xdccfae;
+/** Hull tint: 0 keeps each ship's own timber colour. */
+let HULL = 0;
+/** Cream sailcloth and trim on ships. */
+let CLOTH = 0xf0e6cc;
 const THATCH = 0xb59a55;
+void THATCH;
 
 function house(x: number, z: number, ry: number, s = 1): Part[] {
   const parts = [
@@ -288,7 +296,7 @@ function hull(w: number, h: number, len: number, color: number): Part[] {
 
 function galley(): Model {
   const parts: Part[] = [
-    ...hull(1.3, 0.7, 3.6, 0x5a3b22),
+    ...hull(1.3, 0.7, 3.6, HULL || 0x5a3b22),
     box(1.1, 0.08, 3.4, 0, 0.7, 0, WOOD_LIGHT),
     box(1.2, 0.55, 0.9, 0, 0.78, -1.4, WOOD),
     cyl(0.08, 0.1, 3.0, 0, 0.7, 0.2, WOOD, 6),
@@ -309,12 +317,12 @@ function galley(): Model {
 
 function longship(): Model {
   const parts: Part[] = [
-    ...hull(0.85, 0.42, 3.0, 0x4d3320),
+    ...hull(0.85, 0.42, 3.0, HULL || 0x4d3320),
     cyl(0.05, 0.06, 1.9, 0, 0.4, 0.1, WOOD, 5),
     box(1.5, 1.0, 0.05, 0, 1.15, 0.15, 0, true),
-    box(0.3, 0.9, 0.05, -0.45, 1.2, 0.18, 0xf0e6cc),
-    box(0.3, 0.9, 0.05, 0.45, 1.2, 0.18, 0xf0e6cc),
-    box(0.14, 0.6, 0.14, 0, 0.3, 2.35, 0x4d3320, false, 0, 0.5),
+    box(0.3, 0.9, 0.05, -0.45, 1.2, 0.18, CLOTH),
+    box(0.3, 0.9, 0.05, 0.45, 1.2, 0.18, CLOTH),
+    box(0.14, 0.6, 0.14, 0, 0.3, 2.35, HULL || 0x4d3320, false, 0, 0.5),
   ];
   for (let i = 0; i < 4; i++) {
     for (const side of [-1, 1]) {
@@ -329,7 +337,7 @@ function longship(): Model {
 
 function cog(): Model {
   const parts: Part[] = [
-    ...hull(1.5, 0.85, 2.5, 0x6a4a2c),
+    ...hull(1.5, 0.85, 2.5, HULL || 0x6a4a2c),
     box(1.3, 0.08, 2.4, 0, 0.85, 0, WOOD_LIGHT),
     box(1.4, 0.6, 0.8, 0, 0.9, -1.0, WOOD),
     box(1.1, 0.4, 0.6, 0, 0.9, 1.1, WOOD),
@@ -359,7 +367,40 @@ function wagon(): Model {
   return build(parts);
 }
 
-function soldier(): Model {
+function soldier(kind: "default" | "mail" | "crusader" = "default"): Model {
+  if (kind === "mail") {
+    // Men-at-arms: mail from neck to knee, a kettle helm, a kite shield.
+    return build([
+      box(0.11, 0.38, 0.14, -0.08, 0, 0, 0x6e747c),
+      box(0.11, 0.38, 0.14, 0.08, 0, 0, 0x6e747c),
+      box(0.36, 0.4, 0.22, 0, 0.36, 0, 0x8a9098),
+      box(0.37, 0.14, 0.23, 0, 0.5, 0, 0, true),
+      box(0.2, 0.18, 0.2, 0, 0.76, 0, 0xd9b38c),
+      cyl(0.17, 0.2, 0.06, 0, 0.9, 0, 0xb4bac2, 8),
+      cyl(0.11, 0.13, 0.1, 0, 0.95, 0, 0xb4bac2, 8),
+      cyl(0.02, 0.02, 1.7, 0.24, 0.1, 0.06, WOOD_LIGHT, 4),
+      cone(0.05, 0.22, 0.24, 1.8, 0.06, 0xd8dce2, 4),
+      box(0.06, 0.46, 0.3, -0.23, 0.3, 0.06, 0, true),
+      box(0.03, 0.12, 0.1, -0.265, 0.5, 0.06, 0xd8dce2),
+    ]);
+  }
+  if (kind === "crusader") {
+    // Crusaders: white surcoat with a cross in their lord's colour, great helm, sword.
+    return build([
+      box(0.11, 0.38, 0.14, -0.08, 0, 0, 0x8a9098),
+      box(0.11, 0.38, 0.14, 0.08, 0, 0, 0x8a9098),
+      box(0.36, 0.5, 0.22, 0, 0.28, 0, 0xf1efe6),
+      box(0.08, 0.34, 0.23, 0, 0.36, 0, 0, true),
+      box(0.24, 0.08, 0.23, 0, 0.56, 0, 0, true),
+      box(0.22, 0.26, 0.22, 0, 0.74, 0, 0xb4bac2),
+      box(0.23, 0.03, 0.23, 0, 0.87, 0, 0x4a4f56),
+      box(0.04, 0.7, 0.05, 0.24, 0.42, 0.1, 0xd8dce2),
+      box(0.16, 0.04, 0.05, 0.24, 0.42, 0.1, 0x8a6a2a),
+      box(0.06, 0.44, 0.3, -0.23, 0.32, 0.06, 0xf1efe6),
+      box(0.03, 0.3, 0.07, -0.265, 0.39, 0.06, 0, true),
+      box(0.03, 0.07, 0.2, -0.265, 0.5, 0.06, 0, true),
+    ]);
+  }
   return build([
     box(0.11, 0.38, 0.14, -0.08, 0, 0, 0x3b3128),
     box(0.11, 0.38, 0.14, 0.08, 0, 0, 0x3b3128),
@@ -447,6 +488,54 @@ export const MODELS = {
   boulder: boulder(),
   scaffold: scaffold(),
 };
+
+/** Runs builders with some materials swapped, then puts them back. */
+function variant<T>(swap: Partial<Record<"STONE" | "STONE_DARK" | "WOOD" | "WOOD_LIGHT" | "PLASTER" | "HULL" | "CLOTH", number>>, make: () => T): T {
+  const keep = { STONE, STONE_DARK, WOOD, WOOD_LIGHT, PLASTER, HULL, CLOTH };
+  if (swap.STONE !== undefined) STONE = swap.STONE;
+  if (swap.STONE_DARK !== undefined) STONE_DARK = swap.STONE_DARK;
+  if (swap.WOOD !== undefined) WOOD = swap.WOOD;
+  if (swap.WOOD_LIGHT !== undefined) WOOD_LIGHT = swap.WOOD_LIGHT;
+  if (swap.PLASTER !== undefined) PLASTER = swap.PLASTER;
+  if (swap.HULL !== undefined) HULL = swap.HULL;
+  if (swap.CLOTH !== undefined) CLOTH = swap.CLOTH;
+  try {
+    return make();
+  } finally {
+    ({ STONE, STONE_DARK, WOOD, WOOD_LIGHT, PLASTER, HULL, CLOTH } = keep);
+  }
+}
+
+const buildings = () => ({
+  town: town(), keep: keep(), harbour: harbour(), market: market(),
+  mageTower: mageTower(), ballistaTower: ballistaTower(),
+});
+const ships = () => ({ galley: galley(), longship: longship(), cog: cog() });
+
+/**
+ * Cosmetic variants, keyed "<model>:<variant>". A model with no entry for a
+ * variant falls back to the plain one in MODELS.
+ */
+export const VARIANTS: Record<string, Model> = {};
+function register(tag: string, models: Record<string, Model>) {
+  for (const [name, m] of Object.entries(models)) VARIANTS[`${name}:${tag}`] = m;
+}
+// Grey stone: pale ashlar walls.
+register("slate", variant({ STONE: 0xbfc4ca, STONE_DARK: 0x8d949c, PLASTER: 0xc6cad0, WOOD: 0x4a4f56 }, buildings));
+// Red brick: warm walls, dark timber.
+register("brick", variant({ STONE: 0xa5604a, STONE_DARK: 0x7d4636, PLASTER: 0xb8543c, WOOD: 0x4a2f22 }, buildings));
+// Black fleet: tarred hulls, dark decks, grey cloth.
+register("black", variant({ HULL: 0x1c1917, WOOD: 0x2a2521, WOOD_LIGHT: 0x3d3630, CLOTH: 0x55504a }, ships));
+// Gilded fleet: gold rails and trim on dark red hulls.
+register("gilt", variant({ HULL: 0x5a1f1c, WOOD: 0x7a5a22, WOOD_LIGHT: 0xe0b84a, CLOTH: 0xfff3c4 }, ships));
+register("mail", { soldier: soldier("mail") });
+register("crusader", { soldier: soldier("crusader") });
+
+/** The model to draw for a base name and the owner's variant. */
+export function modelFor(name: keyof typeof MODELS, variantTag: string): { key: string; model: Model } {
+  const key = `${name}:${variantTag}`;
+  return VARIANTS[key] ? { key, model: VARIANTS[key] } : { key: name, model: MODELS[name] };
+}
 
 const bodyMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });
 const teamMaterial = new THREE.MeshLambertMaterial({ vertexColors: true });

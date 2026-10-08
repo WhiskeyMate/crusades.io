@@ -47,6 +47,8 @@ export const ClientMessageSchema = z.discriminatedUnion("type", [
     type: z.literal("hello"),
     /** May be left out while just looking at the list of games. */
     name: UsernameSchema.optional(),
+    /** The signed-in account's access token: brings a reserved name and cosmetics. */
+    token: z.string().max(4000).optional(),
     /** A client id and secret from an earlier welcome, to take that seat back. */
     resume: z.object({ clientID: z.string().max(16), secret: z.string().max(64) }).optional(),
   }),
@@ -69,6 +71,11 @@ export const ClientMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("report"), event: z.string().max(40), detail: z.string().max(400).optional() }),
 ]);
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;
+
+export interface WireCosmetic {
+  equipped?: Record<string, string>;
+  skin?: { color: string; division: number; charge: number } | null;
+}
 
 export interface LobbyMember {
   clientID: string;
@@ -109,6 +116,8 @@ export type ServerMessage =
       realmHash: string;
       /** Turns so far; empty for a fresh start, the whole game on resume. */
       turns: Turn[];
+      /** What each signed-in player wears, by client id; the server vouches for it. */
+      cosmetics: Record<string, WireCosmetic>;
     }
   | { type: "turn"; turn: Turn }
   | {
@@ -126,5 +135,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "5";
+export const PROTOCOL_VERSION = "6";
 export const TURN_MS = 100;

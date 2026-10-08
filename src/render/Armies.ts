@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { GameState, TickDelta } from "../client/GameState";
 import { RGB } from "../client/Heraldry";
 import { Effects } from "./Effects";
-import { MODELS, Pool } from "./Models";
+import { modelFor, MODELS, Pool } from "./Models";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
 
@@ -44,6 +44,9 @@ interface Tally {
 export class Armies {
   private companies = new Map<number, Company>();
   private soldiers: Pool;
+  /** Soldier pools for bought troop variants, made on first use. */
+  private variants = new Map<string, Pool>();
+  private group: THREE.Group;
   private banners: Pool;
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
@@ -60,7 +63,7 @@ export class Armies {
     private state: GameState,
     private effects: Effects,
   ) {
-    const group = new THREE.Group();
+    const group = (this.group = new THREE.Group());
     stage.scene.add(group);
     this.soldiers = new Pool(MODELS.soldier, MAX_SOLDIERS, group);
     this.banners = new Pool(MODELS.banner, 1200, group);
@@ -143,9 +146,21 @@ export class Armies {
     pool.add(this.m, color);
   }
 
+  private troops(variantTag: string): Pool {
+    if (variantTag === "default") return this.soldiers;
+    let p = this.variants.get(variantTag);
+    if (!p) {
+      p = new Pool(modelFor("soldier", variantTag).model, 3000, this.group);
+      p.begin();
+      this.variants.set(variantTag, p);
+    }
+    return p;
+  }
+
   update(dt: number, time: number) {
     this.soldiers.begin();
     this.banners.begin();
+    for (const p of this.variants.values()) p.begin();
     const cam = this.stage.camera;
     this.pv.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(this.pv);
@@ -155,6 +170,7 @@ export class Armies {
     const dist = this.stage.distance;
     if (dist >= SHOW_WITHIN) {
       this.soldiers.end();
+      for (const p of this.variants.values()) p.end();
       this.banners.end();
       return;
     }
@@ -185,7 +201,7 @@ export class Armies {
         const push = rank === 0 ? Math.max(0, step) * 0.35 * scale : 0;
         const back = rank * gap * 1.1;
         this.place(
-          this.soldiers,
+          this.troops(owner.look.troops),
           co.x + rx * slot * gap + co.dx * (push - back),
           co.y + ry * slot * gap + co.dy * (push - back),
           yaw, scale, owner.color, Math.abs(step) * 0.1 * scale, rank === 0 ? step * 0.12 : 0,
@@ -206,7 +222,7 @@ export class Armies {
           const step = Math.sin(time * 8 + co.seed * 2 + i * 2.3);
           const push = Math.max(0, step) * 0.3 * scale;
           this.place(
-            this.soldiers,
+            this.troops(foe.look.troops),
             co.x + rx * slot * gap + co.dx * (reach - push),
             co.y + ry * slot * gap + co.dy * (reach - push),
             yaw + Math.PI, scale, foe.color, Math.abs(step) * 0.1 * scale, -step * 0.12,
@@ -231,6 +247,7 @@ export class Armies {
       }
     }
     this.soldiers.end();
+    for (const p of this.variants.values()) p.end();
     this.banners.end();
   }
 }
