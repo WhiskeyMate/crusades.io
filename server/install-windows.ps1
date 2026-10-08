@@ -42,6 +42,7 @@ foreach ($d in "$Root", "$Root\bin", "$Root\logs", "$Root\app") {
 
 Write-Host "Copying the server to $Root\app..."
 Copy-Item "$project\server\dist\server.mjs" "$Root\app\server.mjs" -Force
+Copy-Item "$project\public\maps" "$Root\app\maps" -Recurse -Force
 # The bundle keeps ws and zod external; give it a tiny package of its own.
 $pkg = @{ name = "crusades-server"; private = $true; type = "module"; dependencies = @{} }
 foreach ($dep in "ws", "zod") {

@@ -24,7 +24,7 @@ import {
   WorkerMessage,
 } from "@crusades/engine-api/worker/WorkerMessages";
 import { LocalTransport, Transport } from "../net/Transport";
-import { generateRealm, Realm } from "../worldgen/RealmGen";
+import { loadRealm, Realm } from "../worldgen/RealmGen";
 import { GameState, TickDelta } from "./GameState";
 
 export interface SessionOptions {
@@ -61,8 +61,8 @@ function randomID(): string {
 }
 
 /** A game against the AI, with the clock in this page. */
-export function soloSession(options: SessionOptions): Session {
-  const realm = generateRealm({
+export async function soloSession(options: SessionOptions): Promise<Session> {
+  const realm = await loadRealm({
     map: options.map,
     seed: options.seed,
     kingdoms: options.kingdoms,

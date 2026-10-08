@@ -3,9 +3,9 @@
 
 import { GameStartInfo, Intent, Turn } from "@crusades/engine-api/Schemas";
 import { MapManifest } from "@crusades/engine-api/game/MapFiles";
-import { generateRealm, Realm } from "../worldgen/RealmGen";
+import { loadRealm, Realm } from "../worldgen/RealmGen";
 import { realmHash } from "../worldgen/RealmHash";
-import { ClientMessage, LobbyConfig, LobbyView, PublicGame, ServerMessage } from "./Protocol";
+import { ClientMessage, LobbyConfig, LobbyView, PROTOCOL_VERSION, PublicGame, ServerMessage } from "./Protocol";
 import { SocketTransport } from "./SocketTransport";
 
 /** The address of the game server, baked in at build time; none means no online play. */
@@ -85,6 +85,11 @@ export class Online {
           return;
         }
         if (msg.type === "welcome") {
+          if (msg.version !== PROTOCOL_VERSION) {
+            ws.close();
+            reject(new Error(`The game server is running an older version (${msg.version}); it needs updating.`));
+            return;
+          }
           welcomed = true;
           this.clientID = msg.clientID;
           this.secret = msg.secret;
@@ -181,7 +186,7 @@ export class Online {
     this.pendingStart = msg;
     const c = msg.info.config;
     const lobby = this.lobby;
-    let realm = generateRealm({
+    let realm = await loadRealm({
       map: c.gameMap,
       seed: lobby?.config.seed ?? 1,
       kingdoms: typeof c.nations === "number" ? c.nations : lobby?.config.kingdoms ?? 12,

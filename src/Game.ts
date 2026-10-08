@@ -34,6 +34,8 @@ export class Game {
   private last = performance.now();
   private time = 0;
   private hoverOwner = 0;
+  private hoverTile: number | null = null;
+  private hoverUnit: UnitState | null = null;
   private paletteDirty = true;
   private centred = false;
   private stopped = false;
@@ -64,7 +66,9 @@ export class Game {
     this.stage.onHover = (hit, ev) => {
       const tile = hit ? state.map.ref(hit.x, hit.y) : null;
       this.hoverOwner = tile !== null ? state.map.ownerID(tile) : 0;
-      this.hud.hover(tile, ev.clientX, ev.clientY);
+      this.hoverTile = tile;
+      this.hoverUnit = hit ? this.structureNear(hit.x, hit.y, 4) : null;
+      this.hud.hover(tile, ev.clientX, ev.clientY, this.hoverUnit ?? undefined);
     };
     this.session.onTick = (d) => this.tick(d);
     this.session.onError = (msg) => this.hud.toast(`Engine error: ${msg}`, "bad");
@@ -232,6 +236,80 @@ export class Game {
     }
   }
 
+  /** The closest standing building within `reach` tiles of a point, if any. */
+  private structureNear(x: number, y: number, reach: number): UnitState | null {
+    const map = this.session.state.map;
+    let best: UnitState | null = null;
+    let bestD = reach * reach;
+    for (const u of this.session.state.units.values()) {
+      if (!Structures.has(u.type)) continue;
+      const dx = map.x(u.pos) - x;
+      const dy = map.y(u.pos) - y;
+      const d = dx * dx + dy * dy;
+      if (d < bestD) {
+        bestD = d;
+        best = u;
+      }
+    }
+    return best;
+  }
+
+  /** How far a building's effect reaches, in tiles, and the ring kind to draw it with. */
+  private reach(type: UnitType, level: number): [number, number] | null {
+    const c = this.session.state.config;
+    switch (type) {
+      case UnitType.DefensePost:
+        return [c.defensePostRange(), 0];
+      case UnitType.SAMLauncher:
+        return [c.samRange(Math.max(1, level)), 1];
+      case UnitType.Factory:
+        return [c.trainStationMaxRange(), 2];
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Range rings on the ground: the building under the cursor, and while
+   * placing, the cursor's own reach plus every nearby building of that kind
+   * and the spacing other buildings demand.
+   */
+  private rings() {
+    const u = this.terrain.uniforms;
+    const out = u.uRings.value as THREE.Vector4[];
+    const map = this.session.state.map;
+    const me = this.session.state.me;
+    let n = 0;
+    const put = (tx: number, ty: number, r: number, kind: number) => {
+      if (n < out.length) out[n++].set(this.terrain.worldX(tx), this.terrain.worldZ(ty), r, kind);
+    };
+    const placing = this.hud.placing;
+    if (placing !== null && this.hoverTile !== null && Structures.has(placing)) {
+      const hx = map.x(this.hoverTile);
+      const hy = map.y(this.hoverTile);
+      const own = this.reach(placing, 1);
+      if (own) put(hx, hy, own[0], own[1]);
+      put(hx, hy, this.session.state.config.structureMinDist(), 3);
+      // The same kind of building nearby, nearest first, so overlaps show.
+      const near: { u: UnitState; d: number }[] = [];
+      for (const b of this.session.state.units.values()) {
+        if (b.type !== placing || !me || b.ownerID !== me.smallID) continue;
+        const dx = map.x(b.pos) - hx;
+        const dy = map.y(b.pos) - hy;
+        near.push({ u: b, d: dx * dx + dy * dy });
+      }
+      near.sort((a, b) => a.d - b.d);
+      for (const { u: b } of near.slice(0, 13)) {
+        const r = this.reach(b.type, b.level);
+        if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
+      }
+    } else if (this.hoverUnit) {
+      const r = this.reach(this.hoverUnit.type, this.hoverUnit.level);
+      if (r) put(map.x(this.hoverUnit.pos), map.y(this.hoverUnit.pos), r[0], r[1]);
+    }
+    u.uRingCount.value = n;
+  }
+
   private frame() {
     const now = performance.now();
     const dt = Math.min(0.1, (now - this.last) / 1000);
@@ -251,6 +329,7 @@ export class Game {
     u.uTime.value = this.time;
     u.uHover.value = this.hoverOwner;
     u.uSpawnPulse.value = session.state.inSpawnPhase ? 1 : 0;
+    this.rings();
     u.uFogNear.value = 500 + this.stage.distance * 1.2;
     u.uFogFar.value = 2400 + this.stage.distance * 3;
     const blasts = u.uBlasts.value as THREE.Vector4[];

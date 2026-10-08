@@ -12,7 +12,8 @@ import {
 } from "@crusades/engine-api/game/GameTypes";
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import { GameStartInfo } from "@crusades/engine-api/Schemas";
-import { generateRealm } from "../src/worldgen/RealmGen";
+import { readFileSync } from "node:fs";
+import { buildRealm, MAP_DIR, MapInfoFile } from "../src/worldgen/RealmGen";
 
 function png(w: number, h: number, rgb: Uint8Array): Buffer {
   const crcTable = new Uint32Array(256).map((_, n) => {
@@ -50,12 +51,18 @@ function png(w: number, h: number, rgb: Uint8Array): Buffer {
   ]);
 }
 
-const mapArg = (process.argv[2] ?? "Aldermark") as GameMapType;
+const mapArg = (process.argv[2] ?? "Greece") as GameMapType;
 const seed = Number(process.argv[3] ?? 7);
 const ticks = Number(process.argv[4] ?? 600);
 
 let t0 = performance.now();
-const realm = generateRealm({ map: mapArg, seed });
+const dir = `public/maps/${MAP_DIR[mapArg]}`;
+const realm = buildRealm(
+  { map: mapArg, seed },
+  JSON.parse(readFileSync(`${dir}/info.json`, "utf8")) as MapInfoFile,
+  new Uint8Array(readFileSync(`${dir}/main.bin`)),
+  new Uint8Array(readFileSync(`${dir}/mini.bin`)),
+);
 console.log(`realm ${mapArg} seed ${seed}: ${realm.width}x${realm.height}, land ${realm.numLandTiles} (${((realm.numLandTiles / (realm.width * realm.height)) * 100).toFixed(1)}%), ${(performance.now() - t0).toFixed(0)}ms`);
 
 {

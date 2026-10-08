@@ -120,5 +120,6 @@ export type ServerMessage =
   | { type: "pong"; t: number }
   | { type: "error"; message: string };
 
-export const PROTOCOL_VERSION = "1";
+// Bump whenever the site and the server must be updated together (map lists, message shapes).
+export const PROTOCOL_VERSION = "2";
 export const TURN_MS = 100;

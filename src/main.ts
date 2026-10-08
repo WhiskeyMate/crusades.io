@@ -16,13 +16,13 @@ const SOURCE_URL = "https://github.com/WhiskeyMate/crusades.io";
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
 const REALMS: { map: GameMapType; blurb: string }[] = [
-  { map: GameMapType.Aldermark, blurb: "One great land" },
-  { map: GameMapType.SunderedIsles, blurb: "Isles and straits" },
-  { map: GameMapType.TwinCrowns, blurb: "Two shores, one sea" },
-  { map: GameMapType.Middenmere, blurb: "Around the inland sea" },
+  { map: GameMapType.Europe, blurb: "From Iberia to the Urals" },
+  { map: GameMapType.Mediterranean, blurb: "The sea in the middle" },
+  { map: GameMapType.Greece, blurb: "Aegean isles and straits" },
+  { map: GameMapType.Earth, blurb: "The whole world, slowly" },
 ];
 
-let chosen = GameMapType.Aldermark;
+let chosen = GameMapType.Europe;
 let game: Game | null = null;
 let attract: Attract | null = null;
 
@@ -30,7 +30,7 @@ let attract: Attract | null = null;
 async function startAttract() {
   if (attract || game) return;
   try {
-    attract = new Attract();
+    attract = await Attract.create();
     (window as unknown as { attract: Attract }).attract = attract;
     await attract.start();
     el("landing").classList.remove("no-gl");
@@ -126,7 +126,7 @@ async function begin() {
   await new Promise((r) => setTimeout(r, 30));
   let session: Session;
   try {
-    session = soloSession(options);
+    session = await soloSession(options);
   } catch (e) {
     el("loading").hidden = true;
     el("menu").hidden = false;

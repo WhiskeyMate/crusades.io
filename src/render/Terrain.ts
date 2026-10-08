@@ -47,6 +47,9 @@ uniform float uTime;
 uniform int uHover;
 uniform float uSpawnPulse;
 uniform vec4 uBlasts[4];
+// Range rings: x, z, radius (tiles), kind (0 keep, 1 ballista, 2 market, 3 spacing).
+uniform vec4 uRings[16];
+uniform int uRingCount;
 varying vec3 vWorld;
 
 ivec2 stateAt(ivec2 t) {
@@ -77,9 +80,9 @@ void main() {
   vec3 snow = vec3(0.93, 0.95, 0.98);
   vec3 sand = vec3(0.80, 0.73, 0.53);
 
-  vec3 col = mix(grass, heath, smoothstep(1.3, 3.2, h + big));
-  col = mix(col, rock, clamp(smoothstep(4.2, 7.5, h) + smoothstep(0.10, 0.28, slope), 0.0, 1.0));
-  col = mix(col, snow, smoothstep(10.5, 13.5, h + fine * 2.5) * (1.0 - smoothstep(0.35, 0.6, slope)));
+  vec3 col = mix(grass, heath, smoothstep(1.3, 2.6, h + big));
+  col = mix(col, rock, clamp(smoothstep(3.2, 5.5, h) + smoothstep(0.14, 0.32, slope), 0.0, 1.0));
+  col = mix(col, snow, smoothstep(6.0, 8.0, h + fine * 1.5) * (1.0 - smoothstep(0.35, 0.6, slope)));
   col = mix(sand, col, smoothstep(0.08, 0.5, h));
   if (h < 0.0) {
     col = mix(sand * 0.75, vec3(0.10, 0.19, 0.25), smoothstep(0.0, 2.5, -h));
@@ -140,6 +143,25 @@ void main() {
   lit += vec3(1.0, 0.42, 0.08) * glow * 0.9;
   if (uSpawnPulse > 0.0 && h > 0.0 && o == 0) {
     lit += vec3(0.25, 0.22, 0.08) * uSpawnPulse * (0.5 + 0.5 * sin(uTime * 3.0));
+  }
+  for (int i = 0; i < 16; i++) {
+    if (i >= uRingCount) break;
+    vec4 r = uRings[i];
+    float d = distance(vWorld.xz, r.xy);
+    float fw = max(fwidth(tile.x), fwidth(tile.y));
+    float line = 1.0 - smoothstep(0.0, max(0.7, fw * 1.6), abs(d - r.z));
+    float inside = 1.0 - step(r.z, d);
+    vec3 rc = r.w < 0.5 ? vec3(1.0, 0.5, 0.3)
+            : r.w < 1.5 ? vec3(0.45, 0.8, 1.0)
+            : r.w < 2.5 ? vec3(1.0, 0.85, 0.4)
+            : vec3(1.0, 1.0, 1.0);
+    if (r.w > 2.5) {
+      // Spacing ring: dashed, so it reads as a limit rather than a reach.
+      float ang = atan(vWorld.z - r.y, vWorld.x - r.x);
+      line *= step(0.5, fract(ang * 6.0 / 3.14159));
+    }
+    lit = mix(lit, rc, line * 0.9);
+    lit += rc * inside * (r.w > 2.5 ? 0.0 : 0.07);
   }
   for (int i = 0; i < 4; i++) {
     vec4 b = uBlasts[i];
@@ -306,6 +328,10 @@ export class Terrain {
       uBlasts: {
         value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 1, 0)),
       },
+      uRings: {
+        value: Array.from({ length: 16 }, () => new THREE.Vector4(0, 0, 1, 0)),
+      },
+      uRingCount: { value: 0 },
     };
 
     const sx = w >> 1;
@@ -360,14 +386,16 @@ export class Terrain {
         } else if (m <= 10) {
           v = 0.22 + m * 0.11 + noise.fbm(x * 0.06, y * 0.06, 2) * 0.25 * (m / 10);
         } else if (m <= 20) {
-          v = 1.32 + (m - 10) * 0.42 + noise.fbm(x * 0.05, y * 0.05, 3) * 1.1;
+          v = 1.32 + (m - 10) * 0.22 + noise.fbm(x * 0.05, y * 0.05, 3) * 0.6;
         } else {
+          // Mountains read as mountains from afar but stay gentle enough that
+          // a building on them sits on a slope, not a cliff.
           const k = (m - 20) / 10;
           v =
-            5.5 +
-            k * 9.5 +
-            noise.ridged(x * 0.035, y * 0.035, 4) * (3 + k * 9) -
-            2.5;
+            3.5 +
+            k * 4.5 +
+            noise.ridged(x * 0.035, y * 0.035, 4) * (1.5 + k * 3.5) -
+            1.2;
         }
         raw[i] = v;
       }
