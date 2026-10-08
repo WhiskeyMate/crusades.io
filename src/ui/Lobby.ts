@@ -47,7 +47,8 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     try {
       await o.connect(GAME_SERVER!);
     } catch (e) {
-      el("public-list").innerHTML = `<p class="dim small">The game server is not reachable. Solo play still works.</p>`;
+      const why = e instanceof Error && e.message.includes("older version") ? e.message : "The game server is not reachable.";
+      el("public-list").innerHTML = `<p class="dim small">${why} Solo play still works.</p>`;
       scheduleRetry();
       return null;
     }
