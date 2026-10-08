@@ -65,6 +65,8 @@ export const ClientMessageSchema = z.discriminatedUnion("type", [
   /** My realm came out different from yours: send me the terrain. */
   z.object({ type: z.literal("realm") }),
   z.object({ type: z.literal("ping"), t: z.number() }),
+  /** What happened on the client's side, for the server log (start received, map loaded, errors). */
+  z.object({ type: z.literal("report"), event: z.string().max(40), detail: z.string().max(400).optional() }),
 ]);
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 
@@ -124,5 +126,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "3";
+export const PROTOCOL_VERSION = "4";
 export const TURN_MS = 100;

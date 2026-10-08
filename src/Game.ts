@@ -71,7 +71,12 @@ export class Game {
       this.hud.hover(tile, ev.clientX, ev.clientY, this.hoverUnit ?? undefined);
     };
     this.session.onTick = (d) => this.tick(d);
-    this.session.onError = (msg) => this.hud.toast(`Engine error: ${msg}`, "bad");
+    // Keep whatever handler the lobby installed (it reports to the server).
+    const reportError = this.session.onError;
+    this.session.onError = (msg) => {
+      reportError(msg);
+      this.hud.toast(`Engine error: ${msg}`, "bad");
+    };
   }
 
   async start() {

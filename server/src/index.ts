@@ -53,6 +53,8 @@ const MAX_LOBBIES = 200;
 let PUBLIC_WAIT_MS = Number(process.env.PUBLIC_WAIT_SECONDS ?? 90) * 1000;
 /** Set from the dashboard: no new games while on. */
 let maintenance = false;
+/** Log every message in and out, per client. Set from the dashboard or VERBOSE=1. */
+let verbose = process.env.VERBOSE === "1";
 const STARTED_AT = Date.now();
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 /** A public game starts as soon as this many have joined. */
@@ -174,12 +176,25 @@ class Lobby {
 
   broadcast(msg: ServerMessage) {
     const text = JSON.stringify(msg);
+    const sent: string[] = [];
+    const missed: string[] = [];
     for (const m of this.members.values()) {
-      if (m.client && m.client.ws.readyState === WebSocket.OPEN) m.client.ws.send(text);
+      if (m.client && m.client.ws.readyState === WebSocket.OPEN) {
+        m.client.ws.send(text);
+        sent.push(m.name);
+      } else {
+        missed.push(`${m.name}${m.client ? ` (socket state ${m.client.ws.readyState})` : " (not connected)"}`);
+      }
+    }
+    // Turns are far too frequent to log; everything else is worth a line.
+    if (msg.type !== "turn" || verbose) {
+      const extra = msg.type === "start" ? ` with ${msg.turns.length} turns` : "";
+      log(`lobby ${this.code}: sent ${msg.type}${extra} to [${sent.join(", ")}]${missed.length ? ` MISSED [${missed.join(", ")}]` : ""}`);
     }
   }
 
   add(client: Client) {
+    log(`lobby ${this.code}: ${client.name} (${client.clientID}) joins; ${this.members.size + 1} members, status ${this.status}`);
     this.members.set(client.clientID, {
       clientID: client.clientID,
       secret: client.secret,
@@ -199,6 +214,7 @@ class Lobby {
   drop(client: Client) {
     const m = this.members.get(client.clientID);
     if (!m) return;
+    log(`lobby ${this.code}: ${m.name} (${client.clientID}) dropped during ${this.status}; seat ${this.status === "open" ? "freed" : "kept for resume"}`);
     m.client = null;
     client.lobby = null;
     if (this.status === "open") {
@@ -224,6 +240,7 @@ class Lobby {
 
   /** A member came back on a new connection. */
   resume(client: Client, m: Member) {
+    log(`lobby ${this.code}: resuming ${m.name}; status ${this.status}, ${this.turns.length} turns to replay`);
     m.client = client;
     client.lobby = this;
     client.name = m.name;
@@ -284,7 +301,9 @@ class Lobby {
         clanTag: null,
       })),
     };
-    log(`lobby ${this.code}: started, ${this.members.size} players, realm ${c.map}/${c.seed} ${this.hash}`);
+    log(
+      `lobby ${this.code}: started, ${this.members.size} players [${[...this.members.values()].map((m) => `${m.name}${m.client ? "" : " (away)"}`).join(", ")}], realm ${c.map}/${c.seed} hash ${this.hash}, ${this.realm.numLandTiles} land tiles`,
+    );
     this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
     this.broadcast({ type: "start", info: this.info!, realmHash: this.hash, turns: [] });
     this.clock = setInterval(() => this.tick(), TURN_MS);
@@ -328,7 +347,8 @@ class Lobby {
         this.hashes.delete(oldest);
       }
     } else if (first.hash !== hash) {
-      log(`lobby ${this.code}: desync at tick ${tick} between ${first.by} and ${client.clientID}`);
+      const name = (id: string) => this.members.get(id)?.name ?? id;
+      log(`lobby ${this.code}: desync at tick ${tick}: ${name(first.by)} has ${first.hash}, ${name(client.clientID)} has ${hash}`);
       send(client, { type: "desync", tick });
     }
   }
@@ -425,6 +445,7 @@ function snapshot(): AdminSnapshot {
     memoryMB: Math.round(process.memoryUsage().rss / 1048576),
     publicWaitSeconds: PUBLIC_WAIT_MS / 1000,
     maintenance,
+    verbose,
     clients: [...clients].map((c) => ({
       clientID: c.clientID,
       name: c.name,
@@ -495,6 +516,10 @@ const adminActions = {
     PUBLIC_WAIT_MS = s * 1000;
     return `public countdown now ${s}s`;
   },
+  verbose(on: string): string {
+    verbose = on === "1" || on === "true";
+    return verbose ? "verbose logging on" : "verbose logging off";
+  },
   maintenance(on: string): string {
     maintenance = on === "1" || on === "true";
     if (maintenance) {
@@ -508,7 +533,12 @@ const adminActions = {
 };
 
 function send(client: Client, msg: ServerMessage) {
-  if (client.ws.readyState === WebSocket.OPEN) client.ws.send(JSON.stringify(msg));
+  if (client.ws.readyState === WebSocket.OPEN) {
+    client.ws.send(JSON.stringify(msg));
+    if (verbose && msg.type !== "pong" && msg.type !== "turn") log(`-> ${client.name || client.clientID}: ${msg.type}`);
+  } else {
+    log(`could not send ${msg.type} to ${client.name || client.clientID}: socket state ${client.ws.readyState}`);
+  }
 }
 
 function fail(client: Client, message: string) {
@@ -529,6 +559,7 @@ function handle(client: Client, msg: ClientMessage) {
     case "hello": {
       client.greeted = true;
       client.name = msg.name ?? "";
+      log(`hello from ${client.clientID} (${client.from}): name "${client.name}"${msg.resume ? `, asks to resume seat ${msg.resume.clientID}` : ""}`);
       const seat = msg.resume ? findSeat(msg.resume.clientID, msg.resume.secret) : null;
       if (seat) {
         client.clientID = seat.member.clientID;
@@ -600,6 +631,9 @@ function handle(client: Client, msg: ClientMessage) {
     case "realm":
       client.lobby?.sendRealm(client);
       break;
+    case "report":
+      log(`client ${client.name || client.clientID}${client.lobby ? ` in ${client.lobby.code}` : ""}: ${msg.event}${msg.detail ? ` — ${msg.detail}` : ""}`);
+      break;
     case "ping":
       send(client, { type: "pong", t: msg.t });
       break;
@@ -663,7 +697,12 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
       return fail(client, "Not JSON.");
     }
     const r = ClientMessageSchema.safeParse(parsed);
-    if (!r.success) return fail(client, "Bad message.");
+    if (!r.success) {
+      const t = (parsed as { type?: unknown })?.type;
+      log(`bad message from ${client.name || client.clientID}: type ${String(t)}: ${r.error.issues.map((i) => i.message).join("; ").slice(0, 200)}`);
+      return fail(client, "Bad message.");
+    }
+    if (verbose && r.data.type !== "ping" && r.data.type !== "intent" && r.data.type !== "hash") log(`<- ${client.name || client.clientID}: ${r.data.type}`);
     if (r.data.type !== "hello" && !client.greeted) return fail(client, "Say hello first.");
     try {
       handle(client, r.data);
@@ -673,10 +712,11 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
     }
   });
   ws.on("pong", () => (client.alive = true));
-  ws.on("close", () => {
+  ws.on("close", (code, reason) => {
     clients.delete(client);
+    const where = client.lobby ? ` from ${client.lobby.code}` : "";
     client.lobby?.drop(client);
-    log(`disconnect ${client.clientID} (${clients.size} online)`);
+    log(`disconnect ${client.name || client.clientID}${where}: code ${code}${reason.length ? ` ${reason.toString()}` : ""} after ${Math.round((Date.now() - client.connectedAt) / 1000)}s (${clients.size} online)`);
   });
   ws.on("error", (e) => log(`socket error ${client.clientID}: ${e.message}`));
 });

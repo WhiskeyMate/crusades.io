@@ -1,8 +1,13 @@
 {
-  "version": "0.1.17",
+  "version": "0.1.18",
   "builtAt": "2026-10-08",
-  "commits": 17,
+  "commits": 18,
   "entries": [
+    {
+      "hash": "4d7f60a",
+      "date": "2026-10-08",
+      "subject": "Fix multiplayer desync: keep turns that arrive while the map downloads; bridge narrow rivers and gaps; flatter mountains"
+    },
     {
       "hash": "7911512",
       "date": "2026-10-08",

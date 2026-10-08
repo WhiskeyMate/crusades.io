@@ -15,6 +15,7 @@ export interface AdminSnapshot {
   memoryMB: number;
   publicWaitSeconds: number;
   maintenance: boolean;
+  verbose: boolean;
   clients: {
     clientID: string;
     name: string;
@@ -168,6 +169,7 @@ const PAGE = /* html */ `<!doctype html>
       <label>Public game countdown <input id="wait" type="number" min="10" max="600" style="width:70px"> s</label>
       <button id="set-wait">Apply</button>
       <label class="switch"><input id="maint" type="checkbox"> Maintenance: no new games, hall shows nothing</label>
+      <label class="switch"><input id="verbose" type="checkbox"> Verbose log: every message per client</label>
       <span id="result" class="dim"></span>
     </div>
   </section>
@@ -227,6 +229,7 @@ async function tick() {
   for (const b of document.querySelectorAll("[data-kick]")) b.onclick = () => act("kick", b.dataset.kick);
   if (document.activeElement !== document.getElementById("wait")) document.getElementById("wait").value = d.publicWaitSeconds;
   document.getElementById("maint").checked = d.maintenance;
+  document.getElementById("verbose").checked = d.verbose;
   document.getElementById("client-note").textContent = d.clients.length + " connection" + (d.clients.length === 1 ? "" : "s");
   document.getElementById("clients").innerHTML = d.clients.map(c =>
     '<tr><td>' + (c.name ? esc(c.name) : '<span class=dim>(no name yet)</span>') + '</td><td class=code>' + c.clientID + '</td>'
@@ -249,6 +252,7 @@ document.getElementById("send-notice").onclick = () => { const i = document.getE
 document.getElementById("notice").onkeydown = e => { if (e.key === "Enter") document.getElementById("send-notice").click(); };
 document.getElementById("set-wait").onclick = () => act("wait", document.getElementById("wait").value);
 document.getElementById("maint").onchange = e => act("maintenance", e.target.checked ? "1" : "0");
+document.getElementById("verbose").onchange = e => act("verbose", e.target.checked ? "1" : "0");
 tick();
 setInterval(tick, 2000);
 </script>

@@ -85,6 +85,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       status("The game has ended.");
     };
     o.onStart = (g) => {
+      window.clearTimeout(stallWatch);
       el("lobby-countdown").textContent = "Raising the realm…";
       const session = new Session({
         realm: g.realm,
@@ -94,8 +95,24 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
         catchup: g.catchup,
       });
       session.onHash = (tick, hash) => o.reportHash(tick, hash);
-      session.onGap = () => resync("A turn went missing");
+      session.onGap = (expected, got) => {
+        o.report("TURN GAP", `expected ${expected}, got ${got}`);
+        resync("A turn went missing");
+      };
+      session.onError = (m) => o.report("ENGINE ERROR", m);
       hooks.begin(session);
+      // Confirm the game is actually ticking on this side.
+      const started = performance.now();
+      const check = window.setInterval(() => {
+        const tick = session.state.tick;
+        if (tick > 0) {
+          window.clearInterval(check);
+          o.report("game running", `tick ${tick} after ${Math.round(performance.now() - started)}ms`);
+        } else if (performance.now() - started > 20000) {
+          window.clearInterval(check);
+          o.report("GAME NOT TICKING", `still at tick 0 after 20s; hud ${el("hud").hidden ? "hidden" : "shown"}`);
+        }
+      }, 500);
     };
     o.onDesync = () => resync("Your game drifted from the others");
     status("");
@@ -208,12 +225,24 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     })();
   }
 
+  let stallWatch = 0;
   function showLobby(lobby: LobbyView | null) {
     const box = el("lobby");
     drawPublic();
     if (!lobby) {
       box.hidden = true;
+      window.clearTimeout(stallWatch);
       return;
+    }
+    // The server says the game is running: we must be in it within 20 s,
+    // or something on this side swallowed the start. Resync rather than sit.
+    window.clearTimeout(stallWatch);
+    if (lobby.status === "running" && el("hud").hidden) {
+      stallWatch = window.setTimeout(() => {
+        if (!el("hud").hidden || el("lobby").hidden) return;
+        online?.report("STUCK STARTING", "lobby running for 20s, no game on this side");
+        resync("The game started without you");
+      }, 20000);
     }
     box.hidden = false;
     el("menu").hidden = true;
@@ -272,6 +301,11 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
 
   void connect();
   return { hostLobby };
+}
+
+/** Something worth a line in the server log, from outside the lobby code. */
+export function reportOnline(event: string, detail?: string) {
+  online?.report(event, detail);
 }
 
 /** When a game ends or is quit: tell the server and drop the lobby. */

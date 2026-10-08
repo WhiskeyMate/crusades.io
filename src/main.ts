@@ -9,7 +9,7 @@ import { setLiege } from "./client/Heraldry";
 import { BUILD_ORDER, UNIT_LORE } from "./client/Lexicon";
 import { Game } from "./Game";
 import { Session, soloSession } from "./client/Session";
-import { initOnline, leaveOnline } from "./ui/Lobby";
+import { initOnline, leaveOnline, reportOnline } from "./ui/Lobby";
 
 /** Where this build's source can be fetched (the AGPL asks for it). */
 const SOURCE_URL = "https://github.com/WhiskeyMate/crusades.io";
@@ -106,6 +106,7 @@ async function launch(session: Session) {
     void startAttract();
     error.textContent = `The realm could not be raised: ${e instanceof Error ? e.message : e}`;
     error.hidden = false;
+    reportOnline("LAUNCH FAILED", e instanceof Error ? e.message : String(e));
   }
   el("loading").hidden = true;
 }

@@ -64,6 +64,11 @@ export class Online {
     this.post({ type: "list" });
   }
 
+  /** Tell the server what happened here, for its log. */
+  report(event: string, detail?: string) {
+    this.post({ type: "report", event, detail: detail?.slice(0, 400) });
+  }
+
   /** Opens the socket and says hello; resolves once the server answers. */
   connect(server: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -131,6 +136,16 @@ export class Online {
   }
   leave() {
     this.post({ type: "leave" });
+    this.resetGame();
+  }
+
+  /**
+   * Forget the game that was running or starting. Without this the next
+   * game's start would be taken for a repeat of the last one and ignored.
+   */
+  private resetGame() {
+    this.pendingStart = null;
+    this.transport = null;
   }
   configure(config: LobbyConfig) {
     this.post({ type: "configure", config });
@@ -148,6 +163,8 @@ export class Online {
     switch (msg.type) {
       case "lobby":
         this.clockOffset = msg.now - Date.now();
+        // A fresh lobby means any earlier game is over for us.
+        if (msg.lobby.status === "open") this.resetGame();
         this.lobby = msg.lobby;
         this.onLobby(msg.lobby);
         break;
@@ -157,6 +174,7 @@ export class Online {
         break;
       case "left":
         this.lobby = null;
+        this.resetGame();
         this.onLobby(null);
         break;
       case "start": {
@@ -169,6 +187,7 @@ export class Online {
         this.begin(msg, transport).catch((e) => {
           console.error("Could not start the game:", e);
           this.pendingStart = null;
+          this.report("START FAILED", e instanceof Error ? e.message : String(e));
           this.onError(`Could not start the game: ${e instanceof Error ? e.message : e}. Leave and rejoin.`);
         });
         break;
@@ -181,10 +200,12 @@ export class Online {
         this.realmWaiters = [];
         break;
       case "desync":
+        this.report("desync received", `tick ${msg.tick}`);
         this.onDesync(msg.tick);
         break;
       case "ended":
         this.lobby = null;
+        this.resetGame();
         this.onEnded();
         break;
       case "notice":
@@ -203,6 +224,8 @@ export class Online {
   private async begin(msg: ServerMessage & { type: "start" }, transport: SocketTransport) {
     this.pendingStart = msg;
     console.log(`Game ${msg.info.gameID} starting on ${msg.info.config.gameMap}, ${msg.turns.length} turns to catch up`);
+    this.report("start received", `${msg.info.config.gameMap}, ${msg.turns.length} turns queued, ${this.lobby ? "lobby known" : "NO LOBBY STATE"}`);
+    const t0 = performance.now();
     const c = msg.info.config;
     const lobby = this.lobby;
     let realm = await loadRealm({
@@ -213,6 +236,7 @@ export class Online {
     if (realmHash(realm) !== msg.realmHash) {
       // This browser's maths disagrees with the server's: take its terrain.
       console.warn("Realm hash mismatch; fetching the server's terrain.");
+      this.report("realm hash mismatch", `mine ${realmHash(realm)}, server ${msg.realmHash}; fetching terrain`);
       const theirs = await new Promise<ServerMessage & { type: "realm" }>((resolve) => {
         this.realmWaiters.push(resolve);
         this.post({ type: "realm" });
@@ -226,6 +250,7 @@ export class Online {
         numLandTiles: manifest.map.num_land_tiles,
       };
     }
+    this.report("realm ready", `${Math.round(performance.now() - t0)}ms, ${transport.queued} turns queued`);
     this.onStart({
       realm,
       info: msg.info,
