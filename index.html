@@ -92,6 +92,7 @@
           <a href="#l-features">The game</a>
           <a href="#l-build">What you build</a>
           <a href="#l-multiplayer">Multiplayer</a>
+          <a href="#l-changelog">What's new</a>
           <button id="account-open" class="ghost-btn" hidden>Sign in</button>
           <button class="primary play">Play</button>
         </nav>
@@ -162,14 +163,21 @@
         <section id="l-multiplayer" class="split">
           <div>
             <h2>Against people</h2>
-            <p>Today you play against lords run by the game: they expand, ally, betray and cast as a player would, at four levels of ruthlessness.</p>
-            <p>Multiplayer is being built. Every player's game will run the same simulation in step, so many banners can share one realm without a heavy server.</p>
+            <p>Play solo against lords run by the game: they expand, ally, betray and cast as a player would, at four levels of ruthlessness.</p>
+            <p>Or against people: join the public game gathering at the top of this page, or host a private one and send friends the code. Every player's browser runs the same simulation in step, so a realm full of banners needs only a small server.</p>
           </div>
           <div>
             <h2>Free and open</h2>
             <p>crusades.io is free to play, and free software under the GNU AGPL v3.</p>
             <p>Its simulation is built on the OpenFront engine.<span id="source-link"></span></p>
           </div>
+        </section>
+
+        <section id="l-changelog">
+          <h2>What's new <small id="cl-version" class="version"></small></h2>
+          <p class="intro">Every change to the game, straight from its history. The site redeploys itself with each one.</p>
+          <div id="changelog" class="changelog"></div>
+          <button id="cl-more" class="ghost-btn" hidden>Show older changes</button>
         </section>
 
         <section class="last">
@@ -182,6 +190,7 @@
         crusades.io is free software under the GNU AGPL v3. Its simulation is
         built on the OpenFront engine; map terrain is OpenFront map data under
         CC BY-SA 4.0.<br />© OpenFront and Contributors
+        <br /><span id="footer-version"></span>
       </footer>
     </div>
 

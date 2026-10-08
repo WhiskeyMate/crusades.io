@@ -280,3 +280,14 @@ button:disabled { opacity: 0.45; cursor: not-allowed; filter: none; }
 #online-status { margin: 0; }
 #lobby .countdown { text-align: center; font-size: 26px; color: var(--gold); margin: 4px 0 8px; font-variant-numeric: tabular-nums; }
 @media (max-width: 900px) { .front { grid-template-columns: 1fr; } .hero h1 { font-size: 54px; } }
+
+/* Changelog */
+#landing h2 .version { font-size: 14px; color: var(--dim); font-weight: normal; margin-left: 10px; }
+.changelog { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.changelog .day { display: grid; grid-template-columns: 120px 1fr; gap: 10px; }
+.changelog .day time { color: var(--gold); font-size: 14px; padding-top: 2px; }
+.changelog ul { margin: 0; padding: 0 0 0 18px; }
+.changelog li { font-size: 15px; line-height: 1.5; color: #d9ccae; }
+.changelog li code { font-family: Consolas, monospace; font-size: 11px; color: #7f7159; margin-left: 6px; }
+#cl-more { margin-top: 16px; }
+@media (max-width: 640px) { .changelog .day { grid-template-columns: 1fr; gap: 2px; } }

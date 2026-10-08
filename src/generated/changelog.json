@@ -1,0 +1,52 @@
+{
+  "version": "0.1.10",
+  "builtAt": "2026-10-08",
+  "commits": 10,
+  "entries": [
+    {
+      "hash": "403270e",
+      "date": "2026-10-08",
+      "subject": "Server dashboard: live view and controls at /admin"
+    },
+    {
+      "hash": "32bf4c2",
+      "date": "2026-10-08",
+      "subject": "Tell the player when the game server is out of date"
+    },
+    {
+      "hash": "187d07f",
+      "date": "2026-10-08",
+      "subject": "Flatter mountains so buildings sit on slopes, not cliffs"
+    },
+    {
+      "hash": "e612471",
+      "date": "2026-10-08",
+      "subject": "Real-world realms (Earth, Europe, Mediterranean, Greece), range rings and building levels"
+    },
+    {
+      "hash": "20ad608",
+      "date": "2026-10-08",
+      "subject": "Install script: substitute the right placeholder"
+    },
+    {
+      "hash": "3e6d638",
+      "date": "2026-10-08",
+      "subject": "Server: default hostname play.crusades.io"
+    },
+    {
+      "hash": "199da2a",
+      "date": "2026-10-08",
+      "subject": "renamed to crusades.io"
+    },
+    {
+      "hash": "130c3c8",
+      "date": "2026-10-08",
+      "subject": "added source URL"
+    },
+    {
+      "hash": "df9a7dc",
+      "date": "2026-10-08",
+      "subject": "initial commit"
+    }
+  ]
+}

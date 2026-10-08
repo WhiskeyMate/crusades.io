@@ -4,6 +4,7 @@ import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { account } from "./account/Account";
 import { initAccountPanel } from "./account/Panel";
 import { Attract } from "./Attract";
+import changelog from "./generated/changelog.json";
 import { setLiege } from "./client/Heraldry";
 import { BUILD_ORDER, UNIT_LORE } from "./client/Lexicon";
 import { Game } from "./Game";
@@ -199,5 +200,34 @@ const { hostLobby } = initOnline({
     maxPlayers: Number(el<HTMLInputElement>("opt-players").value),
   }),
 });
+// The changelog and version, generated from git at build time (tools/changelog.ts).
+{
+  const cl = changelog as { version: string; builtAt: string; entries: { hash: string; date: string; subject: string }[] };
+  const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  const pretty = (d: string) =>
+    new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  el("cl-version").textContent = `v${cl.version} · ${pretty(cl.builtAt)}`;
+  el("footer-version").textContent = `Build v${cl.version}, ${pretty(cl.builtAt)}`;
+  const days = new Map<string, typeof cl.entries>();
+  for (const e of cl.entries) (days.get(e.date) ?? days.set(e.date, []).get(e.date)!).push(e);
+  const render = (limit: number) => {
+    let shown = 0;
+    el("changelog").innerHTML = [...days]
+      .map(([date, list]) => {
+        if (shown >= limit) return "";
+        const items = list.slice(0, Math.max(0, limit - shown));
+        shown += items.length;
+        return (
+          `<div class="day"><time>${pretty(date)}</time><ul>` +
+          items.map((e) => `<li>${esc(e.subject)}<code>${e.hash}</code></li>`).join("") +
+          `</ul></div>`
+        );
+      })
+      .join("");
+    el("cl-more").hidden = shown >= cl.entries.length;
+  };
+  render(12);
+  el("cl-more").onclick = () => render(cl.entries.length);
+}
 // Let the page paint before generating a realm for the backdrop.
 window.setTimeout(() => void startAttract(), 150);
