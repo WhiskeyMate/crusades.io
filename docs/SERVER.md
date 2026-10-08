@@ -56,7 +56,7 @@ and never contacts your machine.
 The server has a control panel at `/admin`. On the machine itself open
 `http://127.0.0.1:8765/admin`; from anywhere else open
 `https://play.crusades.io/admin?token=…` with the token the install script
-printed (it is kept in `C:\crusadesdmin-token.txt`; the script reuses it on
+printed (it is kept in `C:\crusades\admin-token.txt`; the script reuses it on
 re-runs). Treat the token like a password: anyone with it can end games.
 
 It shows who is online, every lobby and running game with its members and
