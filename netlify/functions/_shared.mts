@@ -24,6 +24,19 @@ export const siteUrl = () => (process.env.URL ?? "http://localhost:8888").replac
 export const priceId = () => need("STRIPE_PRICE_ID");
 export const webhookSecret = () => need("STRIPE_WEBHOOK_SECRET");
 
+/**
+ * A message safe to show the player for a failed payment call: names the
+ * missing setting or repeats Stripe's own explanation (which never contains
+ * a full key), so a misconfiguration can be fixed without digging in logs.
+ */
+export function explain(e: unknown, fallback: string): string {
+  const err = e as { message?: string; type?: string; code?: string };
+  const msg = err?.message ?? "";
+  if (msg.startsWith("Missing environment variable")) return `${fallback} The site is missing a setting: ${msg.replace("Missing environment variable ", "")}.`;
+  if (typeof err?.type === "string" && err.type.startsWith("Stripe")) return `${fallback} Stripe says: ${msg}`;
+  return fallback;
+}
+
 export const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,

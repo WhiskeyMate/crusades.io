@@ -4,7 +4,7 @@
 // the Stripe dashboard (Settings > Payment methods).
 
 import { PACKS } from "../../src/store/Catalog";
-import { admin, caller, json, siteUrl, stripe } from "./_shared.mts";
+import { admin, caller, explain, json, siteUrl, stripe } from "./_shared.mts";
 
 export default async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
@@ -41,6 +41,6 @@ export default async (req: Request) => {
     return json({ url: session.url });
   } catch (e) {
     console.error("create-checkout", e);
-    return json({ error: "Could not start checkout." }, 500);
+    return json({ error: explain(e, "Could not start checkout.") }, 500);
   }
 };

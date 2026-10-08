@@ -1,7 +1,7 @@
 // POST, signed in: returns a link to the Stripe billing portal, where a
 // subscriber can update their card or cancel.
 
-import { admin, caller, json, siteUrl, stripe } from "./_shared.mts";
+import { admin, caller, explain, json, siteUrl, stripe } from "./_shared.mts";
 
 export default async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
@@ -22,6 +22,6 @@ export default async (req: Request) => {
     return json({ url: portal.url });
   } catch (e) {
     console.error("billing-portal", e);
-    return json({ error: "Could not open billing." }, 500);
+    return json({ error: explain(e, "Could not open billing.") }, 500);
   }
 };
