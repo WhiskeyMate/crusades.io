@@ -72,7 +72,7 @@ Checkout, and can then choose the colour and arms their realm flies.
 | `STRIPE_SECRET_KEY` | Stripe secret key (`sk_test_...` first) | **yes** |
 | `STRIPE_WEBHOOK_SECRET` | the webhook signing secret | **yes** |
 | `STRIPE_PRICE_ID` | the price id | no |
-| `VITE_GAME_SERVER` | `wss://play.yourdomain` once the game server is up (docs/SERVER.md) | no |
+| `VITE_GAME_SERVER` | `wss://play.crusades.io` once the game server is up (docs/SERVER.md) | no |
 
 Redeploy after setting them (the `VITE_` ones are read at build time).
 

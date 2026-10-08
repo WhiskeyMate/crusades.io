@@ -2,7 +2,7 @@
 # Run from an elevated PowerShell in the project folder:
 #
 #   Set-ExecutionPolicy -Scope Process Bypass
-#   .\server\install-windows.ps1 -Hostname play.example.com
+#   .\server\install-windows.ps1 -Hostname play.crusades.io
 #
 # What it does:
 #   1. builds the server bundle (npm run build:server)
@@ -16,7 +16,7 @@
 # Re-running it updates the server in place.
 
 param(
-    [Parameter(Mandatory = $true)][string]$Hostname,
+    [string]$Hostname = "play.crusades.io",
     [string]$Root = "C:\crusades",
     [int]$Port = 8765
 )
