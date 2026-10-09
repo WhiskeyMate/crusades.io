@@ -1,0 +1,2 @@
+# Map terrain is raw bytes: never let git rewrite line endings in it.
+*.bin binary
