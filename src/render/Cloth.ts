@@ -69,13 +69,19 @@ vec3 cloth(int pat, vec2 tile, vec3 fill) {
       m = step(0.4, length((fract(q) - 0.5) * vec2(1.0, 1.1)));
     }
     else if (pat == 13) {
-      float t = fract((tile.x + tile.y) / 46.0);
-      vec3 rb = 0.55 + 0.45 * cos(6.2832 * (t + vec3(0.0, 0.33, 0.67)));
-      return mix(fill, rb, 0.72);
+      // Vair: rows of bell shapes, alternate rows turned over.
+      vec2 q = tile / vec2(7.0, 8.0);
+      float row = mod(floor(q.y), 2.0);
+      q.x += 0.5 * row;
+      vec2 f = fract(q);
+      float y = row > 0.5 ? 1.0 - f.y : f.y;
+      m = step(abs(f.x - 0.5), 0.12 + 0.36 * y);
     }
     else if (pat == 14) {
-      float s = step(0.5, fract((tile.x - tile.y) / 9.0));
-      return mix(fill, mix(vec3(0.96, 0.78, 0.08), vec3(0.07), s), 0.78);
+      // Fretty: narrow bands crossing both ways.
+      float a = abs(fract((tile.x + tile.y) / 12.0) - 0.5);
+      float b = abs(fract((tile.x - tile.y) / 12.0) - 0.5);
+      m = max(1.0 - step(0.09, a), 1.0 - step(0.09, b));
     }
     else {
       m = step(0.5, fbm2(tile * 0.11));
@@ -97,40 +103,6 @@ vec3 cloth(int pat, vec2 tile, vec3 fill) {
 }`;
 
 const CELL = 128;
-
-function drawSmug(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = "#1b1410";
-  ctx.fillStyle = "#f3ead2";
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, r, r * 0.92, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  // Squinting eyes under a raised brow.
-  ctx.beginPath();
-  ctx.moveTo(cx - r * 0.6, cy - r * 0.2);
-  ctx.quadraticCurveTo(cx - r * 0.35, cy - r * 0.42, cx - r * 0.1, cy - r * 0.2);
-  ctx.moveTo(cx + r * 0.12, cy - r * 0.26);
-  ctx.quadraticCurveTo(cx + r * 0.38, cy - r * 0.5, cx + r * 0.64, cy - r * 0.22);
-  ctx.moveTo(cx + r * 0.08, cy - r * 0.56);
-  ctx.quadraticCurveTo(cx + r * 0.4, cy - r * 0.82, cx + r * 0.7, cy - r * 0.5);
-  ctx.stroke();
-  // A grin far too wide for the face.
-  ctx.fillStyle = "#fffdf6";
-  ctx.beginPath();
-  ctx.moveTo(cx - r * 0.72, cy + r * 0.1);
-  ctx.quadraticCurveTo(cx, cy + r * 0.38, cx + r * 0.78, cy - r * 0.02);
-  ctx.quadraticCurveTo(cx + r * 0.3, cy + r * 0.95, cx - r * 0.72, cy + r * 0.1);
-  ctx.fill();
-  ctx.stroke();
-  ctx.lineWidth = 2;
-  for (let i = -2; i <= 3; i++) {
-    ctx.beginPath();
-    ctx.moveTo(cx + i * r * 0.2, cy + r * 0.14);
-    ctx.lineTo(cx + i * r * 0.18, cy + r * 0.62);
-    ctx.stroke();
-  }
-}
 
 function drawJester(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number) {
   const tips: [number, number, string][] = [[-0.95, -0.5, "#c0392b"], [0, -1.0, "#d9a521"], [0.95, -0.5, "#2c6fb3"]];
@@ -156,6 +128,106 @@ function drawJester(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: nu
   ctx.strokeRect(cx - r * 0.62, cy + r * 0.4, r * 1.24, r * 0.3);
 }
 
+const PALE = "#f1e6c6";
+const INK = "rgba(27, 20, 16, 0.8)";
+
+/** The charges that no font has: each drawn in a pale tincture with a dark outline. */
+const DRAWN: Record<string, (ctx: CanvasRenderingContext2D, x: number, y: number, r: number) => void> = {
+  jester: drawJester,
+  keys(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.arc(x - r * 0.45, y - r * 0.45, r * 0.34, 0, Math.PI * 2);
+    ctx.moveTo(x - r * 0.2, y - r * 0.2);
+    ctx.lineTo(x + r * 0.75, y + r * 0.75);
+    ctx.moveTo(x + r * 0.35, y + r * 0.35);
+    ctx.lineTo(x + r * 0.62, y + r * 0.08);
+    ctx.moveTo(x + r * 0.6, y + r * 0.6);
+    ctx.lineTo(x + r * 0.87, y + r * 0.33);
+    ctx.lineWidth = r * 0.36;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    ctx.lineWidth = r * 0.18;
+    ctx.strokeStyle = PALE;
+    ctx.stroke();
+  },
+  chalices(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.62, y - r * 0.8);
+    ctx.lineTo(x + r * 0.62, y - r * 0.8);
+    ctx.quadraticCurveTo(x + r * 0.6, y, x + r * 0.1, y + r * 0.05);
+    ctx.lineTo(x + r * 0.1, y + r * 0.55);
+    ctx.lineTo(x + r * 0.5, y + r * 0.8);
+    ctx.lineTo(x - r * 0.5, y + r * 0.8);
+    ctx.lineTo(x - r * 0.1, y + r * 0.55);
+    ctx.lineTo(x - r * 0.1, y + r * 0.05);
+    ctx.quadraticCurveTo(x - r * 0.6, y, x - r * 0.62, y - r * 0.8);
+    ctx.closePath();
+  },
+  ermine(ctx, x, y, r) {
+    ctx.beginPath();
+    for (const [dx, dy] of [[0, -0.75], [-0.3, -0.5], [0.3, -0.5]]) {
+      ctx.moveTo(x + dx * r + r * 0.13, y + dy * r);
+      ctx.arc(x + dx * r, y + dy * r, r * 0.13, 0, Math.PI * 2);
+    }
+    ctx.moveTo(x, y - r * 0.4);
+    ctx.quadraticCurveTo(x + r * 0.12, y + r * 0.3, x + r * 0.5, y + r * 0.85);
+    ctx.lineTo(x, y + r * 0.55);
+    ctx.lineTo(x - r * 0.5, y + r * 0.85);
+    ctx.quadraticCurveTo(x - r * 0.12, y + r * 0.3, x, y - r * 0.4);
+    ctx.closePath();
+  },
+  horseshoes(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.6, y + r * 0.75);
+    ctx.bezierCurveTo(x - r * 1.0, y - r * 1.1, x + r * 1.0, y - r * 1.1, x + r * 0.6, y + r * 0.75);
+    ctx.lineWidth = r * 0.5;
+    ctx.strokeStyle = INK;
+    ctx.stroke();
+    ctx.lineWidth = r * 0.32;
+    ctx.strokeStyle = PALE;
+    ctx.stroke();
+  },
+  bells(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.75, y + r * 0.5);
+    ctx.quadraticCurveTo(x - r * 0.4, y + r * 0.3, x - r * 0.42, y - r * 0.2);
+    ctx.quadraticCurveTo(x - r * 0.4, y - r * 0.85, x, y - r * 0.85);
+    ctx.quadraticCurveTo(x + r * 0.4, y - r * 0.85, x + r * 0.42, y - r * 0.2);
+    ctx.quadraticCurveTo(x + r * 0.4, y + r * 0.3, x + r * 0.75, y + r * 0.5);
+    ctx.closePath();
+    ctx.moveTo(x + r * 0.17, y + r * 0.7);
+    ctx.arc(x, y + r * 0.7, r * 0.17, 0, Math.PI * 2);
+  },
+  axes(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.rect(x - r * 0.08, y - r * 0.85, r * 0.16, r * 1.7);
+    ctx.moveTo(x + r * 0.08, y - r * 0.75);
+    ctx.quadraticCurveTo(x + r * 0.85, y - r * 0.85, x + r * 0.7, y - r * 0.2);
+    ctx.quadraticCurveTo(x + r * 0.85, y + r * 0.2, x + r * 0.08, y);
+    ctx.closePath();
+  },
+  arrows(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.rect(x - r * 0.07, y - r * 0.85, r * 0.14, r * 0.9);
+    ctx.moveTo(x, y + r * 0.85);
+    ctx.lineTo(x - r * 0.65, y - r * 0.25);
+    ctx.lineTo(x - r * 0.3, y - r * 0.1);
+    ctx.lineTo(x, y + r * 0.3);
+    ctx.lineTo(x + r * 0.3, y - r * 0.1);
+    ctx.lineTo(x + r * 0.65, y - r * 0.25);
+    ctx.closePath();
+  },
+  shields(ctx, x, y, r) {
+    ctx.beginPath();
+    ctx.moveTo(x - r * 0.7, y - r * 0.8);
+    ctx.lineTo(x + r * 0.7, y - r * 0.8);
+    ctx.lineTo(x + r * 0.7, y);
+    ctx.quadraticCurveTo(x + r * 0.6, y + r * 0.65, x, y + r * 0.9);
+    ctx.quadraticCurveTo(x - r * 0.6, y + r * 0.65, x - r * 0.7, y);
+    ctx.closePath();
+  },
+};
+
 let atlas: THREE.CanvasTexture | null = null;
 
 /** The symbols of every glyph cloth, one per cell, drawn once. */
@@ -171,11 +243,20 @@ export function glyphAtlas(): THREE.CanvasTexture {
   GLYPHS.forEach((g, i) => {
     const cx = (i % ATLAS_COLS) * CELL + CELL / 2;
     const cy = Math.floor(i / ATLAS_COLS) * CELL + CELL / 2;
-    if (g.glyph === "custom:smug") return drawSmug(ctx, cx, cy, CELL * 0.33);
-    if (g.glyph === "custom:jester") return drawJester(ctx, cx, cy + 6, CELL * 0.32);
-    if (g.emoji) {
-      ctx.font = `${CELL * 0.56}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
-      ctx.fillText(g.glyph, cx, cy + 4);
+    if (g.glyph.startsWith("custom:")) {
+      const draw = DRAWN[g.glyph.slice(7)];
+      if (!draw) return;
+      ctx.beginPath();
+      draw(ctx, cx, cy + (g.key === "jester" ? 6 : 0), CELL * 0.3);
+      // Outline charges fill and stroke here; stroked ones have already drawn themselves.
+      if (g.key !== "jester" && g.key !== "keys" && g.key !== "horseshoes") {
+        ctx.lineWidth = 7;
+        ctx.strokeStyle = INK;
+        ctx.stroke();
+        ctx.fillStyle = PALE;
+        ctx.fill("evenodd");
+      }
+      ctx.beginPath();
     } else {
       ctx.font = `${CELL * 0.6}px "Segoe UI Symbol", "DejaVu Sans", "Noto Sans Symbols", serif`;
       ctx.lineWidth = 7;

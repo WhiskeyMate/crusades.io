@@ -97,9 +97,11 @@ const METALS = ["#e8d9a0", "#f1efe6"];
 export const CHARGES = [
   "✚", "♜", "⚜", "★", "♞", "☗", "❖", "♛", "⚔", "☾", "♣", "⛨",
   "", "♥", "♠", "♦", "☀", "☠", "⚓", "♚", "♝", "✠", "☩", "✦", "❀", "☘", "⚒", "♆", "☥", "⚚",
-  "🦁", "🦅", "🐉", "🐺", "🐻", "🐗", "🦌", "🐎", "🦉", "🐍", "🦂", "🐝", "🌹", "🌳", "🔥", "⚡", "🗝", "🏰", "🛡", "🏹",
-  "🐸", "🐔", "🦆", "🦀", "🐀", "🧀", "🍺", "💰", "💀", "🤡", "💩", "👀", "🗿", "😼", "🍌", "🌶",
-];
+  "♔", "♕", "♖", "♗", "♘", "♙", "✝", "☨", "☦", "✙", "✜", "✢", "✣", "✤", "✥", "❦", "☙", "✿", "❁", "✾",
+  "✶", "✴", "✹", "❂", "☼", "☽", "⚖", "⚑", "⚐", "♱", "♰", "⚘", "✪", "❉", "✺", "✧", "♤", "♧", "♡", "♢",
+  "☧", "⚝", "✵", "❃", "⚔", "♨",
+].slice(0, 76);
+
 
 /** A small shield as inline SVG: field in the realm's colour, a division and a charge. */
 export function shieldSVG(name: string, color: RGB, size = 18, skin?: Skin | null): string {
@@ -110,7 +112,9 @@ export function shieldSVG(name: string, color: RGB, size = 18, skin?: Skin | nul
   const main = css(color);
   const dark = css(color, 0.55);
   const division = worn ? worn.division : (h >>> 3) % 5;
-  const charge = CHARGES[worn ? worn.charge : (h >>> 7) % 12];
+  // The selector asks for the plain text form: no coloured emoji on a shield.
+  const raw = CHARGES[worn ? worn.charge : (h >>> 7) % 12];
+  const charge = raw ? raw + "︎" : raw;
   const path = "M2 2h20v10c0 7-5 10-10 12C7 22 2 19 2 12z";
   const m = `fill="${metal}"`;
   let field = "";

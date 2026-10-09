@@ -11,6 +11,7 @@ import { LevelTags } from "./LevelTags";
 import { Marks } from "./Marks";
 import { modelFor, MODELS, Pool } from "./Models";
 import "./Styles";
+import "./Follies";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
 import { trailFor } from "../store/Trails";

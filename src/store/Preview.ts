@@ -7,6 +7,7 @@ import { hexToRGB, RGB, shieldSVG, Skin } from "../client/Heraldry";
 import { CLOTH_GLSL, glyphAtlas, NOISE_GLSL } from "../render/Cloth";
 import { Model, modelFor } from "../render/Models";
 import "../render/Styles";
+import "../render/Follies";
 import { clothId } from "./Cloths";
 import { SeaTrails } from "../render/SeaTrails";
 import { trailFor } from "./Trails";

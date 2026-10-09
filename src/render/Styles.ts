@@ -14,7 +14,7 @@ const WOODL = 0x9a7648;
 const CLOTH = 0xf0e6cc;
 
 /** A sphere, optionally squashed; `team` parts take the owner's colour. */
-function ball(r: number, x: number, y: number, z: number, color: number, team = false, sx = 1, sy = 1, sz = 1): Part {
+export function ball(r: number, x: number, y: number, z: number, color: number, team = false, sx = 1, sy = 1, sz = 1): Part {
   const g = new THREE.SphereGeometry(r, 8, 6);
   g.scale(sx, sy, sz);
   g.translate(x, y, z);
@@ -22,7 +22,7 @@ function ball(r: number, x: number, y: number, z: number, color: number, team = 
 }
 
 /** The top half of a sphere, standing on y. */
-function dome(r: number, x: number, y: number, z: number, color: number, team = false, sy = 1): Part {
+export function dome(r: number, x: number, y: number, z: number, color: number, team = false, sy = 1): Part {
   const g = new THREE.SphereGeometry(r, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2);
   g.scale(1, sy, 1);
   g.translate(x, y, z);
@@ -30,7 +30,7 @@ function dome(r: number, x: number, y: number, z: number, color: number, team = 
 }
 
 /** An onion dome: a bulb drawn up to a point. */
-function onion(r: number, x: number, y: number, z: number, color: number, team = false): Part[] {
+export function onion(r: number, x: number, y: number, z: number, color: number, team = false): Part[] {
   return [
     ball(r, x, y + r * 0.85, z, color, team, 1, 1.1, 1),
     cone(r * 0.55, r * 1.2, x, y + r * 1.55, z, color, 8, team),
@@ -39,13 +39,13 @@ function onion(r: number, x: number, y: number, z: number, color: number, team =
 }
 
 /** A flat triangle visible from both sides (sails). */
-function tri(a: number[], b: number[], c: number[], color: number, team = false): Part {
+export function tri(a: number[], b: number[], c: number[], color: number, team = false): Part {
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute([...a, ...b, ...c, ...a, ...c, ...b], 3));
   return { g: paint(g, team ? T : color), team };
 }
 
-function ring(n: number, r: number, each: (x: number, z: number, a: number, i: number) => Part | Part[] | null): Part[] {
+export function ring(n: number, r: number, each: (x: number, z: number, a: number, i: number) => Part | Part[] | null): Part[] {
   const out: Part[] = [];
   for (let i = 0; i < n; i++) {
     const a = (i / n) * Math.PI * 2;
@@ -55,7 +55,7 @@ function ring(n: number, r: number, each: (x: number, z: number, a: number, i: n
   return out;
 }
 
-function ballista(y: number): Part[] {
+export function ballista(y: number): Part[] {
   return [
     box(0.22, 0.22, 2.3, 0, y + 0.6, 0.1, WOOD, false, 0, -0.3),
     box(2.0, 0.12, 0.14, 0, y + 1.05, 0.75, WOODL),
@@ -63,20 +63,20 @@ function ballista(y: number): Part[] {
   ];
 }
 
-function crystal(y: number): Part {
+export function crystal(y: number): Part {
   const g = new THREE.OctahedronGeometry(0.34, 0);
   g.scale(1, 1.6, 1);
   g.translate(0, y, 0);
   return { g: paint(g, 0x9ff3ff), team: false };
 }
 
-function flag(x: number, y: number, z: number): Part[] {
+export function flag(x: number, y: number, z: number): Part[] {
   return [cyl(0.04, 0.04, 1.5, x, y, z, WOOD, 5), box(0.9, 0.5, 0.05, x + 0.47, y + 0.95, z, 0, true)];
 }
 
 // ===================================================================== troops
 
-function legs(color: number, w = 0.11): Part[] {
+export function legs(color: number, w = 0.11): Part[] {
   return [box(w, 0.38, 0.14, -0.08, 0, 0, color), box(w, 0.38, 0.14, 0.08, 0, 0, color)];
 }
 

@@ -183,6 +183,9 @@ class Lobby {
     };
   }
 
+  /** Who the last turn could not be sent to, so the log says it once. */
+  private lastAway = "";
+
   broadcast(msg: ServerMessage) {
     const text = JSON.stringify(msg);
     const sent: string[] = [];
@@ -192,13 +195,22 @@ class Lobby {
         m.client.ws.send(text);
         sent.push(m.name);
       } else {
-        missed.push(`${m.name}${m.client ? ` (socket state ${m.client.ws.readyState})` : " (not connected)"}`);
+        // Not an error: someone who has left or dropped keeps their seat, and
+        // catches up from the recorded turns if they come back.
+        missed.push(`${m.name}${m.client ? ` (socket state ${m.client.ws.readyState})` : " (away, seat held)"}`);
       }
     }
     // Turns are far too frequent to log; everything else is worth a line.
-    if (msg.type !== "turn" || verbose) {
+    if (msg.type !== "turn") {
       const extra = msg.type === "start" ? ` with ${msg.turns.length} turns` : "";
-      log(`lobby ${this.code}: sent ${msg.type}${extra} to [${sent.join(", ")}]${missed.length ? ` MISSED [${missed.join(", ")}]` : ""}`);
+      log(`lobby ${this.code}: sent ${msg.type}${extra} to [${sent.join(", ")}]${missed.length ? `; not to [${missed.join(", ")}]` : ""}`);
+    } else if (verbose) {
+      // Even in verbose mode, say who is absent once, not ten times a second.
+      const away = missed.join(", ");
+      if (away !== this.lastAway) {
+        this.lastAway = away;
+        log(`lobby ${this.code}: turns now go to [${sent.join(", ")}]${away ? `; not to [${away}]` : ""}`);
+      }
     }
   }
 

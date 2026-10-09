@@ -128,9 +128,10 @@ wearing and the arms editor all work, and nothing is charged. Clear
 2. Make the variant:
    - a recolour is one `register(...)` line in `src/render/Models.ts`;
    - a whole new set of models (troops, a fleet, an architecture) goes in
-     `src/render/Styles.ts`, registered under the variant name;
-   - a territory cloth is one line in `src/store/Cloths.ts`: a symbol or
-     emoji appended to `GLYPHS` (append only, the order is the atlas order),
+     `src/render/Styles.ts` (historical) or `src/render/Follies.ts` (the
+     jokes), registered under the variant name;
+   - a territory cloth is one line in `src/store/Cloths.ts`: a heraldic
+     charge appended to `GLYPHS` (append only, the order is the atlas order),
      or a `PROCEDURAL` entry plus its branch in `src/render/Cloth.ts`;
    - arms charges are appended to `CHARGES` in `src/client/Heraldry.ts`.
    - a sea trail (the ribbon a longship lays on the water) is one line in

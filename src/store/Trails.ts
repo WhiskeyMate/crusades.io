@@ -46,7 +46,6 @@ export interface Trail {
   colors: [Ink, Ink, Ink];
   /** For glyph trails: the symbol's place in the glyph atlas. */
   glyph?: number;
-  meme?: boolean;
 }
 
 const hex = (h: string): RGB => [
@@ -81,15 +80,13 @@ const FIGURED: Trail[] = [
   t("ember", "Ember", "Coal, flame and ash.", 250, STYLE.gradient, "#ffd45a", "#e8541e", "#3a1512"),
   t("frost", "Hoarfrost", "White, ice and steel.", 250, STYLE.gradient, "#ffffff", "#9fdcf5", "#5b7fa8"),
   t("forest", "Greenwood", "Leaf, moss and bark.", 250, STYLE.gradient, "#b7e05a", "#3f9a4a", "#5a3d22"),
-  t("candy", "Sweetmeats", "Pink, cream and mint.", 250, STYLE.gradient, "#ff7fc0", "#fff2d6", "#7fe6c4"),
   t("teamfade", "House fade", "Your colour, fading to white and back.", 250, STYLE.gradient, "team", WHITE, "team"),
   t("bruise", "Bruise", "Purple, black and blue.", 250, STYLE.gradient, "#8a3fb0", BLACK, "#2f56c4"),
-  t("toxic", "Plague water", "Something is wrong with that sea.", 300, STYLE.gradient, "#c8ff3a", "#3fbf3a", "#1d3d1a"),
 
   // Colours that drift over time.
   t("pulse", "Heartbeat", "Your colour, pulsing to white.", 300, STYLE.shift, "team", WHITE, "team"),
   t("mood", "Changeable", "It cannot make up its mind.", 350, STYLE.shift, "#f0527a", "#f2c23c", "#27b6d6"),
-  t("alarm", "Alarm", "Red, then white, then red.", 300, STYLE.shift, "#e0201c", WHITE, "#e0201c"),
+  t("alarm", "Beacon", "A warning fire, flaring and fading.", 300, STYLE.shift, "#e0201c", WHITE, "#e0201c"),
   t("witch", "Witchlight", "Green to violet and back.", 350, STYLE.shift, "#4dff8a", "#b04dff", "#2ad0c0"),
 
   // Lengthwise stripes.
@@ -105,70 +102,60 @@ const FIGURED: Trail[] = [
   // Patterns.
   t("chevrons", "Chevrons", "Arrows, pointing where you are going.", 300, STYLE.chevron, "team", WHITE),
   t("goldchev", "Gilded chevrons", "Gold on black, pointing the way.", 350, STYLE.chevron, GOLD, BLACK),
-  t("hazard", "Hazard", "Black and yellow. They were warned.", 350, STYLE.barber, "#f5c814", BLACK),
   t("barber", "Barber's pole", "Red and white, round and round.", 300, STYLE.barber, "#c2181c", WHITE),
   t("teambarber", "House twist", "Your colour, twisted with white.", 300, STYLE.barber, "team", WHITE),
-  t("candycane", "Sugar stick", "Pink and white twist.", 300, STYLE.barber, "#ff6fb0", WHITE),
   t("chequer", "Chequered", "A treasurer's board, laid on the sea.", 300, STYLE.check, BLACK, WHITE),
   t("teamcheck", "House chequer", "Your colour and white, chequered.", 300, STYLE.check, "team", WHITE),
   t("harlequin", "Harlequin", "Red and gold, chequered.", 350, STYLE.check, "#c2181c", GOLD),
-  t("road", "The king's highway", "A proper road, with a line down the middle.", 350, STYLE.dash, "#3a3a40", "#f2e6a0"),
-  t("teamroad", "House highway", "Your colour, with a white centre line.", 350, STYLE.dash, "team", WHITE),
   t("surf", "Surf", "Blue water, scalloped in foam.", 300, STYLE.scallop, "#2a8fd0", WHITE),
   t("lace", "Lace", "Your colour, edged in lace.", 300, STYLE.scallop, "team", WHITE),
   t("goldlace", "Gold lace", "Crimson, edged in gold.", 350, STYLE.scallop, "#9c1420", GOLD),
 
+  t("mosaic", "Mosaic", "Gold and lapis, laid in squares.", 350, STYLE.check, "#f2c23c", "#2c46a8"),
+  t("goldbarber", "Gilded cord", "Gold and black, twisted like rope.", 350, STYLE.barber, "#f2c23c", "#15110f"),
+  t("illuminated", "Illuminated", "Vermilion, lapis and gold leaf.", 300, STYLE.gradient, "#d2301c", "#2c46a8", "#f2c23c"),
+
   // Showpieces.
-  t("rainbow", "Rainbow", "Every colour, in order.", 450, STYLE.rainbow, WHITE),
-  t("rainbowrun", "Rainbow road", "A rainbow that runs along behind you.", 600, STYLE.flow, WHITE),
   t("fire", "Wake of fire", "The sea is burning behind you.", 600, STYLE.flame, "#b0180c", "#ff8a1c", "#fff0a0"),
   t("ghostfire", "Ghost fire", "Cold green flame.", 600, STYLE.flame, "#0c5a3a", "#3dffa0", "#e8fff0"),
   t("bluefire", "Wizard's fire", "It burns blue, and wet.", 600, STYLE.flame, "#1a2f9c", "#3a9cff", "#e0f4ff"),
   t("stars", "Starlight", "The night sky, laid on the water.", 500, STYLE.twinkle, "#141a44", "#fff6c8"),
-  t("fairy", "Fairy lights", "Twinkling in your own colour.", 500, STYLE.twinkle, "team", WHITE),
+  t("fairy", "Marsh lights", "Will-o-the-wisps, in your own colour.", 500, STYLE.twinkle, "team", WHITE),
   t("treasure", "Treasure fleet", "Black water, glittering with gold.", 500, STYLE.twinkle, BLACK, GOLD),
 ];
 
-/** Symbols and emoji from the cloth atlas, repeated along a band. */
-const GLYPH_TRAILS: [key: string, name: string, blurb: string, crowns: number, band: string, meme?: boolean][] = [
+/** Charges from the cloth atlas, repeated along a band. */
+const GLYPH_TRAILS: [key: string, name: string, blurb: string, crowns: number, band: string][] = [
   ["fleur", "Road of lilies", "Fleurs-de-lis on royal blue.", 350, "#2c46a8"],
   ["crowns", "Road of crowns", "Royalty passed this way.", 350, "#7a1c24"],
   ["crosses", "Pilgrim's road", "Crosses, all the way across.", 350, "#9c1420"],
+  ["pattee", "Templar's road", "The cross of the order, on black.", 400, "#15110f"],
   ["stars", "Road of stars", "Stars on midnight blue.", 350, "#141a44"],
   ["anchors", "Road of anchors", "Somebody will want those back.", 350, "#1f5f7a"],
   ["swords", "Road of swords", "They know why you are coming.", 350, "#4a2a2a"],
   ["hearts", "Road of hearts", "An invasion, with love.", 350, "#b02a5a"],
   ["skulls", "Road of death's heads", "A warning to whoever follows.", 400, "#1a1614"],
-  ["flames", "Road of flames", "Fire, floating.", 400, "#3a1512"],
-  ["roses", "Road of roses", "Petals on the water.", 400, "#f3d9de"],
-  ["dragons", "Road of dragons", "Sea serpents, tamed.", 450, "#12382a"],
-  ["bees", "Road of bees", "They follow the ship. Nobody knows why.", 400, "#f2c23c"],
-  ["ducks", "Road of ducklings", "They imprinted on the longship.", 450, "#2a8fd0", true],
-  ["frogs", "Road of frogs", "Hopping mad.", 450, "#2f5f2a", true],
-  ["crabs", "Road of crabs", "Sideways, all the way across.", 450, "#e6c98a", true],
-  ["chickens", "Road of chickens", "Why did the chicken cross the sea?", 450, "#7a4a2a", true],
-  ["rats", "Road of rats", "They left the ship. Draw your own conclusions.", 450, "#4a4a44", true],
-  ["poop", "Road of dung", "The bilges needed emptying.", 500, "#c9b27a", true],
-  ["clowns", "Road of clowns", "The whole circus is coming.", 500, "#7a3fc4", true],
-  ["skulls2", "Road of skulls", "Bones in the wake.", 450, "#2a2a30", true],
-  ["eyes", "Road of eyes", "The sea watches you leave.", 450, "#1a1614", true],
-  ["bananas", "Road of bananas", "A slipping hazard for pursuers.", 450, "#2f6f3a", true],
-  ["gold", "Road of moneybags", "Somebody has a hole in the hold.", 500, "#1f4a2a", true],
-  ["cheese", "Road of cheese", "Leaking provisions.", 450, "#7a1c24", true],
-  ["ale", "Road of ale", "The crew has been at the barrels.", 450, "#4a2f18", true],
-  ["cats", "Road of smirking cats", "They know something.", 500, "#3a2f5a", true],
-  ["moai", "Road of stone heads", "Unbothered, and somehow floating.", 500, "#2a7f7a", true],
-  ["hundred", "Road of hundreds", "A flawless crossing.", 500, "#f1ece0", true],
-  ["smug", "Road of smug faces", "You meant to land there.", 600, "#2a8f4a", true],
-  ["jester", "Road of jester's caps", "Bells, bobbing in the swell.", 550, "#3a1f5a", true],
+  ["roses", "Road of roses", "Petals on the water.", 350, "#7a1c3a"],
+  ["towers", "Road of towers", "A wall across the sea.", 350, "#4a4e58"],
+  ["horses", "Road of chargers", "The cavalry is coming, by boat.", 350, "#5a3d22"],
+  ["tridents", "Road of tridents", "The sea-lord's own.", 350, "#12384a"],
+  ["keys", "Road of keys", "Every lock in the realm, opened.", 400, "#2f5f2a"],
+  ["chalices", "Road of chalices", "A procession of cups.", 400, "#5a1f4a"],
+  ["ermine", "Road of ermine", "A duke's mantle, unrolled on the water.", 450, "#efe9da"],
+  ["bells", "Road of bells", "You can hear this one coming.", 400, "#1f4a2a"],
+  ["axes", "Road of axes", "Headsman's progress.", 400, "#3a1512"],
+  ["arrows", "Road of arrows", "All pointing the same way: at them.", 400, "#2a3a2a"],
+  ["shields", "Road of shields", "A shield-wall, laid flat.", 400, "#2c46a8"],
+  ["horseshoes", "Road of horseshoes", "Luck, all the way over.", 400, "#4a2f18"],
+  ["jester", "Fool's road", "Bells, bobbing in the swell.", 450, "#3a1f5a"],
 ];
 
 export const TRAILS: Trail[] = [
   ...FIGURED,
-  ...GLYPH_TRAILS.flatMap(([key, name, blurb, crowns, band, meme]): Trail[] => {
+  ...GLYPH_TRAILS.flatMap(([key, name, blurb, crowns, band]): Trail[] => {
     const glyph = GLYPHS.findIndex((g) => g.key === key);
     if (glyph < 0) return [];
-    return [{ key: `g:${key}`, name, blurb, crowns, style: STYLE.glyph, colors: [hex(band), hex(band), hex(band)], glyph, meme }];
+    return [{ key: `g:${key}`, name, blurb, crowns, style: STYLE.glyph, colors: [hex(band), hex(band), hex(band)], glyph }];
   }),
 ];
 

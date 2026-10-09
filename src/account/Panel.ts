@@ -23,9 +23,9 @@ type Tab = "featured" | "crowns" | Slot | "name";
 const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "featured", label: "Featured", icon: "✦" },
   { id: "troops", label: "Troops", icon: "⚔" },
-  { id: "ships", label: "Ships", icon: "⛵" },
-  { id: "buildings", label: "Buildings", icon: "🏰" },
-  { id: "trails", label: "Sea trails", icon: "〰" },
+  { id: "ships", label: "Ships", icon: "⚓" },
+  { id: "buildings", label: "Buildings", icon: "♜" },
+  { id: "trails", label: "Sea trails", icon: "≋" },
   { id: "territory", label: "Territory", icon: "▦" },
   { id: "banner", label: "Your arms", icon: "⛨" },
   { id: "name", label: "House name", icon: "✒" },
@@ -33,7 +33,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
 ];
 
 let tab: Tab = "featured";
-let filter: "all" | "owned" | "New models" | "Meme" = "all";
+let filter: "all" | "owned" | "New models" | "Jest" = "all";
 let draft: Skin = { ...DEFAULT };
 let note = "";
 
@@ -54,7 +54,7 @@ function picture(item: Item): string {
   const url = previewURL(item, myColor(), item.id === "banner-custom" ? draft : null);
   return url
     ? `<div class="shot ${item.slot}"><img src="${url}" alt="" loading="lazy" /></div>`
-    : `<div class="shot none"><span>${{ territory: "▦", banner: "⛨", ships: "⛵", buildings: "🏰", troops: "⚔", trails: "〰" }[item.slot]}</span></div>`;
+    : `<div class="shot none"><span>${{ territory: "▦", banner: "⛨", ships: "⚓", buildings: "♜", troops: "⚔", trails: "≋" }[item.slot]}</span></div>`;
 }
 
 function card(item: Item): string {
@@ -66,7 +66,7 @@ function card(item: Item): string {
   return (
     `<div class="card ${rarity}${worn ? " worn" : ""}${owned ? " owned" : ""}">` +
     picture(item) +
-    (item.tag ? `<i class="kind ${item.tag === "Meme" ? "meme" : item.tag === "New models" ? "model" : ""}">${item.tag}</i>` : "") +
+    (item.tag ? `<i class="kind ${item.tag === "Jest" ? "meme" : item.tag === "New models" ? "model" : ""}">${item.tag}</i>` : "") +
     `<div class="meta"><b>${esc(item.name)}</b><p>${esc(item.blurb)}</p>` +
     (worn
       ? `<span class="pill worn">Wearing</span>`
@@ -116,7 +116,7 @@ function drawSlot(slot: Slot): string {
   else if (filter !== "all") list = list.filter((i) => i.tag === filter);
   else list = list.filter((i) => !i.unlisted || i.crowns === 0);
   list = [...list].sort((a, b) => a.crowns - b.crowns);
-  const chips = (["all", "owned", "New models", "Meme"] as const)
+  const chips = (["all", "owned", "New models", "Jest"] as const)
     .filter((f) => f === "all" || f === "owned" || ITEMS.some((i) => i.slot === slot && i.tag === f))
     .map((f) => `<button class="chip${filter === f ? " on" : ""}" data-filter="${f}">${f === "all" ? "All" : f === "owned" ? "Owned" : f}</button>`)
     .join("");
@@ -128,7 +128,7 @@ function drawSlot(slot: Slot): string {
 }
 
 function drawFeatured(): string {
-  const picks = ["troops-cavalry", "ships-norse", "build-desert", "ships-duck", "troops-skeleton", "terr-g-dragons", "troops-chicken", "build-eastern"]
+  const picks = ["troops-snail", "ships-turtle", "build-toadstool", "troops-goose", "ships-swan", "build-necropolis", "troops-rabbit", "ships-serpent"]
     .map((id) => itemById(id)!)
     .filter(Boolean);
   return (
@@ -158,7 +158,7 @@ function drawArms(): string {
     `<h3>Design your arms</h3>` +
     (locked ? `<p class="dim small">Buy “Your own arms” above to save a design. You can try the editor first.</p>` : "") +
     `<div id="acct-editor"><div class="arms-left"><div id="acct-preview"></div>` +
-    `<button id="acct-random">🎲 Surprise me</button>` +
+    `<button id="acct-random">⚄ Surprise me</button>` +
     `<button id="acct-save" class="primary" ${locked ? "disabled" : ""}>Save my arms</button></div>` +
     `<div class="controls">` +
     `<div class="field-label">Field</div><div id="acct-colors" class="row-wrap"></div>` +
@@ -184,7 +184,7 @@ function wireArms() {
     `<button class="pick${i === draft.division ? " on" : ""}" data-d="${i}" title="${DIVISION_NAMES[i]}">${shieldSVG("preview", hexToRGB(draft.color), 30, { ...draft, division: i, charge: 12 })}</button>`,
   ).join("");
   el("acct-charges").innerHTML = CHARGES.map(
-    (c, i) => `<button class="pick glyph${i === draft.charge ? " on" : ""}" data-g="${i}">${c || "∅"}</button>`,
+    (c, i) => `<button class="pick glyph${i === draft.charge ? " on" : ""}" data-g="${i}">${c ? c + "︎" : "∅"}</button>`,
   ).join("");
   for (const b of Array.from(el("acct-editor").querySelectorAll<HTMLButtonElement>(".controls button"))) {
     b.onclick = () => {
