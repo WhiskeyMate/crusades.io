@@ -1,8 +1,23 @@
 {
-  "version": "0.1.29",
+  "version": "0.1.32",
   "builtAt": "2026-10-09",
-  "commits": 29,
+  "commits": 32,
   "entries": [
+    {
+      "hash": "3e89203",
+      "date": "2026-10-09",
+      "subject": "No splash when trade ships arrive at a harbour"
+    },
+    {
+      "hash": "3146abe",
+      "date": "2026-10-09",
+      "subject": "Building level numbers go past 40 (up to 256)"
+    },
+    {
+      "hash": "fd6da0d",
+      "date": "2026-10-09",
+      "subject": "Store: new troop, ship and building models, 57 territory cloths, bigger arms editor, shop with live 3D previews"
+    },
     {
       "hash": "ec253b0",
       "date": "2026-10-09",

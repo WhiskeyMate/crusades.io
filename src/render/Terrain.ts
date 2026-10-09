@@ -65,6 +65,9 @@ ivec2 stateAt(ivec2 t) {
   return ivec2(int(s.r * 255.0 + 0.5), int(s.g * 255.0 + 0.5));
 }
 int ownerOf(ivec2 s) { return s.x + (s.y & 15) * 256; }
+bool landAt(ivec2 t) {
+  return texelFetch(tTerrain, clamp(t, ivec2(0), ivec2(uMap) - 1), 0).r > 0.5;
+}
 
 void main() {
   vec2 tile = vWorld.xz + uMap * 0.5;
@@ -99,30 +102,60 @@ void main() {
   ivec2 ti = ivec2(floor(tile));
   vec2 f = fract(tile);
   ivec2 st = stateAt(ti);
-  int o = ownerOf(st);
   float glow = 0.0;
   // What the game says this tile is, not what the smoothed mesh happens to
   // show: a one-tile islet is land and gets its owner's colour.
-  bool isLand = texelFetch(tTerrain, clamp(ti, ivec2(0), ivec2(uMap) - 1), 0).r > 0.5;
+  bool isLand = landAt(ti);
   if (isLand && h < 0.1) col = sand;
-  if (isLand && o != 0) {
-    vec4 pc = texelFetch(tPalette, ivec2(o & 63, o >> 6), 0);
-    float fw = max(fwidth(tile.x), fwidth(tile.y));
-    float w = max(0.32, fw * 1.3);
-    float edge = 0.0;
-    if (ownerOf(stateAt(ti + ivec2(-1, 0))) != o) edge = max(edge, 1.0 - smoothstep(0.0, w, f.x));
-    if (ownerOf(stateAt(ti + ivec2(1, 0))) != o) edge = max(edge, 1.0 - smoothstep(0.0, w, 1.0 - f.x));
-    if (ownerOf(stateAt(ti + ivec2(0, -1))) != o) edge = max(edge, 1.0 - smoothstep(0.0, w, f.y));
-    if (ownerOf(stateAt(ti + ivec2(0, 1))) != o) edge = max(edge, 1.0 - smoothstep(0.0, w, 1.0 - f.y));
-    if (fw > 0.7) {
-      // Far away a one-tile line is thinner than a pixel: look further out.
-      float far = 0.0;
-      if (ownerOf(stateAt(ti + ivec2(-2, 0))) != o) far = 1.0;
-      if (ownerOf(stateAt(ti + ivec2(2, 0))) != o) far = 1.0;
-      if (ownerOf(stateAt(ti + ivec2(0, -2))) != o) far = 1.0;
-      if (ownerOf(stateAt(ti + ivec2(0, 2))) != o) far = 1.0;
-      edge = max(edge, far * smoothstep(0.7, 1.6, fw) * 0.8);
+
+  // Who holds this spot. The game works in square tiles; drawn as they are,
+  // every border is a staircase. So each of the nine tiles around votes with
+  // a smooth weight and the strongest claim wins, which rounds the corners.
+  // Water has no vote, so a realm runs right out to the waterline wherever
+  // the smoothed shore shows more dry ground than the tile grid has land.
+  int cand[4];
+  float cw[4];
+  int nc = 0;
+  vec2 d = f - 0.5;
+  vec3 wx = vec3(0.5 * (0.5 - d.x) * (0.5 - d.x), 0.75 - d.x * d.x, 0.5 * (0.5 + d.x) * (0.5 + d.x));
+  vec3 wy = vec3(0.5 * (0.5 - d.y) * (0.5 - d.y), 0.75 - d.y * d.y, 0.5 * (0.5 + d.y) * (0.5 + d.y));
+  for (int j = 0; j < 3; j++) {
+    for (int i = 0; i < 3; i++) {
+      ivec2 t = ti + ivec2(i - 1, j - 1);
+      if (!landAt(t)) continue;
+      int id = ownerOf(stateAt(t));
+      float w = wx[i] * wy[j];
+      bool found = false;
+      for (int k = 0; k < 4; k++) {
+        if (k < nc && cand[k] == id) { cw[k] += w; found = true; }
+      }
+      if (!found && nc < 4) { cand[nc] = id; cw[nc] = w; nc++; }
     }
+  }
+  if (nc == 0 && h > 0.0) {
+    // Dry ground further than a tile from any land tile: take the nearest.
+    for (int r = 2; r <= 3 && nc == 0; r++) {
+      for (int k = 0; k < 8 && nc == 0; k++) {
+        ivec2 t = ti + ivec2(k < 3 ? -r : k < 5 ? 0 : r, k == 0 || k == 3 || k == 5 ? -r : k == 1 || k == 6 ? 0 : r);
+        if (landAt(t)) { cand[0] = ownerOf(stateAt(t)); cw[0] = 1.0; nc = 1; }
+      }
+    }
+  }
+  int o = 0;
+  float best = 0.0, second = 0.0, total = 0.0;
+  for (int k = 0; k < 4; k++) {
+    if (k >= nc) break;
+    total += cw[k];
+    if (cw[k] > best) { second = best; best = cw[k]; o = cand[k]; }
+    else if (cw[k] > second) second = cw[k];
+  }
+  bool held = nc > 0 && (isLand || h > 0.0);
+  if (held && o != 0) {
+    vec4 pc = texelFetch(tPalette, ivec2(o & 63, o >> 6), 0);
+    // The border runs where two claims are level.
+    float margin = (best - second) / max(total, 1e-4);
+    float fw = max(fwidth(tile.x), fwidth(tile.y));
+    float edge = second > 0.0 ? 1.0 - smoothstep(0.0, max(0.26, fw * 1.1), margin) : 0.0;
     float lum = dot(col, vec3(0.3, 0.55, 0.15));
     vec3 fill = pc.rgb * (0.55 + lum * 0.9);
     // A bought cloth figures the realm's colour (see render/Cloth.ts).
@@ -155,7 +188,7 @@ void main() {
   float diff = max(dot(n, uSun), 0.0);
   vec3 lit = col * (vec3(0.42, 0.46, 0.55) + vec3(1.05, 0.97, 0.84) * diff * 0.85);
   lit += vec3(1.0, 0.42, 0.08) * glow * 0.9;
-  if (uSpawnPulse > 0.0 && isLand && o == 0) {
+  if (uSpawnPulse > 0.0 && held && o == 0) {
     lit += vec3(0.25, 0.22, 0.08) * uSpawnPulse * (0.5 + 0.5 * sin(uTime * 3.0));
   }
   {
