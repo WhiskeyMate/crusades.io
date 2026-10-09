@@ -35,7 +35,7 @@ export class Labels {
     root.className = "label" + (p === this.state.me ? " me" : "");
     const name = document.createElement("div");
     name.className = "label-name";
-    name.innerHTML = `${shieldSVG(p.name, p.color, 16)}<span></span>`;
+    name.innerHTML = `${shieldSVG(p.name, p.color, 16, p.arms)}<span></span>`;
     name.lastElementChild!.textContent = p.name;
     const troops = document.createElement("div");
     troops.className = "label-troops";

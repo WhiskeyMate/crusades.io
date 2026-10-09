@@ -304,7 +304,7 @@ export class Hud {
     const box = document.createElement("div");
     box.className = "offer";
     box.innerHTML =
-      `<div>${shieldSVG(from.name, from.color, 22)} <b>${esc(from.name)}</b> offers a pact.</div>` +
+      `<div>${shieldSVG(from.name, from.color, 22, from.arms)} <b>${esc(from.name)}</b> offers a pact.</div>` +
       `<div class="row"><button class="yes">Swear it</button><button class="no">Refuse</button></div>`;
     (box.querySelector(".yes") as HTMLElement).onclick = () => {
       this.session.send({ type: "allianceRequest", recipient: from.id });
@@ -345,7 +345,7 @@ export class Hud {
 
     if (me) {
       const max = state.maxTroops(me);
-      el("me-name").innerHTML = `${shieldSVG(me.name, me.color, 20)}<span>${esc(me.name)}</span>`;
+      el("me-name").innerHTML = `${shieldSVG(me.name, me.color, 20, me.arms)}<span>${esc(me.name)}</span>`;
       el("me-gold").textContent = fmt(me.gold);
       el("me-troops").textContent = `${fmtTroops(me.troops)} / ${fmtTroops(max)}`;
       (el("me-bar").firstElementChild as HTMLElement).style.width =
@@ -395,7 +395,7 @@ export class Hud {
         const ally = me && me.allies.includes(p.smallID);
         return (
           `<tr class="${p === me ? "me" : ""}" data-tile="${Math.round(p.nameY) * state.map.width() + Math.round(p.nameX)}">` +
-          `<td class="n">${rank}</td><td class="who">${shieldSVG(p.name, p.color, 15)}` +
+          `<td class="n">${rank}</td><td class="who">${shieldSVG(p.name, p.color, 15, p.arms)}` +
           `<span>${esc(p.name)}</span>${ally ? '<i title="Pact">🤝</i>' : ""}${p.isTraitor ? '<i title="Oathbreaker">🗡</i>' : ""}</td>` +
           `<td>${((p.tilesOwned / land) * 100).toFixed(1)}%</td><td>${fmtTroops(p.troops)}</td><td>${fmt(p.gold)}</td></tr>`
         );
@@ -459,7 +459,7 @@ export class Hud {
     if (owner) {
       const kind = owner === state.me ? "Your realm" : owner.type === PlayerType.Bot ? "Clan" : "Kingdom";
       text =
-        `<b>${shieldSVG(owner.name, owner.color, 14)} ${esc(owner.name)}</b>` +
+        `<b>${shieldSVG(owner.name, owner.color, 14, owner.arms)} ${esc(owner.name)}</b>` +
         `<span>${kind} · ${fmtTroops(owner.troops)} levies${state.me && state.me.allies.includes(owner.smallID) ? " · sworn pact" : ""}</span>`;
     } else if (map.isLand(tile)) {
       const t = map.terrainType(tile);
@@ -530,7 +530,7 @@ export class Hud {
     let head: string;
     if (owner) {
       head =
-        `<div class="head">${shieldSVG(owner.name, owner.color, 30)}<div><b>${esc(owner.name)}</b>` +
+        `<div class="head">${shieldSVG(owner.name, owner.color, 30, owner.arms)}<div><b>${esc(owner.name)}</b>` +
         `<span>${fmtTroops(owner.troops)} levies · ${fmt(owner.gold)} gold · ${owner.tilesOwned.toLocaleString("en-US")} tiles</span>` +
         `${owner.isTraitor ? "<span class='bad'>Oathbreaker</span>" : ""}</div></div>`;
     } else {

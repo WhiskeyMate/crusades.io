@@ -1,8 +1,13 @@
 {
-  "version": "0.1.42",
+  "version": "0.1.43",
   "builtAt": "2026-10-09",
-  "commits": 42,
+  "commits": 43,
   "entries": [
+    {
+      "hash": "fc70bee",
+      "date": "2026-10-09",
+      "subject": "Store: confirm before spending Crowns; no paying for a house name or bundle you already own"
+    },
     {
       "hash": "b3b136d",
       "date": "2026-10-09",

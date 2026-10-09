@@ -23,7 +23,7 @@ import { unpackMotionPlans } from "@crusades/engine-lib/game/MotionPlans";
 import { Realm } from "../worldgen/RealmGen";
 import { MotionPlanResolver } from "./MotionPlanResolver";
 import { Equipped, Slot, variantsOf } from "../store/Catalog";
-import { hexToRGB, playerColor, RGB, setArms, Skin, validSkin } from "./Heraldry";
+import { hexToRGB, liegeArms, playerColor, RGB, setArms, Skin, validSkin } from "./Heraldry";
 
 /** What one human player wears, as the server (or the local account) says. */
 export interface Cosmetic {
@@ -32,6 +32,8 @@ export interface Cosmetic {
 }
 
 export interface PlayerState {
+  /** The arms this player designed, if they have any; otherwise their name decides. */
+  arms: Skin | null;
   /** Visual variants per slot (see store/Catalog). AI realms wear the defaults. */
   look: Record<Slot, string>;
   id: string;
@@ -281,12 +283,17 @@ export class GameState {
         nameY: 0,
         nameSize: 0,
         color: [1, 1, 1],
+        arms: null,
         look: variantsOf(null),
       };
       const mine = p.clientID !== null && p.clientID === this.clientID;
       const worn = p.clientID !== null ? this.cosmetics.get(p.clientID) : undefined;
       p.look = variantsOf(worn?.equipped);
-      const arms = worn?.skin && validSkin(worn.skin) ? worn.skin : null;
+      // What the server sent for this player; for our own realm, what we
+      // chose here, which is always the newest.
+      const sent = worn?.skin && validSkin(worn.skin) ? worn.skin : null;
+      const arms = (mine ? liegeArms() : null) ?? sent;
+      p.arms = arms;
       if (arms) {
         setArms(p.name, arms);
         p.color = hexToRGB(arms.color);

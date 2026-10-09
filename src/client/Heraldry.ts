@@ -50,6 +50,9 @@ export function setLiege(name: string | null, skin: Skin | null) {
   liegeSkin = skin;
 }
 
+/** The local player's own chosen arms, if any. */
+export const liegeArms = (): Skin | null => liegeSkin;
+
 /** Arms chosen by other players in this game, by house name. */
 const armsByName = new Map<string, Skin>();
 export function setArms(name: string, skin: Skin | null) {
