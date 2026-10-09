@@ -13,7 +13,8 @@ import { modelFor, MODELS, Pool } from "./Models";
 import "./Styles";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
-import { trailColor, trailFor } from "../store/Trails";
+import { trailFor } from "../store/Trails";
+import { SeaTrails } from "./SeaTrails";
 
 const STRUCTURES: Partial<Record<UnitType, keyof typeof MODELS>> = {
   [UnitType.City]: "town",
@@ -28,6 +29,8 @@ const NEUTRAL: RGB = [0.6, 0.6, 0.6];
 
 /** A war galley's full strength (veterans can hold a little more). */
 const GALLEY_HEALTH = 1000;
+/** Most points one sea trail is drawn through. */
+const TRAIL_POINTS = 160;
 
 interface Memo {
   /** Sorcery only: will a ballista tower reach it? Worked out now and then. */
@@ -44,6 +47,9 @@ export class Units {
   private pools: Record<string, Pool> = {};
   private tags: LevelTags;
   private marks: Marks;
+  private trails: SeaTrails;
+  private trailX = new Float32Array(TRAIL_POINTS);
+  private trailZ = new Float32Array(TRAIL_POINTS);
   private memo = new Map<number, Memo>();
   private dragons = new Map<number, Dragon>();
   private m = new THREE.Matrix4();
@@ -63,6 +69,7 @@ export class Units {
     stage.scene.add(this.group);
     this.tags = new LevelTags(this.group);
     this.marks = new Marks(this.group);
+    this.trails = new SeaTrails(this.group);
     const cap: Record<string, number> = {
       town: 1500, keep: 1500, harbour: 800, market: 800, mageTower: 600,
       ballistaTower: 800, scaffold: 400, galley: 600, longship: 600, cog: 900,
@@ -203,6 +210,7 @@ export class Units {
     const showTags = this.stage.distance < 420;
     this.tags.begin(this.stage.camera, 1.6 * Math.pow(S, 0.6));
     this.marks.begin(this.stage.camera);
+    this.trails.begin(time);
     // Buildings grow only a little with distance, so they shrink on screen
     // as the camera pulls back instead of crowding the map.
     const structScale = 1.35 * Math.pow(S, 0.4);
@@ -326,29 +334,27 @@ export class Units {
     for (const pool of Object.values(this.pools)) pool.end();
     this.tags.end();
     this.marks.end();
+    this.trails.end();
   }
 
   /**
-   * The line a longship has sailed, from where it put to sea to where it is
+   * The ribbon a longship has laid, from where it put to sea to where it is
    * now, in its owner's chosen trail. It lasts as long as the ship does.
    */
   private seaTrail(u: UnitState, alpha: number, variant: string | undefined, color: RGB, S: number) {
     const plan = this.state.plans.gridPlans().get(u.id);
     if (!plan || plan.path.length < 3) return;
     const s = Math.min(plan.path.length - 1, (this.state.tick - plan.startTick + alpha) / Math.max(1, plan.ticksPerStep));
-    const trail = trailFor(variant);
-    // Marks grow a little as the camera pulls back, and thin out on long
-    // crossings so a sea full of ships stays cheap to draw.
-    const grow = Math.pow(S, 0.7);
-    const gap = Math.max(trail.gap * grow, s / 220);
-    const size = trail.size * grow;
-    const kind = trail.shape === "glyph" ? 4 : trail.shape === "diamond" ? 3 : trail.shape === "ring" ? 2 : 0;
-    // Counted from the start, so marks stay put as the ship sails on; none under the hull.
-    for (let i = 0, d = 0; d < s - 2.5 * grow; i++, d += gap) {
-      const [tx, ty] = this.alongPath(plan.path, d);
-      const [r, g, b] = trailColor(trail, color, i);
-      this.marks.mark(this.terrain.worldX(tx), 0.35 + size * 0.3, this.terrain.worldZ(ty), size, kind, trail.glyph ?? 0, r, g, b);
+    if (s < 1) return;
+    // Long crossings are sampled more coarsely, so a sea full of ships stays cheap.
+    const n = Math.min(TRAIL_POINTS, Math.max(2, Math.ceil(s / 1.5) + 1));
+    for (let i = 0; i < n; i++) {
+      const [tx, ty] = this.alongPath(plan.path, (s * i) / (n - 1));
+      this.trailX[i] = this.terrain.worldX(tx);
+      this.trailZ[i] = this.terrain.worldZ(ty);
     }
+    // A little wider from far off, so it stays visible as the camera pulls back.
+    this.trails.add(this.trailX, this.trailZ, n, 0.3, 1.9 * Math.pow(S, 0.7), trailFor(variant), color);
   }
 
   /** How high a sorcery flies over tile (tx, ty) of its path, and how far along it is. */

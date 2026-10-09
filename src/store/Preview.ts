@@ -8,7 +8,8 @@ import { CLOTH_GLSL, glyphAtlas, NOISE_GLSL } from "../render/Cloth";
 import { Model, modelFor } from "../render/Models";
 import "../render/Styles";
 import { clothId } from "./Cloths";
-import { trailColor, trailFor } from "./Trails";
+import { SeaTrails } from "../render/SeaTrails";
+import { trailFor } from "./Trails";
 import { Item } from "./Catalog";
 
 const W = 320;
@@ -133,64 +134,38 @@ function clothPicture(variant: string, color: RGB): string {
   return url;
 }
 
-/** A trail drawn as it lies on the sea: a curving line of its marks, with a boat at the head. */
+/** A trail as it lies on the sea, drawn by the game's own ribbon shader. */
 function trailPicture(variant: string, color: RGB): string {
-  const trail = trailFor(variant);
-  const canvas = document.createElement("canvas");
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext("2d")!;
-  const sea = ctx.createLinearGradient(0, 0, W, H);
-  sea.addColorStop(0, "#1d5d78");
-  sea.addColorStop(1, "#123c5c");
-  ctx.fillStyle = sea;
-  ctx.fillRect(0, 0, W, H);
-  const atlas = glyphAtlas().image as HTMLCanvasElement;
-  const cell = atlas.width / 8;
-  const px = 28; // pixels per tile
-  const n = Math.max(3, Math.floor(10.5 / trail.gap));
-  for (let i = 0; i <= n; i++) {
-    const t = i / n;
-    const x = 26 + t * (W - 70);
-    const y = H * 0.72 - Math.sin(t * Math.PI * 0.9) * H * 0.42;
-    const s = trail.size * px;
-    const [r, g, b] = trailColor(trail, color, i);
-    const fill = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
-    ctx.lineWidth = Math.max(1.5, s * 0.14);
-    ctx.strokeStyle = "rgba(15, 10, 6, 0.85)";
-    ctx.fillStyle = fill;
-    if (trail.shape === "glyph") {
-      const gi = trail.glyph ?? 0;
-      ctx.drawImage(atlas, (gi % 8) * cell, Math.floor(gi / 8) * cell, cell, cell, x - s / 2, y - s / 2, s, s);
-    } else if (trail.shape === "ring") {
-      ctx.lineWidth = s * 0.34;
-      ctx.beginPath();
-      ctx.arc(x, y, s * 0.36, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.lineWidth = s * 0.2;
-      ctx.strokeStyle = fill;
-      ctx.stroke();
-    } else if (trail.shape === "diamond") {
-      ctx.beginPath();
-      ctx.moveTo(x, y - s / 2);
-      ctx.lineTo(x + s / 2, y);
-      ctx.lineTo(x, y + s / 2);
-      ctx.lineTo(x - s / 2, y);
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    } else {
-      ctx.beginPath();
-      ctx.arc(x, y, s * 0.42, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
+  const r = gl();
+  if (!r) return "";
+  const scene = new THREE.Scene();
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(40, 30), new THREE.MeshBasicMaterial({ color: 0x1a5672 }));
+  sea.rotation.x = -Math.PI / 2;
+  scene.add(sea);
+  const ribbon = new SeaTrails(scene, 400);
+  const n = 60;
+  const xs = new Float32Array(n);
+  const zs = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    xs[i] = -8.2 + t * 15.6;
+    zs[i] = 2.6 - Math.sin(t * Math.PI * 1.15) * 4.2;
   }
-  ctx.font = "34px serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("⛵", W - 30, H * 0.72 - Math.sin(Math.PI * 0.9) * H * 0.42 - 16);
-  return canvas.toDataURL("image/png");
+  ribbon.begin(1.3);
+  ribbon.add(xs, zs, n, 0.1, 2.5, trailFor(variant), color);
+  ribbon.end();
+  // Straight down, so the pattern is seen flat. (Up is -z: north at the top.)
+  const cam = new THREE.OrthographicCamera(-9.6, 9.6, 6.6, -6.6, 0.1, 50);
+  cam.position.set(0, 20, 0);
+  cam.up.set(0, 0, -1);
+  cam.lookAt(0, 0, 0);
+  r.setClearColor(0x000000, 0);
+  r.render(scene, cam);
+  const url = r.domElement.toDataURL("image/png");
+  ribbon.dispose();
+  sea.geometry.dispose();
+  (sea.material as THREE.Material).dispose();
+  return url;
 }
 
 const svgURL = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '))}`;

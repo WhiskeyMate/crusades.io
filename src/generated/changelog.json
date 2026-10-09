@@ -1,8 +1,13 @@
 {
-  "version": "0.1.36",
+  "version": "0.1.37",
   "builtAt": "2026-10-09",
-  "commits": 36,
+  "commits": 37,
   "entries": [
+    {
+      "hash": "16e34e4",
+      "date": "2026-10-09",
+      "subject": "Longships trace their route with a dotted line; 54 sea trails in the store"
+    },
     {
       "hash": "ff073b1",
       "date": "2026-10-09",

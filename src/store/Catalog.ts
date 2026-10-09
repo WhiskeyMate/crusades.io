@@ -102,7 +102,7 @@ export const ITEMS: Item[] = [
   ...TRAILS.map((t): Item => ({
     id: t.key === "default" ? "trail-chalk" : `trail-${t.key.replace("g:", "g-")}`,
     slot: "trails", name: t.name, blurb: t.blurb, crowns: t.crowns, variant: t.key,
-    ...(t.crowns === 0 ? { unlisted: true } : { tag: t.meme ? "Meme" : t.shape === "glyph" ? "Heraldic" : "Pattern" }),
+    ...(t.crowns === 0 ? { unlisted: true } : { tag: t.meme ? "Meme" : t.glyph !== undefined ? "Heraldic" : "Pattern" }),
   })),
 ];
 
