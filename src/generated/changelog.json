@@ -1,8 +1,13 @@
 {
-  "version": "0.1.41",
+  "version": "0.1.42",
   "builtAt": "2026-10-09",
-  "commits": 41,
+  "commits": 42,
   "entries": [
+    {
+      "hash": "b3b136d",
+      "date": "2026-10-09",
+      "subject": "Aiming a fireball or dragon shows its flight and whether a ballista tower covers it; sea trail cards in the store are live 3D"
+    },
     {
       "hash": "eca01d7",
       "date": "2026-10-09",

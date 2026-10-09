@@ -46,6 +46,39 @@ function say(text: string, bad = false) {
   n.classList.toggle("bad", bad);
 }
 
+/**
+ * Asks before Crowns are spent. Resolves true only if the player presses the
+ * spend button; Escape, Cancel or a click outside all mean no.
+ */
+function confirmSpend(what: string, cost: number, detail = ""): Promise<boolean> {
+  const box = el("store-confirm");
+  const left = (account.state?.crowns ?? 0) - cost;
+  el("confirm-text").innerHTML =
+    `<b>${esc(what)}</b>${detail ? `<p>${detail}</p>` : ""}` +
+    `<p class="sum">Cost <span class="gold">${cost.toLocaleString("en-US")} ♛</span> · you will have <span class="gold">${left.toLocaleString("en-US")} ♛</span> left</p>`;
+  el("confirm-yes").innerHTML = `Spend ${cost.toLocaleString("en-US")} ♛`;
+  box.hidden = false;
+  el("confirm-no").focus();
+  return new Promise((resolve) => {
+    const done = (answer: boolean) => {
+      box.hidden = true;
+      window.removeEventListener("keydown", key, true);
+      resolve(answer);
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      e.stopPropagation();
+      done(false);
+    };
+    window.addEventListener("keydown", key, true);
+    el("confirm-yes").onclick = () => done(true);
+    el("confirm-no").onclick = () => done(false);
+    box.onclick = (e) => {
+      if (e.target === box) done(false);
+    };
+  });
+}
+
 const crowns = (n: number) => `<span class="cr">${n.toLocaleString("en-US")} ♛</span>`;
 
 /** The colour previews are drawn in: the player's chosen field, or crimson. */
@@ -236,7 +269,9 @@ function drawName(): string {
     `<div class="namebox"><p class="sub">A reserved house name is yours alone: nobody else can play under it, on any server.</p>` +
     (s.username ? `<p>Your house: <b class="gold">${esc(s.username)}</b></p>` : "") +
     `<label>House name<input id="acct-name" maxlength="24" placeholder="House Lionhart" value="${esc(s.username ?? "")}" /></label>` +
-    `<button id="acct-reserve" class="primary wide">${s.username ? "Change it" : "Reserve it"} for ${NAME_COST} ♛</button></div>`
+    `<button id="acct-reserve" class="primary wide">${s.username ? "Change it" : "Reserve it"} for ${NAME_COST} ♛</button>` +
+    (s.username ? `<p class="dim small">Keeping ${esc(s.username)} costs nothing. You only pay to change it.</p>` : "") +
+    `</div>`
   );
 }
 
@@ -291,6 +326,8 @@ function draw() {
       tab = "crowns";
       return draw();
     }
+    if (account.owns(item.id)) return say(`You already own ${item.name}.`, true);
+    if (!(await confirmSpend(`Buy ${item.name}?`, item.crowns, `${SLOT_NAMES[item.slot]}. ${esc(item.blurb)}`))) return;
     const err = await account.buyItem(item.id);
     if (!err) await account.equip(item.slot, item.id);
     say(err ?? `${item.name} is yours, and you're wearing it.`, Boolean(err));
@@ -303,6 +340,14 @@ function draw() {
       tab = "crowns";
       return draw();
     }
+    const missing = bundle.items.map((i) => itemById(i)!).filter((i) => !account.owns(i.id));
+    if (missing.length === 0) return say(`You already own everything in ${bundle.name}.`, true);
+    const have = bundle.items.length - missing.length;
+    if (!(await confirmSpend(
+      `Buy ${bundle.name}?`, bundle.crowns,
+      `You get: ${missing.map((i) => esc(i.name)).join(", ")}.` +
+        (have > 0 ? ` <span class="warn">You already own ${have} of the ${bundle.items.length} items in it; the price is the same.</span>` : ""),
+    ))) return;
     const err = await account.buyBundle(bundle.id);
     if (!err) for (const id of bundle.items) await account.equip(itemById(id)!.slot, id);
     say(err ?? `${bundle.name} is yours, and you're wearing it.`, Boolean(err));
@@ -318,8 +363,19 @@ function draw() {
     reserve.onclick = async () => {
       const name = el<HTMLInputElement>("acct-name").value.trim();
       if (name.length < 3) return say("Three letters at least.", true);
+      const mine = account.state!.username;
+      if (mine === name) return say(`${name} is already your house name. Nothing to pay.`, true);
+      if (account.state!.crowns < NAME_COST) {
+        say(`A house name costs ${NAME_COST} ♛ and you have ${account.state!.crowns}.`, true);
+        tab = "crowns";
+        return draw();
+      }
+      if (!(await confirmSpend(
+        mine ? `Change your house name to ${name}?` : `Reserve the house name ${name}?`, NAME_COST,
+        mine ? `You will give up ${esc(mine)}, and anyone may then take it.` : "Nobody else will be able to play under it.",
+      ))) return;
       const err = await account.reserveName(name);
-      say(err ?? `${name} is yours.`, Boolean(err));
+      say(err ? `${err.charAt(0).toUpperCase()}${err.slice(1)}. No Crowns were spent.` : `${name} is yours.`, Boolean(err));
       draw();
       if (!err) el<HTMLInputElement>("opt-name").value = name;
     };

@@ -192,6 +192,7 @@ class AccountService {
   async buyBundle(bundleId: string): Promise<string | null> {
     const b = BUNDLES.find((x) => x.id === bundleId);
     if (!this.state || !b) return "No such bundle.";
+    if (b.items.every((i) => this.state!.owned.has(i))) return "You already own everything in that bundle.";
     if (DEV_PREVIEW) {
       if (this.state.crowns < b.crowns) return "Not enough Crowns.";
       this.state.crowns -= b.crowns;
@@ -205,6 +206,7 @@ class AccountService {
 
   async reserveName(name: string): Promise<string | null> {
     if (!this.state) return "Sign in first.";
+    if (this.state.username === name) return "That is already your house name.";
     if (DEV_PREVIEW) {
       if (this.state.crowns < 200) return "Not enough Crowns.";
       this.state.crowns -= 200;

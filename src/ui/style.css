@@ -415,3 +415,12 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 #hint.danger { color: #ffb0a0; border-color: #c0392b; }
 #hint.clear { color: #c8f0b0; }
 .shot canvas { width: 100%; height: 100%; display: block; }
+#store-confirm { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; background: rgba(8, 5, 3, 0.72); }
+#store-confirm[hidden] { display: none; }
+#store-confirm .panel { width: min(440px, 88%); padding: 20px 22px 16px; border-color: var(--gold); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7); }
+#confirm-text b { font-size: 20px; color: var(--gold); }
+#confirm-text p { margin: 8px 0 0; font-size: 14px; line-height: 1.45; color: #d9ccae; }
+#confirm-text .sum { color: var(--ink); }
+#confirm-text .warn { color: #ffb38a; }
+#store-confirm .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+#store-confirm .row button { padding: 8px 16px; font-size: 15px; }
