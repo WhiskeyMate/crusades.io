@@ -132,15 +132,6 @@ void main() {
       if (!found && nc < 4) { cand[nc] = id; cw[nc] = w; nc++; }
     }
   }
-  if (nc == 0 && h > 0.0) {
-    // Dry ground further than a tile from any land tile: take the nearest.
-    for (int r = 2; r <= 3 && nc == 0; r++) {
-      for (int k = 0; k < 8 && nc == 0; k++) {
-        ivec2 t = ti + ivec2(k < 3 ? -r : k < 5 ? 0 : r, k == 0 || k == 3 || k == 5 ? -r : k == 1 || k == 6 ? 0 : r);
-        if (landAt(t)) { cand[0] = ownerOf(stateAt(t)); cw[0] = 1.0; nc = 1; }
-      }
-    }
-  }
   int o = 0;
   float best = 0.0, second = 0.0, total = 0.0;
   for (int k = 0; k < 4; k++) {
@@ -149,7 +140,12 @@ void main() {
     if (cw[k] > best) { second = best; best = cw[k]; o = cand[k]; }
     else if (cw[k] > second) second = cw[k];
   }
-  bool held = nc > 0 && (isLand || h > 0.0);
+  // The mesh has one vertex for every four tiles, so a channel a tile or two
+  // wide is bridged by dry ground. Where the game says water and the mesh
+  // says land, paint the water on: every strait a longship must cross shows.
+  float sea = -texture(tHeight, uv).r;
+  bool wet = sea > 0.02 && h > -0.02;
+  bool held = nc > 0 && !wet && (isLand || h > 0.0);
   if (held && o != 0) {
     vec4 pc = texelFetch(tPalette, ivec2(o & 63, o >> 6), 0);
     // The border runs where two claims are level.
@@ -177,6 +173,15 @@ void main() {
   }
   float road = texture(tRoads, uv).r;
   col = mix(col, vec3(0.62, 0.52, 0.36), smoothstep(0.2, 0.55, road) * 0.9);
+  if (wet) {
+    float ripple = fbm2(tile * 0.9 + vec2(uTime * 0.5, -uTime * 0.35));
+    vec3 waterCol = mix(vec3(0.20, 0.52, 0.56), vec3(0.09, 0.30, 0.42), smoothstep(0.1, 1.2, sea));
+    waterCol *= 0.9 + 0.22 * ripple;
+    // Foam where it laps the bank.
+    waterCol = mix(waterCol, vec3(0.93, 0.96, 0.97), (1.0 - smoothstep(0.02, 0.1, sea)) * 0.55);
+    col = mix(col, waterCol, smoothstep(0.02, 0.05, sea));
+    n = mix(n, vec3(0.0, 1.0, 0.0), 0.85);
+  }
   if ((st.y & 32) != 0 && isLand) {
     // Scorched by sorcery: char, with embers still glowing in the cracks.
     float crack = fbm2(tile * 0.9 + 7.0);
@@ -507,7 +512,7 @@ export class Terrain {
         let v = c * 0.4 + (s / 8) * 0.6;
         // Keep land above the waterline and water below it.
         if (e[y * w + x] >= 0) v = Math.max(v, 0.2);
-        else v = Math.min(v, -0.12);
+        else v = Math.min(v, -0.26);
         out[y * w + x] = v;
       }
     }

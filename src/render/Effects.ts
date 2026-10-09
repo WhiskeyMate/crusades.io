@@ -389,6 +389,18 @@ export class Effects {
     }
   }
 
+  /** Foam churned up behind a moving ship, spreading out to either side. */
+  wake(x: number, z: number, yaw: number, size: number) {
+    const side = Math.random() < 0.5 ? 1 : -1;
+    const sx = Math.cos(yaw) * side;
+    const sz = -Math.sin(yaw) * side;
+    this.smoke.emit(
+      this.time, x + sx * size * 0.4, 0.12, z + sz * size * 0.4,
+      sx * size * rnd(0.5, 1.1), rnd(0.02, 0.12) * size, sz * size * rnd(0.5, 1.1),
+      0.9, 0.96, 0.98, rnd(0.9, 1.7), size * 0.7, size * 2.4,
+    );
+  }
+
   /** A wisp of dust kicked up by marching feet. */
   dust(x: number, y: number, z: number, size: number) {
     this.smoke.emit(

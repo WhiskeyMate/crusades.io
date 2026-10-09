@@ -8,6 +8,7 @@ import { GameState, UnitState } from "../client/GameState";
 import { RGB } from "../client/Heraldry";
 import { Dragon, Effects } from "./Effects";
 import { LevelTags } from "./LevelTags";
+import { Marks } from "./Marks";
 import { modelFor, MODELS, Pool } from "./Models";
 import "./Styles";
 import { Stage } from "./Stage";
@@ -24,7 +25,13 @@ const STRUCTURES: Partial<Record<UnitType, keyof typeof MODELS>> = {
 
 const NEUTRAL: RGB = [0.6, 0.6, 0.6];
 
+/** A war galley's full strength (veterans can hold a little more). */
+const GALLEY_HEALTH = 1000;
+
 interface Memo {
+  /** Sorcery only: will a ballista tower reach it? Worked out now and then. */
+  doomed?: boolean;
+  doomedAt?: number;
   yaw: number;
   x: number;
   y: number;
@@ -35,6 +42,7 @@ interface Memo {
 export class Units {
   private pools: Record<string, Pool> = {};
   private tags: LevelTags;
+  private marks: Marks;
   private memo = new Map<number, Memo>();
   private dragons = new Map<number, Dragon>();
   private m = new THREE.Matrix4();
@@ -53,6 +61,7 @@ export class Units {
   ) {
     stage.scene.add(this.group);
     this.tags = new LevelTags(this.group);
+    this.marks = new Marks(this.group);
     const cap: Record<string, number> = {
       town: 1500, keep: 1500, harbour: 800, market: 800, mageTower: 600,
       ballistaTower: 800, scaffold: 400, galley: 600, longship: 600, cog: 900,
@@ -192,6 +201,7 @@ export class Units {
     // Level numbers are readable only so far out; beyond that they'd be clutter.
     const showTags = this.stage.distance < 420;
     this.tags.begin(this.stage.camera, 1.6 * Math.pow(S, 0.6));
+    this.marks.begin(this.stage.camera);
     // Buildings grow only a little with distance, so they shrink on screen
     // as the camera pulls back instead of crowding the map.
     const structScale = 1.35 * Math.pow(S, 0.4);
@@ -269,6 +279,15 @@ export class Units {
           if (hurt < 1 && Math.random() < 0.15) {
             this.effects.trail(this.p.set(pos.x, 2 * shipScale, pos.z), 0.5 * shipScale);
           }
+          if (u.type === UnitType.Warship && u.health !== undefined && this.stage.distance < 700) {
+            this.marks.bar(pos.x, bob + 4.6 * size, pos.z, 2.6 * size, u.health / GALLEY_HEALTH);
+          }
+          if (u.type === UnitType.TransportShip && (w.dx !== 0 || w.dy !== 0) && Math.random() < 0.6) {
+            // White water off the stern.
+            this.effects.wake(
+              pos.x - Math.sin(memo.yaw) * 1.6 * size, pos.z - Math.cos(memo.yaw) * 1.6 * size, memo.yaw, 0.55 * size,
+            );
+          }
           memo.y = 1;
           break;
         }
@@ -310,12 +329,11 @@ export class Units {
     }
     for (const pool of Object.values(this.pools)) pool.end();
     this.tags.end();
+    this.marks.end();
   }
 
-  /** Flight of a fireball, dragon, rising star or falling star. */
-  private sorcery(
-    u: UnitState, tx: number, ty: number, pos: THREE.Vector3, memo: Memo, S: number, time: number,
-  ) {
+  /** How high a sorcery flies over tile (tx, ty) of its path, and how far along it is. */
+  private arc(u: UnitState, tx: number, ty: number): { y: number; t: number } {
     const map = this.state.map;
     const ox = map.x(u.origin);
     const oy = map.y(u.origin);
@@ -339,6 +357,62 @@ export class Units {
       default:
         y = ground + 3 + Math.sin(Math.PI * t) * Math.min(120, 22 + total * 0.25);
     }
+    return { y, t };
+  }
+
+  /**
+   * Will a ballista tower reach this fireball or dragon? True if what is left
+   * of its path passes inside the range of a finished tower belonging to
+   * someone who is not its caster's ally. A forecast, not a promise: a tower
+   * that is reloading, or busy with another target, can still let it through.
+   */
+  private doomed(u: UnitState, path: Uint32Array, from: number): boolean {
+    const map = this.state.map;
+    const caster = this.state.players.get(u.ownerID);
+    for (const sam of this.state.units.values()) {
+      if (sam.type !== UnitType.SAMLauncher || sam.underConstruction || sam.ownerID === u.ownerID) continue;
+      const owner = this.state.players.get(sam.ownerID);
+      if (caster && owner && this.state.isAllied(owner, caster)) continue;
+      const range = this.state.config.samRange(Math.max(1, sam.level));
+      const sx = map.x(sam.pos);
+      const sy = map.y(sam.pos);
+      for (let i = from; i < path.length - 1; i += 2) {
+        const dx = map.x(path[i]) - sx;
+        const dy = map.y(path[i]) - sy;
+        if (dx * dx + dy * dy <= range * range) return true;
+      }
+    }
+    return false;
+  }
+
+  /** The dotted line a fireball or dragon has still to fly: red if a ballista will have it. */
+  private flightLine(u: UnitState, memo: Memo, S: number) {
+    const plan = this.state.plans.gridPlans().get(u.id);
+    if (!plan || plan.path.length < 3) return;
+    const s = (this.state.tick - plan.startTick) / Math.max(1, plan.ticksPerStep);
+    const from = Math.max(0, Math.floor(s));
+    if (memo.doomed === undefined || this.state.tick - (memo.doomedAt ?? 0) >= 10) {
+      memo.doomed = this.doomed(u, plan.path, from);
+      memo.doomedAt = this.state.tick;
+    }
+    const last = plan.path.length - 1;
+    const step = Math.max(2, Math.ceil((last - from) / 60));
+    const size = 0.9 * Math.pow(S, 0.8);
+    const [r, g, b] = memo.doomed ? [1.0, 0.22, 0.16] : [1.0, 0.86, 0.42];
+    // Dots are counted back from the target so they stand still as it flies.
+    for (let i = last; i > from + 1; i -= step) {
+      const [tx, ty] = this.alongPath(plan.path, i);
+      const { y } = this.arc(u, tx, ty);
+      this.marks.dot(this.terrain.worldX(tx), y, this.terrain.worldZ(ty), i === last ? size * 2 : size, r, g, b);
+    }
+  }
+
+  /** Flight of a fireball, dragon, rising star or falling star. */
+  private sorcery(
+    u: UnitState, tx: number, ty: number, pos: THREE.Vector3, memo: Memo, S: number, time: number,
+  ) {
+    const { y, t } = this.arc(u, tx, ty);
+    if (u.type === UnitType.AtomBomb || u.type === UnitType.HydrogenBomb) this.flightLine(u, memo, S);
     const prevY = memo.seen ? memo.y : y;
     memo.y = y;
     const color = this.color(u.ownerID);
