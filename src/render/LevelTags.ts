@@ -4,8 +4,9 @@
 import * as THREE from "three";
 
 const MAX = 1200;
-const COLS = 8;
-const ROWS = 5;
+// 256 numbers: towns grow well past what a small atlas could show.
+const COLS = 16;
+const ROWS = 16;
 const CELL = 64;
 
 const VERT = /* glsl */ `
@@ -59,7 +60,7 @@ export class LevelTags {
       ctx.lineWidth = 3;
       ctx.strokeStyle = "#dcb65a";
       ctx.stroke();
-      ctx.font = `bold ${i + 1 >= 10 ? 28 : 32}px "Palatino Linotype", "Book Antiqua", Georgia, serif`;
+      ctx.font = `bold ${i + 1 >= 100 ? 21 : i + 1 >= 10 ? 28 : 32}px "Palatino Linotype", "Book Antiqua", Georgia, serif`;
       ctx.fillStyle = "#f3e8cc";
       ctx.fillText(String(i + 1), x, y + 2);
     }
