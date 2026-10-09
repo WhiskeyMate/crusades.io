@@ -13,7 +13,7 @@ export const identityEnabled = Boolean(URL_ && KEY);
 
 export interface Cosmetic {
   equipped?: Record<string, string>;
-  skin?: { color: string; division: number; charge: number; second?: string } | null;
+  skin?: { color: string; division: number; charge: number; second?: string; ink?: string | null } | null;
 }
 
 export interface Identity {

@@ -31,6 +31,8 @@ export interface Skin {
   charge: number;
   /** The second tincture, "#rrggbb"; a metal is chosen from the name if absent. */
   second?: string;
+  /** The colour of the charge; left out, the herald picks one that shows. */
+  ink?: string | null;
 }
 
 export const DIVISION_NAMES = [
@@ -70,7 +72,8 @@ export function validSkin(v: unknown): v is Skin {
     typeof k.color === "string" && /^#[0-9a-fA-F]{6}$/.test(k.color) &&
     Number.isInteger(k.division) && k.division >= 0 && k.division < DIVISION_COUNT &&
     Number.isInteger(k.charge) && k.charge >= 0 && k.charge < CHARGES.length &&
-    (k.second === undefined || k.second === null || (typeof k.second === "string" && /^#[0-9a-fA-F]{6}$/.test(k.second)))
+    (k.second === undefined || k.second === null || (typeof k.second === "string" && /^#[0-9a-fA-F]{6}$/.test(k.second))) &&
+    (k.ink === undefined || k.ink === null || (typeof k.ink === "string" && /^#[0-9a-fA-F]{6}$/.test(k.ink)))
   );
 }
 
@@ -149,7 +152,7 @@ export function shieldSVG(name: string, color: RGB, size = 18, skin?: Skin | nul
     `<svg width="${size}" height="${Math.round(size * 1.08)}" viewBox="0 0 24 26">` +
     `<clipPath id="${id}"><path d="${path}"/></clipPath>` +
     `<g clip-path="url(#${id})"><rect width="24" height="26" fill="${main}"/>${field}` +
-    `<text x="12" y="16" font-size="11" text-anchor="middle" fill="${division === 4 ? metal : dark}" font-family="serif">${charge}</text></g>` +
+    `<text x="12" y="16" font-size="11" text-anchor="middle" fill="${worn?.ink ?? (division === 4 ? metal : dark)}" font-family="serif">${charge}</text></g>` +
     `<path d="${path}" fill="none" stroke="#1b1410" stroke-width="1.6"/></svg>`
   );
 }

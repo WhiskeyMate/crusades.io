@@ -1,8 +1,13 @@
 {
-  "version": "0.1.38",
+  "version": "0.1.39",
   "builtAt": "2026-10-09",
-  "commits": 38,
+  "commits": 39,
   "entries": [
+    {
+      "hash": "d52ad1f",
+      "date": "2026-10-09",
+      "subject": "Store: snail knights, geese, swan boats, tower turtles, toadstool towns and more new 3D sets; all 2D items are now medieval heraldry"
+    },
     {
       "hash": "16e34e4",
       "date": "2026-10-09",

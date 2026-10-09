@@ -410,3 +410,5 @@ button.short { filter: saturate(0.45) brightness(0.85); }
   #acct-editor { grid-template-columns: 1fr; }
   .bundles { grid-template-columns: 1fr; }
 }
+#acct-custom3 { width: 30px; height: 28px; padding: 0; border: 1px solid var(--edge); background: none; margin: 0; display: inline-block; }
+.pick.auto { line-height: 1; font-size: 12px; padding: 5px 9px; }

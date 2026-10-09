@@ -17,6 +17,7 @@ const SWATCHES = [
   "#2c6fb3", "#3b46a8", "#6a3fa6", "#a8358f", "#d0498a", "#8a2f2f", "#5b4636", "#3f4a55", "#2b2b33", "#e9e4d4",
 ];
 const METALS = ["#e8d9a0", "#f1efe6", "#d9a521", "#c0c4ca", "#1b1410", "#c71a21", "#2c6fb3", "#2f8a4a", "#6a3fa6"];
+const INKS = ["#1b1410", "#f1efe6", "#e8d9a0", "#d9a521", "#c0c4ca", "#c71a21", "#2c6fb3", "#2f8a4a", "#6a3fa6", "#d9632b"];
 const DEFAULT: Skin = { color: SWATCHES[0], division: 4, charge: 3 };
 
 type Tab = "featured" | "crowns" | Slot | "name";
@@ -163,6 +164,7 @@ function drawArms(): string {
     `<div class="controls">` +
     `<div class="field-label">Field</div><div id="acct-colors" class="row-wrap"></div>` +
     `<div class="field-label">Second tincture</div><div id="acct-metals" class="row-wrap"></div>` +
+    `<div class="field-label">Charge colour</div><div id="acct-inks" class="row-wrap"></div>` +
     `<div class="field-label">Division</div><div id="acct-divisions" class="row-wrap"></div>` +
     `<div class="field-label">Charge</div><div id="acct-charges" class="row-wrap charges"></div>` +
     `</div></div>`
@@ -180,6 +182,10 @@ function wireArms() {
   el("acct-metals").innerHTML =
     METALS.map((c) => `<button class="swatch${c === second ? " on" : ""}" data-m="${c}" style="background:${c}"></button>`).join("") +
     `<input type="color" id="acct-custom2" value="${second}" title="Any colour" />`;
+  el("acct-inks").innerHTML =
+    `<button class="pick auto${draft.ink ? "" : " on"}" data-k="auto" title="Let the herald choose">Auto</button>` +
+    INKS.map((c) => `<button class="swatch${c === draft.ink ? " on" : ""}" data-k="${c}" style="background:${c}"></button>`).join("") +
+    `<input type="color" id="acct-custom3" value="${draft.ink ?? INKS[0]}" title="Any colour" />`;
   el("acct-divisions").innerHTML = Array.from({ length: DIVISION_COUNT }, (_, i) =>
     `<button class="pick${i === draft.division ? " on" : ""}" data-d="${i}" title="${DIVISION_NAMES[i]}">${shieldSVG("preview", hexToRGB(draft.color), 30, { ...draft, division: i, charge: 12 })}</button>`,
   ).join("");
@@ -190,6 +196,7 @@ function wireArms() {
     b.onclick = () => {
       if (b.dataset.c) draft.color = b.dataset.c;
       if (b.dataset.m) draft.second = b.dataset.m;
+      if (b.dataset.k) draft.ink = b.dataset.k === "auto" ? undefined : b.dataset.k;
       if (b.dataset.d) draft.division = Number(b.dataset.d);
       if (b.dataset.g) draft.charge = Number(b.dataset.g);
       wireArms();
@@ -201,9 +208,12 @@ function wireArms() {
   const c2 = el<HTMLInputElement>("acct-custom2");
   c2.oninput = () => { draft.second = c2.value; preview(); };
   c2.onchange = wireArms;
+  const c3 = el<HTMLInputElement>("acct-custom3");
+  c3.oninput = () => { draft.ink = c3.value; preview(); };
+  c3.onchange = wireArms;
   el("acct-random").onclick = () => {
     const pick = <T,>(a: T[]) => a[(Math.random() * a.length) | 0];
-    draft = { color: pick(SWATCHES), second: pick(METALS), division: (Math.random() * DIVISION_COUNT) | 0, charge: (Math.random() * CHARGES.length) | 0 };
+    draft = { color: pick(SWATCHES), second: pick(METALS), ink: Math.random() < 0.5 ? pick(INKS) : undefined, division: (Math.random() * DIVISION_COUNT) | 0, charge: (Math.random() * CHARGES.length) | 0 };
     wireArms();
   };
   el("acct-save").onclick = async () => {
