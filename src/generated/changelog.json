@@ -1,8 +1,13 @@
 {
-  "version": "0.1.43",
+  "version": "0.1.44",
   "builtAt": "2026-10-09",
-  "commits": 43,
+  "commits": 44,
   "entries": [
+    {
+      "hash": "dbc5f58",
+      "date": "2026-10-09",
+      "subject": "Map labels, the realm list and tooltips show each house's own designed arms"
+    },
     {
       "hash": "fc70bee",
       "date": "2026-10-09",

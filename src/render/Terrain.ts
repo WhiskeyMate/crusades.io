@@ -40,6 +40,7 @@ ${CLOTH_GLSL}
 uniform sampler2D tState;
 uniform sampler2D tPalette;
 uniform sampler2D tHeight;
+uniform sampler2D tRelief;
 uniform sampler2D tRoads;
 uniform sampler2D tTerrain;
 uniform sampler2D tPattern;
@@ -73,13 +74,17 @@ void main() {
   vec2 tile = vWorld.xz + uMap * 0.5;
   vec2 uv = tile / uMap;
   vec2 px = 1.0 / uMap;
-  float hL = texture(tHeight, uv - vec2(px.x, 0.0)).r;
-  float hR = texture(tHeight, uv + vec2(px.x, 0.0)).r;
-  float hD = texture(tHeight, uv - vec2(0.0, px.y)).r;
-  float hU = texture(tHeight, uv + vec2(0.0, px.y)).r;
-  vec3 n = normalize(vec3(hL - hR, 2.0, hD - hU));
-  float h = vWorld.y;
-  float slope = 1.0 - n.y;
+  // The ground is flat; its hills are a painting. The relief map says how
+  // high each spot would stand, which picks its colour and its shading.
+  float hL = texture(tRelief, uv - vec2(px.x, 0.0)).r;
+  float hR = texture(tRelief, uv + vec2(px.x, 0.0)).r;
+  float hD = texture(tRelief, uv - vec2(0.0, px.y)).r;
+  float hU = texture(tRelief, uv + vec2(0.0, px.y)).r;
+  float slope = 1.0 - normalize(vec3(hL - hR, 2.0, hD - hU)).y;
+  vec3 n = normalize(vec3((hL - hR) * 0.7, 2.0, (hD - hU) * 0.7));
+  // Where the surface really is: at land level, or under the sea.
+  float y = vWorld.y;
+  float h = y < 0.0 ? y : max(texture(tRelief, uv).r, 0.05);
 
   float big = fbm2(tile * 0.035);
   float fine = fbm2(tile * 0.45);
@@ -106,7 +111,7 @@ void main() {
   // What the game says this tile is, not what the smoothed mesh happens to
   // show: a one-tile islet is land and gets its owner's colour.
   bool isLand = landAt(ti);
-  if (isLand && h < 0.1) col = sand;
+  if (isLand && y < 0.0) col = sand;
 
   // Who holds this spot. The game works in square tiles; drawn as they are,
   // every border is a staircase. So each of the nine tiles around votes with
@@ -144,8 +149,8 @@ void main() {
   // wide is bridged by dry ground. Where the game says water and the mesh
   // says land, paint the water on: every strait a longship must cross shows.
   float sea = -texture(tHeight, uv).r;
-  bool wet = sea > 0.02 && h > -0.02;
-  bool held = nc > 0 && !wet && (isLand || h > 0.0);
+  bool wet = sea > 0.02 && y > -0.02;
+  bool held = nc > 0 && !wet && (isLand || y > 0.0);
   if (held && o != 0) {
     vec4 pc = texelFetch(tPalette, ivec2(o & 63, o >> 6), 0);
     // The border runs where two claims are level.
@@ -322,6 +327,9 @@ void main() {
   gl_FragColor = vec4(col, alpha);
 }`;
 
+/** The height of all land, in tiles above the sea. */
+const LAND_LEVEL = 0.1;
+
 export class Terrain {
   readonly width: number;
   readonly height: number;
@@ -342,22 +350,30 @@ export class Terrain {
   ) {
     const w = (this.width = realm.width);
     const h = (this.height = realm.height);
-    this.heights = this.buildHeights(realm);
+    // The land is flat: every land tile lies at one level just above the sea,
+    // so ships, troops and buildings all stand where the game says they are
+    // and nothing sails through a hillside. Hills and mountains are painted
+    // on (colour and shading from `relief`), not built.
+    const relief = this.buildHeights(realm);
+    this.heights = new Float32Array(w * h);
+    for (let i = 0; i < relief.length; i++) this.heights[i] = realm.elevation[i] >= 0 ? LAND_LEVEL : relief[i];
 
-    const half = new Uint16Array(w * h);
-    for (let i = 0; i < half.length; i++) {
-      half[i] = THREE.DataUtils.toHalfFloat(this.heights[i]);
-    }
-    const heightTex = new THREE.DataTexture(
-      half,
-      w,
-      h,
-      THREE.RedFormat,
-      THREE.HalfFloatType,
-    );
-    heightTex.magFilter = heightTex.minFilter = THREE.LinearFilter;
-    heightTex.wrapS = heightTex.wrapT = THREE.ClampToEdgeWrapping;
-    heightTex.needsUpdate = true;
+    const floatTex = (data: Float32Array) => {
+      const half = new Uint16Array(w * h);
+      for (let i = 0; i < half.length; i++) half[i] = THREE.DataUtils.toHalfFloat(data[i]);
+      const tex = new THREE.DataTexture(half, w, h, THREE.RedFormat, THREE.HalfFloatType);
+      tex.magFilter = tex.minFilter = THREE.LinearFilter;
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      tex.needsUpdate = true;
+      return tex;
+    };
+    // The shaders find the waterline where this map crosses zero. Land is
+    // given the same magnitude as shallow water so that crossing falls on the
+    // edge between a land tile and a water tile, not inside either.
+    const shore = new Float32Array(w * h);
+    for (let i = 0; i < relief.length; i++) shore[i] = realm.elevation[i] >= 0 ? 0.26 : relief[i];
+    const heightTex = floatTex(shore);
+    const reliefTex = floatTex(relief);
 
     const buf = state.map.tileStateBuffer();
     this.stateTex = new THREE.DataTexture(
@@ -409,6 +425,7 @@ export class Terrain {
       tState: { value: this.stateTex },
       tPalette: { value: this.paletteTex },
       tHeight: { value: heightTex },
+      tRelief: { value: reliefTex },
       tRoads: { value: this.roadTex },
       tTerrain: { value: terrainTex },
       tPattern: { value: this.patternTex },
