@@ -1,8 +1,13 @@
 {
-  "version": "0.1.39",
+  "version": "0.1.40",
   "builtAt": "2026-10-09",
-  "commits": 39,
+  "commits": 40,
   "entries": [
+    {
+      "hash": "ac8a00b",
+      "date": "2026-10-09",
+      "subject": "Arms editor: choose the colour of your charge"
+    },
     {
       "hash": "d52ad1f",
       "date": "2026-10-09",

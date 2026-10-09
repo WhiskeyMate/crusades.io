@@ -33,6 +33,7 @@ const FRAG = /* glsl */ `
 ${NOISE_GLSL}
 uniform sampler2D tGlyphs;
 uniform float uTime;
+uniform float uOpacity;
 varying vec2 vUv;
 varying vec3 vA;
 varying vec3 vB;
@@ -88,12 +89,13 @@ void main() {
   }
   else if (style == 14) col = v < 0.3333 ? vA : v < 0.6667 ? vB : vC;
 
-  // A dark hem so the ribbon reads on any water, then a soft edge.
-  if (style != 12) col = mix(col, col * 0.22, smoothstep(0.8, 0.88, c));
-  alpha *= 1.0 - smoothstep(0.93, 1.0, c);
+  // The ribbon lies in the water, not on it: see-through, soft at the edges,
+  // and broken up a little by the swell.
+  alpha *= 1.0 - smoothstep(0.55, 1.0, c);
+  alpha *= 0.8 + 0.2 * fbm2(vec2(u * 1.3 + uTime * 0.25, v * 2.0 - uTime * 0.15));
   alpha *= vStyle.z;
   if (alpha < 0.01) discard;
-  gl_FragColor = vec4(col, alpha * 0.94);
+  gl_FragColor = vec4(col, alpha * uOpacity);
 }`;
 
 /** Floats per vertex: position 3, uv 2, three colours 9, style 3. */
@@ -109,7 +111,8 @@ export class SeaTrails {
   private nv = 0;
   private ni = 0;
 
-  constructor(parent: THREE.Object3D, private maxVerts = 120000) {
+  /** `opacity` is how solid the ribbon is: low in the game, higher for the store's pictures. */
+  constructor(parent: THREE.Object3D, private maxVerts = 120000, opacity = 0.5) {
     this.data = new Float32Array(maxVerts * STRIDE);
     this.index = new Uint32Array(maxVerts * 3);
     this.buffer = new THREE.InterleavedBuffer(this.data, STRIDE);
@@ -126,7 +129,7 @@ export class SeaTrails {
     const idx = new THREE.BufferAttribute(this.index, 1);
     idx.setUsage(THREE.DynamicDrawUsage);
     this.geo.setIndex(idx);
-    this.uniforms = { tGlyphs: { value: glyphAtlas() }, uTime: { value: 0 } };
+    this.uniforms = { tGlyphs: { value: glyphAtlas() }, uTime: { value: 0 }, uOpacity: { value: opacity } };
     this.mesh = new THREE.Mesh(
       this.geo,
       new THREE.ShaderMaterial({

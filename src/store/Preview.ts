@@ -143,7 +143,7 @@ function trailPicture(variant: string, color: RGB): string {
   const sea = new THREE.Mesh(new THREE.PlaneGeometry(40, 30), new THREE.MeshBasicMaterial({ color: 0x1a5672 }));
   sea.rotation.x = -Math.PI / 2;
   scene.add(sea);
-  const ribbon = new SeaTrails(scene, 400);
+  const ribbon = new SeaTrails(scene, 400, 0.8);
   const n = 60;
   const xs = new Float32Array(n);
   const zs = new Float32Array(n);
