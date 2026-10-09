@@ -334,12 +334,6 @@ export class Terrain {
   readonly width: number;
   readonly height: number;
   readonly heights: Float32Array;
-  /**
-   * For every tile, how far it is from the shore, in tiles: positive on
-   * water (distance to the nearest land), negative on land (distance to the
-   * nearest water), capped. Zero falls on the edge between the two.
-   */
-  private sea!: Float32Array;
   readonly group = new THREE.Group();
   readonly uniforms: Record<string, THREE.IUniform>;
   private stateTex: THREE.DataTexture;
@@ -363,8 +357,6 @@ export class Terrain {
     const relief = this.buildHeights(realm);
     this.heights = new Float32Array(w * h);
     for (let i = 0; i < relief.length; i++) this.heights[i] = realm.elevation[i] >= 0 ? LAND_LEVEL : relief[i];
-
-    this.sea = this.buildSea(realm);
 
     const floatTex = (data: Float32Array) => {
       const half = new Uint16Array(w * h);
@@ -491,90 +483,6 @@ export class Terrain {
     );
     water.renderOrder = 1;
     this.group.add(water);
-  }
-
-  /** The signed distance of every tile from the shore (see `sea`). */
-  private buildSea(realm: Realm): Float32Array {
-    const { width: w, height: h, elevation: e } = realm;
-    const CAP = 12;
-    // A two-pass chamfer transform: once for the water, once for the land.
-    const sweep = (inside: (i: number) => boolean): Float32Array => {
-      const d = new Float32Array(w * h);
-      for (let i = 0; i < d.length; i++) d[i] = inside(i) ? CAP : 0;
-      const relax = (i: number, j: number, cost: number) => {
-        if (d[j] + cost < d[i]) d[i] = d[j] + cost;
-      };
-      for (let y = 0; y < h; y++) {
-        for (let x = 0; x < w; x++) {
-          const i = y * w + x;
-          if (d[i] === 0) continue;
-          if (x > 0) relax(i, i - 1, 1);
-          if (y > 0) {
-            relax(i, i - w, 1);
-            if (x > 0) relax(i, i - w - 1, 1.414);
-            if (x < w - 1) relax(i, i - w + 1, 1.414);
-          }
-        }
-      }
-      for (let y = h - 1; y >= 0; y--) {
-        for (let x = w - 1; x >= 0; x--) {
-          const i = y * w + x;
-          if (d[i] === 0) continue;
-          if (x < w - 1) relax(i, i + 1, 1);
-          if (y < h - 1) {
-            relax(i, i + w, 1);
-            if (x < w - 1) relax(i, i + w + 1, 1.414);
-            if (x > 0) relax(i, i + w - 1, 1.414);
-          }
-        }
-      }
-      return d;
-    };
-    const fromLand = sweep((i) => e[i] < 0);
-    const fromWater = sweep((i) => e[i] >= 0);
-    const out = new Float32Array(w * h);
-    for (let i = 0; i < out.length; i++) out[i] = e[i] < 0 ? fromLand[i] - 0.5 : 0.5 - fromWater[i];
-    return out;
-  }
-
-  /** Distance from the shore at tile coordinates: positive out at sea, negative inland. */
-  seaAt(tx: number, ty: number): number {
-    const w = this.width;
-    const x = Math.min(w - 1.001, Math.max(0, tx));
-    const y = Math.min(this.height - 1.001, Math.max(0, ty));
-    const x0 = Math.floor(x);
-    const y0 = Math.floor(y);
-    const fx = x - x0;
-    const fy = y - y0;
-    const i = y0 * w + x0;
-    const d = this.sea;
-    return (d[i] * (1 - fx) + d[i + 1] * fx) * (1 - fy) + (d[i + w] * (1 - fx) + d[i + w + 1] * fx) * fy;
-  }
-
-  /**
-   * Moves a point so that it lies at least `room` tiles out from the shore,
-   * by pushing it straight away from the land. In a strait narrower than
-   * that it settles in mid-channel. Used to keep hulls and wakes in the water
-   * whatever the path under them does.
-   */
-  keepAfloat(tx: number, ty: number, room: number, out: [number, number], steps = 4): [number, number] {
-    let x = tx;
-    let y = ty;
-    for (let k = 0; k < steps; k++) {
-      const d = this.seaAt(x, y);
-      if (d >= room) break;
-      const gx = this.seaAt(x + 0.75, y) - this.seaAt(x - 0.75, y);
-      const gy = this.seaAt(x, y + 0.75) - this.seaAt(x, y - 0.75);
-      const len = Math.hypot(gx, gy);
-      // Level water all round and still too tight: this is mid-channel already.
-      if (len < 0.05) break;
-      const move = Math.min(1.5, (room - d) * 0.85);
-      x += (gx / len) * move;
-      y += (gy / len) * move;
-    }
-    out[0] = x;
-    out[1] = y;
-    return out;
   }
 
   private buildHeights(realm: Realm): Float32Array {

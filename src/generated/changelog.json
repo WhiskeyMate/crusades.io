@@ -1,8 +1,13 @@
 {
-  "version": "0.1.45",
-  "builtAt": "2026-10-09",
-  "commits": 45,
+  "version": "0.1.46",
+  "builtAt": "2026-10-10",
+  "commits": 46,
   "entries": [
+    {
+      "hash": "f504d66",
+      "date": "2026-10-10",
+      "subject": "Ships and their wakes are kept off the land: every drawn position is stood off the shore by the ship's beam"
+    },
     {
       "hash": "448b87f",
       "date": "2026-10-09",

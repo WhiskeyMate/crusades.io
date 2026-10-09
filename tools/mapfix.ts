@@ -17,7 +17,7 @@ if (!dir) throw new Error("usage: mapfix <mapdir> [maxGap]");
 /** Water strips up to this many tiles wide are filled in. */
 const MAX_GAP = Number(process.argv[3] ?? 4);
 /** Water bodies smaller than this (tiles) are filled in too. */
-const MIN_LAKE = 120;
+const MIN_LAKE = 400;
 
 const info = JSON.parse(readFileSync(join(dir, "info.json"), "utf8"));
 const w: number = info.width;
@@ -72,6 +72,63 @@ const newLand = new Uint8Array(n);
 for (let i = 0; i < n; i++) {
   newLand[i] = land[i] || dWater[i] > r ? 1 : 0;
   if (newLand[i] && !land[i]) filled++;
+}
+
+// Square the coast to the half-size grid. The engine plans every sea route
+// on a half-size copy of the map and walks the result on the full one, so a
+// 2x2 block that is part land and part water lets ships cross what is drawn
+// as land, or run alongside a channel instead of in it. Making every block
+// wholly one or the other (water on a tie) means a route can only ever cross
+// water, and every channel a ship can use is at least two tiles wide and
+// plain to see.
+{
+  let toWater = 0;
+  let toLand = 0;
+  for (let y = 0; y + 1 < h; y += 2) {
+    for (let x = 0; x + 1 < w; x += 2) {
+      const a = y * w + x;
+      const landCount = newLand[a] + newLand[a + 1] + newLand[a + w] + newLand[a + w + 1];
+      if (landCount === 0 || landCount === 4) continue;
+      const v = landCount >= 3 ? 1 : 0;
+      for (const i of [a, a + 1, a + w, a + w + 1]) {
+        if (newLand[i] !== v) {
+          if (v) toLand++;
+          else toWater++;
+          newLand[i] = v;
+        }
+      }
+    }
+  }
+  console.log(`squared the coast: ${toWater} tiles to water, ${toLand} to land`);
+}
+
+// No water thinner than four tiles. A channel one block wide can be sailed
+// and can take a harbour, but at any ordinary zoom it is a hairline nobody
+// sees: ships seem to cross dry land and harbours to stand in fields. Water
+// survives only where it is part of a 2x2 square of water blocks (4x4
+// tiles); everything thinner is filled.
+{
+  const bw = w >> 1;
+  const bh = h >> 1;
+  const water = new Uint8Array(bw * bh);
+  for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) water[y * bw + x] = newLand[y * 2 * w + x * 2] ? 0 : 1;
+  const keep = new Uint8Array(bw * bh);
+  for (let y = 0; y + 1 < bh; y++) {
+    for (let x = 0; x + 1 < bw; x++) {
+      const i = y * bw + x;
+      if (water[i] && water[i + 1] && water[i + bw] && water[i + bw + 1]) keep[i] = keep[i + 1] = keep[i + bw] = keep[i + bw + 1] = 1;
+    }
+  }
+  let thin = 0;
+  for (let y = 0; y < bh; y++) {
+    for (let x = 0; x < bw; x++) {
+      if (!water[y * bw + x] || keep[y * bw + x]) continue;
+      const a = y * 2 * w + x * 2;
+      newLand[a] = newLand[a + 1] = newLand[a + w] = newLand[a + w + 1] = 1;
+      thin += 4;
+    }
+  }
+  console.log(`filled ${thin} tiles of water thinner than four tiles`);
 }
 
 // Small lakes become land as well.
@@ -250,7 +307,7 @@ function components2(mask: Uint8Array, W: number, H: number): { labels: Int32Arr
   return { labels, sizes };
 }
 
-// The mini map: 2x2 blocks, water wins so the pathfinder keeps every channel.
+// The mini map: one tile for each 2x2 block, which by now is all land or all water.
 const mw = w >> 1;
 const mh = h >> 1;
 const miniLand = new Uint8Array(mw * mh);
