@@ -133,6 +133,8 @@ wearing and the arms editor all work, and nothing is charged. Clear
      emoji appended to `GLYPHS` (append only, the order is the atlas order),
      or a `PROCEDURAL` entry plus its branch in `src/render/Cloth.ts`;
    - arms charges are appended to `CHARGES` in `src/client/Heraldry.ts`.
+   - a sea trail (the line a longship leaves) is one line in
+     `src/store/Trails.ts`: a colour and shape, or a symbol from `GLYPHS`.
 3. Run `npm run catalog-sql` to rewrite the price mirror at the bottom of
    `supabase/schema.sql`, then re-run that file in Supabase.
 

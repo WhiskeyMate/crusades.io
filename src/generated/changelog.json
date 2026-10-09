@@ -1,8 +1,13 @@
 {
-  "version": "0.1.35",
+  "version": "0.1.36",
   "builtAt": "2026-10-09",
-  "commits": 35,
+  "commits": 36,
   "entries": [
+    {
+      "hash": "ff073b1",
+      "date": "2026-10-09",
+      "subject": "Narrow straits show as water, war galleys get health bars, longships leave a wake, sorcery shows its flight line"
+    },
     {
       "hash": "e7a6a69",
       "date": "2026-10-09",

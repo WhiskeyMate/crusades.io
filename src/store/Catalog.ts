@@ -5,8 +5,9 @@
 // by `npm run catalog-sql`; re-run supabase/schema.sql after changing them.
 
 import { GLYPHS, PROCEDURAL } from "./Cloths";
+import { TRAILS } from "./Trails";
 
-export type Slot = "territory" | "banner" | "ships" | "buildings" | "troops";
+export type Slot = "territory" | "banner" | "ships" | "buildings" | "troops" | "trails";
 
 export interface CrownPack {
   id: string;
@@ -96,6 +97,13 @@ export const ITEMS: Item[] = [
   { id: "troops-skeleton", slot: "troops", name: "The restless dead", blurb: "They have marched before. They did not enjoy it.", crowns: 650, variant: "skeleton", tag: "New models" },
   { id: "troops-cavalry", slot: "troops", name: "Knights on horse", blurb: "Mounted knights in caparison, lances high.", crowns: 900, variant: "cavalry", tag: "New models" },
   { id: "troops-chicken", slot: "troops", name: "Poultry levy", blurb: "Very large chickens, armed. Morale is excellent.", crowns: 800, variant: "chicken", tag: "Meme" },
+
+  // ------------------------------------------------------------------- trails
+  ...TRAILS.map((t): Item => ({
+    id: t.key === "default" ? "trail-chalk" : `trail-${t.key.replace("g:", "g-")}`,
+    slot: "trails", name: t.name, blurb: t.blurb, crowns: t.crowns, variant: t.key,
+    ...(t.crowns === 0 ? { unlisted: true } : { tag: t.meme ? "Meme" : t.shape === "glyph" ? "Heraldic" : "Pattern" }),
+  })),
 ];
 
 export interface Bundle {
@@ -107,13 +115,13 @@ export interface Bundle {
 }
 
 export const BUNDLES: Bundle[] = [
-  { id: "bundle-northmen", name: "The Northmen", blurb: "Northern holds, dragon ships and Northmen to crew them.", items: ["build-nordic", "ships-norse", "troops-viking", "terr-g-wolves"], crowns: 1800 },
+  { id: "bundle-northmen", name: "The Northmen", blurb: "Northern holds, dragon ships and Northmen to crew them.", items: ["build-nordic", "ships-norse", "troops-viking", "terr-g-wolves", "trail-g-skulls"], crowns: 1950 },
   { id: "bundle-sultan", name: "The Sultan", blurb: "Desert cities, southern galleys, longbowmen and a field of crescents.", items: ["build-desert", "ships-lateen", "troops-archer", "terr-g-moons"], crowns: 1700 },
   { id: "bundle-tsar", name: "The Tsar", blurb: "Onion domes, eastern junks and knights on horse beneath the eagle.", items: ["build-eastern", "ships-junk", "troops-cavalry", "terr-g-eagles"], crowns: 2400 },
   { id: "bundle-crusade", name: "The Crusade", blurb: "Crusaders, a gilded fleet, grey stone and a field of crosses.", items: ["troops-crusader", "ships-gilt", "build-slate", "terr-g-crosses"], crowns: 1050 },
   { id: "bundle-northern", name: "The Black Baron", blurb: "Grey stone halls, a black fleet, mailed men and death's heads.", items: ["build-slate", "ships-black", "troops-mail", "terr-g-skulls"], crowns: 800 },
   { id: "bundle-herald", name: "The Herald", blurb: "Your own arms and six classic cloths.", items: ["banner-custom", "terr-stripes", "terr-checks", "terr-chevrons", "terr-lozenges", "terr-g-fleur", "terr-g-crowns"], crowns: 950 },
-  { id: "bundle-fool", name: "The Fool's Court", blurb: "A duck armada, a poultry levy, and clowns as far as the eye can see.", items: ["ships-duck", "troops-chicken", "terr-g-clowns", "terr-g-smug", "terr-g-jester"], crowns: 2500 },
+  { id: "bundle-fool", name: "The Fool's Court", blurb: "A duck armada, a poultry levy, and clowns as far as the eye can see.", items: ["ships-duck", "troops-chicken", "terr-g-clowns", "terr-g-smug", "terr-g-jester", "trail-g-ducks"], crowns: 2700 },
   { id: "bundle-dead", name: "The Risen", blurb: "The restless dead, a black fleet, and skulls on every acre.", items: ["troops-skeleton", "ships-black", "terr-g-skulls2", "terr-g-flames"], crowns: 1300 },
 ];
 
@@ -126,6 +134,7 @@ export const SLOT_NAMES: Record<Slot, string> = {
   ships: "Ships",
   buildings: "Buildings",
   troops: "Troops",
+  trails: "Sea trail",
 };
 
 export const itemById = (id: string): Item | undefined => ITEMS.find((i) => i.id === id);

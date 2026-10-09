@@ -13,6 +13,7 @@ import { modelFor, MODELS, Pool } from "./Models";
 import "./Styles";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
+import { trailColor, trailFor } from "../store/Trails";
 
 const STRUCTURES: Partial<Record<UnitType, keyof typeof MODELS>> = {
   [UnitType.City]: "town",
@@ -282,12 +283,7 @@ export class Units {
           if (u.type === UnitType.Warship && u.health !== undefined && this.stage.distance < 700) {
             this.marks.bar(pos.x, bob + 4.6 * size, pos.z, 2.6 * size, u.health / GALLEY_HEALTH);
           }
-          if (u.type === UnitType.TransportShip && (w.dx !== 0 || w.dy !== 0) && Math.random() < 0.6) {
-            // White water off the stern.
-            this.effects.wake(
-              pos.x - Math.sin(memo.yaw) * 1.6 * size, pos.z - Math.cos(memo.yaw) * 1.6 * size, memo.yaw, 0.55 * size,
-            );
-          }
+          if (u.type === UnitType.TransportShip) this.seaTrail(u, alpha, look?.trails, color, S);
           memo.y = 1;
           break;
         }
@@ -330,6 +326,29 @@ export class Units {
     for (const pool of Object.values(this.pools)) pool.end();
     this.tags.end();
     this.marks.end();
+  }
+
+  /**
+   * The line a longship has sailed, from where it put to sea to where it is
+   * now, in its owner's chosen trail. It lasts as long as the ship does.
+   */
+  private seaTrail(u: UnitState, alpha: number, variant: string | undefined, color: RGB, S: number) {
+    const plan = this.state.plans.gridPlans().get(u.id);
+    if (!plan || plan.path.length < 3) return;
+    const s = Math.min(plan.path.length - 1, (this.state.tick - plan.startTick + alpha) / Math.max(1, plan.ticksPerStep));
+    const trail = trailFor(variant);
+    // Marks grow a little as the camera pulls back, and thin out on long
+    // crossings so a sea full of ships stays cheap to draw.
+    const grow = Math.pow(S, 0.7);
+    const gap = Math.max(trail.gap * grow, s / 220);
+    const size = trail.size * grow;
+    const kind = trail.shape === "glyph" ? 4 : trail.shape === "diamond" ? 3 : trail.shape === "ring" ? 2 : 0;
+    // Counted from the start, so marks stay put as the ship sails on; none under the hull.
+    for (let i = 0, d = 0; d < s - 2.5 * grow; i++, d += gap) {
+      const [tx, ty] = this.alongPath(plan.path, d);
+      const [r, g, b] = trailColor(trail, color, i);
+      this.marks.mark(this.terrain.worldX(tx), 0.35 + size * 0.3, this.terrain.worldZ(ty), size, kind, trail.glyph ?? 0, r, g, b);
+    }
   }
 
   /** How high a sorcery flies over tile (tx, ty) of its path, and how far along it is. */

@@ -25,6 +25,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "troops", label: "Troops", icon: "⚔" },
   { id: "ships", label: "Ships", icon: "⛵" },
   { id: "buildings", label: "Buildings", icon: "🏰" },
+  { id: "trails", label: "Sea trails", icon: "〰" },
   { id: "territory", label: "Territory", icon: "▦" },
   { id: "banner", label: "Your arms", icon: "⛨" },
   { id: "name", label: "House name", icon: "✒" },
@@ -53,7 +54,7 @@ function picture(item: Item): string {
   const url = previewURL(item, myColor(), item.id === "banner-custom" ? draft : null);
   return url
     ? `<div class="shot ${item.slot}"><img src="${url}" alt="" loading="lazy" /></div>`
-    : `<div class="shot none"><span>${{ territory: "▦", banner: "⛨", ships: "⛵", buildings: "🏰", troops: "⚔" }[item.slot]}</span></div>`;
+    : `<div class="shot none"><span>${{ territory: "▦", banner: "⛨", ships: "⛵", buildings: "🏰", troops: "⚔", trails: "〰" }[item.slot]}</span></div>`;
 }
 
 function card(item: Item): string {
@@ -121,7 +122,7 @@ function drawSlot(slot: Slot): string {
     .join("");
   return (
     `<div class="chips">${chips}<span class="count">${list.length} item${list.length === 1 ? "" : "s"}</span></div>` +
-    (list.length ? `<div class="cards${slot === "territory" ? " dense" : ""}">${list.map(card).join("")}</div>` : `<p class="dim">Nothing here yet.</p>`) +
+    (list.length ? `<div class="cards${slot === "territory" || slot === "trails" ? " dense" : ""}">${list.map(card).join("")}</div>` : `<p class="dim">Nothing here yet.</p>`) +
     (slot === "banner" ? drawArms() : "")
   );
 }

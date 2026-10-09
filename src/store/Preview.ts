@@ -8,6 +8,7 @@ import { CLOTH_GLSL, glyphAtlas, NOISE_GLSL } from "../render/Cloth";
 import { Model, modelFor } from "../render/Models";
 import "../render/Styles";
 import { clothId } from "./Cloths";
+import { trailColor, trailFor } from "./Trails";
 import { Item } from "./Catalog";
 
 const W = 320;
@@ -132,6 +133,66 @@ function clothPicture(variant: string, color: RGB): string {
   return url;
 }
 
+/** A trail drawn as it lies on the sea: a curving line of its marks, with a boat at the head. */
+function trailPicture(variant: string, color: RGB): string {
+  const trail = trailFor(variant);
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+  const sea = ctx.createLinearGradient(0, 0, W, H);
+  sea.addColorStop(0, "#1d5d78");
+  sea.addColorStop(1, "#123c5c");
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, 0, W, H);
+  const atlas = glyphAtlas().image as HTMLCanvasElement;
+  const cell = atlas.width / 8;
+  const px = 28; // pixels per tile
+  const n = Math.max(3, Math.floor(10.5 / trail.gap));
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const x = 26 + t * (W - 70);
+    const y = H * 0.72 - Math.sin(t * Math.PI * 0.9) * H * 0.42;
+    const s = trail.size * px;
+    const [r, g, b] = trailColor(trail, color, i);
+    const fill = `rgb(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)})`;
+    ctx.lineWidth = Math.max(1.5, s * 0.14);
+    ctx.strokeStyle = "rgba(15, 10, 6, 0.85)";
+    ctx.fillStyle = fill;
+    if (trail.shape === "glyph") {
+      const gi = trail.glyph ?? 0;
+      ctx.drawImage(atlas, (gi % 8) * cell, Math.floor(gi / 8) * cell, cell, cell, x - s / 2, y - s / 2, s, s);
+    } else if (trail.shape === "ring") {
+      ctx.lineWidth = s * 0.34;
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.36, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = s * 0.2;
+      ctx.strokeStyle = fill;
+      ctx.stroke();
+    } else if (trail.shape === "diamond") {
+      ctx.beginPath();
+      ctx.moveTo(x, y - s / 2);
+      ctx.lineTo(x + s / 2, y);
+      ctx.lineTo(x, y + s / 2);
+      ctx.lineTo(x - s / 2, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    } else {
+      ctx.beginPath();
+      ctx.arc(x, y, s * 0.42, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+  ctx.font = "34px serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("⛵", W - 30, H * 0.72 - Math.sin(Math.PI * 0.9) * H * 0.42 - 16);
+  return canvas.toDataURL("image/png");
+}
+
 const svgURL = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg.replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" '))}`;
 
 /** An image of the item as it will look in game, in this colour. Empty if WebGL is unavailable. */
@@ -148,6 +209,9 @@ export function previewURL(item: Item, colorHex: string, skin?: Skin | null): st
         break;
       case "banner":
         url = svgURL(shieldSVG("preview", color, 180, skin ?? undefined));
+        break;
+      case "trails":
+        url = trailPicture(item.variant, color);
         break;
       case "ships": {
         const g = new THREE.Group();
