@@ -140,7 +140,7 @@ export class Units {
    * drawn position is a weighted average of the tiles around the current
    * step and the heading comes from a little way ahead and behind.
    */
-  private where(u: UnitState, alpha: number, out: THREE.Vector3) {
+  private where(u: UnitState, alpha: number, out: THREE.Vector3, room = 0) {
     const map = this.state.map;
     const plan = this.state.plans.gridPlans().get(u.id);
     if (plan && plan.path.length > 2) {
@@ -148,6 +148,16 @@ export class Units {
       const here = this.alongPath(plan.path, s);
       const back = this.alongPath(plan.path, s - 3);
       const ahead = this.alongPath(plan.path, s + 3);
+      if (room > 0) {
+        // A ship: the path from the engine hugs the coast tile by tile, and
+        // rounding it off cuts corners across headlands. Stand every point
+        // off the shore by the beam of the ship, easing in to the quay at
+        // either end of the voyage.
+        const last = plan.path.length - 1;
+        this.afloat(here, room * this.berth(s, last));
+        this.afloat(back, room * this.berth(s - 3, last));
+        this.afloat(ahead, room * this.berth(s + 3, last));
+      }
       out.set(this.terrain.worldX(here[0]), 0, this.terrain.worldZ(here[1]));
       return { tx: here[0], ty: here[1], dx: ahead[0] - back[0], dy: ahead[1] - back[1] };
     }
@@ -159,10 +169,25 @@ export class Units {
       x0 = x1;
       y0 = y1;
     }
-    const tx = x0 + (x1 - x0) * alpha;
-    const ty = y0 + (y1 - y0) * alpha;
+    let tx = x0 + (x1 - x0) * alpha;
+    let ty = y0 + (y1 - y0) * alpha;
+    if (room > 0) {
+      const p = this.afloat([tx, ty], room);
+      tx = p[0];
+      ty = p[1];
+    }
     out.set(this.terrain.worldX(tx), 0, this.terrain.worldZ(ty));
     return { tx, ty, dx: x1 - x0, dy: y1 - y0 };
+  }
+
+  /** Pushes a point (in place) out from the shore until it has `room` tiles of water. */
+  private afloat(p: [number, number], room: number): [number, number] {
+    return this.terrain.keepAfloat(p[0], p[1], room, p);
+  }
+
+  /** How much sea-room to insist on at step `s` of a voyage: little at the quays, all of it between. */
+  private berth(s: number, last: number): number {
+    return Math.min(1, Math.max(0.2, Math.min(s, last - s) / 6));
   }
 
   /** Smoothed tile coordinates at fractional step `s` of a path. */
@@ -267,7 +292,11 @@ export class Units {
         continue;
       }
 
-      const w = this.where(u, alpha, pos);
+      // Ships are kept clear of the shore by about their own beam, which
+      // grows as the camera pulls back and the models are drawn larger.
+      const ship = u.type === UnitType.Warship || u.type === UnitType.TransportShip || u.type === UnitType.TradeShip;
+      const room = ship ? Math.min(3.5, (u.type === UnitType.TradeShip ? 0.7 : 1.15) * shipScale) : 0;
+      const w = this.where(u, alpha, pos, room);
       if (w.dx !== 0 || w.dy !== 0) {
         const want = Math.atan2(w.dx, w.dy);
         let d = want - memo.yaw;
@@ -290,14 +319,14 @@ export class Units {
           // Galleys are the big ships; cogs are little merchantmen beside them.
           const size =
             u.type === UnitType.Warship ? shipScale * 0.8 : u.type === UnitType.TradeShip ? shipScale * 0.45 : shipScale;
-          this.put(pool, pos.x, bob + 0.05, pos.z, memo.yaw, size, color, hurt, Math.sin(time * 1.1 + u.id) * 0.04, roll);
+          this.put(pool, pos.x, bob + 0.12, pos.z, memo.yaw, size, color, hurt, Math.sin(time * 1.1 + u.id) * 0.04, roll);
           if (hurt < 1 && Math.random() < 0.15) {
             this.effects.trail(this.p.set(pos.x, 2 * shipScale, pos.z), 0.5 * shipScale);
           }
           if (u.type === UnitType.Warship && u.health !== undefined && this.stage.distance < 700) {
             this.marks.bar(pos.x, bob + 4.6 * size, pos.z, 2.6 * size, u.health / GALLEY_HEALTH);
           }
-          if (u.type === UnitType.TransportShip) this.seaTrail(u, alpha, look?.trails, color, S);
+          if (u.type === UnitType.TransportShip) this.seaTrail(u, alpha, look?.trails, color, S, room);
           memo.y = 1;
           break;
         }
@@ -348,17 +377,20 @@ export class Units {
    * The ribbon a longship has laid, from where it put to sea to where it is
    * now, in its owner's chosen trail. It lasts as long as the ship does.
    */
-  private seaTrail(u: UnitState, alpha: number, variant: string | undefined, color: RGB, S: number) {
+  private seaTrail(u: UnitState, alpha: number, variant: string | undefined, color: RGB, S: number, room: number) {
     const plan = this.state.plans.gridPlans().get(u.id);
     if (!plan || plan.path.length < 3) return;
     const s = Math.min(plan.path.length - 1, (this.state.tick - plan.startTick + alpha) / Math.max(1, plan.ticksPerStep));
     if (s < 1) return;
+    const last = plan.path.length - 1;
     // Long crossings are sampled more coarsely, so a sea full of ships stays cheap.
     const n = Math.min(TRAIL_POINTS, Math.max(2, Math.ceil(s / 1.5) + 1));
     for (let i = 0; i < n; i++) {
-      const [tx, ty] = this.alongPath(plan.path, (s * i) / (n - 1));
-      this.trailX[i] = this.terrain.worldX(tx);
-      this.trailZ[i] = this.terrain.worldZ(ty);
+      // The wake lies where the hull went: stood off the shore the same way.
+      const d = (s * i) / (n - 1);
+      const p = this.afloat(this.alongPath(plan.path, d), room * this.berth(d, last));
+      this.trailX[i] = this.terrain.worldX(p[0]);
+      this.trailZ[i] = this.terrain.worldZ(p[1]);
     }
     // A little wider from far off, so it stays visible as the camera pulls back.
     this.trails.add(this.trailX, this.trailZ, n, 0.3, 1.9 * Math.pow(S, 0.7), trailFor(variant), color);

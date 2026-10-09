@@ -1,8 +1,13 @@
 {
-  "version": "0.1.44",
+  "version": "0.1.45",
   "builtAt": "2026-10-09",
-  "commits": 44,
+  "commits": 45,
   "entries": [
+    {
+      "hash": "448b87f",
+      "date": "2026-10-09",
+      "subject": "The land is flat: hills and mountains are painted on, so nothing sails or marches through a hillside"
+    },
     {
       "hash": "dbc5f58",
       "date": "2026-10-09",
