@@ -5,7 +5,7 @@ import { CHARGES, DIVISION_COUNT, DIVISION_NAMES, hexToRGB, shieldSVG, Skin } fr
 import {
   BUNDLES, Bundle, defaultItem, Item, ITEMS, itemById, NAME_COST, PACKS, rarityOf, Slot, SLOT_NAMES,
 } from "../store/Catalog";
-import { previewURL } from "../store/Preview";
+import { liveTrailHTML, previewURL, startLiveTrails } from "../store/Preview";
 import { account, accountsEnabled } from "./Account";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -51,7 +51,14 @@ const crowns = (n: number) => `<span class="cr">${n.toLocaleString("en-US")} ♛
 /** The colour previews are drawn in: the player's chosen field, or crimson. */
 const myColor = () => (account.skin ?? account.state?.skin ?? DEFAULT).color;
 
+let trailCards = 0;
+
 function picture(item: Item): string {
+  if (item.slot === "trails") {
+    // Trails move, so their cards do: a longship of the fleet you wear, sailing.
+    const ships = itemById(account.state?.equipped.ships ?? "")?.variant ?? "default";
+    return `<div class="shot trails">${liveTrailHTML(item.variant, myColor(), ships, trailCards++)}</div>`;
+  }
   const url = previewURL(item, myColor(), item.id === "banner-custom" ? draft : null);
   return url
     ? `<div class="shot ${item.slot}"><img src="${url}" alt="" loading="lazy" /></div>`
@@ -318,6 +325,7 @@ function draw() {
     };
   }
   wireArms();
+  startLiveTrails();
   if (note) el("acct-note").textContent = note;
 }
 

@@ -374,7 +374,14 @@ export class Game {
       }
     }
 
+    // Aiming a fireball or dragon: show its flight before it is cast.
+    const aiming = this.hud.placing;
+    this.units.aim =
+      (aiming === UnitType.AtomBomb || aiming === UnitType.HydrogenBomb) && this.hoverTile !== null
+        ? { type: aiming, target: this.hoverTile }
+        : null;
     this.units.update(alpha, dt, this.time);
+    this.hud.aimWarning(this.units.aimDoomed);
     this.armies.update(dt, this.time);
     this.effects.update(this.time, window.innerHeight, this.stage.camera.fov);
     this.groundNames.update();

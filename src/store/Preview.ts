@@ -220,3 +220,114 @@ export function previewURL(item: Item, colorHex: string, skin?: Skin | null): st
   cache.set(key, url);
   return url;
 }
+
+// ------------------------------------------------------------ live sea trails
+// A trail is a moving thing, so its card shows it moving: a longship sailing
+// a bend of open water in 3D, laying the ribbon behind it. One scene and the
+// one hidden renderer serve every card; each frame the cards on screen are
+// drawn in turn and copied to their own small canvases.
+
+interface LiveScene {
+  scene: THREE.Scene;
+  cam: THREE.PerspectiveCamera;
+  ribbon: SeaTrails;
+  ship: THREE.Group;
+  shipKey: string;
+}
+
+let live: LiveScene | null = null;
+let liveRunning = false;
+const LIVE_POINTS = 70;
+const liveX = new Float32Array(LIVE_POINTS);
+const liveZ = new Float32Array(LIVE_POINTS);
+
+/** The course sailed in a trail card: a long S across the frame. */
+const courseX = (t: number) => -8.5 + t * 17;
+const courseZ = (t: number) => Math.sin(t * Math.PI * 1.5) * 2.6 - 0.3;
+
+function liveScene(): LiveScene {
+  if (live) return live;
+  const scene = new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x24405a, 1.3));
+  const sun = new THREE.DirectionalLight(0xfff1d6, 2.0);
+  sun.position.set(4, 8, 5);
+  scene.add(sun);
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(80, 60), new THREE.MeshLambertMaterial({ color: 0x1d5f7d }));
+  sea.rotation.x = -Math.PI / 2;
+  scene.add(sea);
+  const cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 200);
+  cam.position.set(0, 10.5, 13.5);
+  cam.lookAt(0, 0, 0.6);
+  live = { scene, cam, ribbon: new SeaTrails(scene, LIVE_POINTS * 2 + 4, 0.72), ship: new THREE.Group(), shipKey: "" };
+  scene.add(live.ship);
+  return live;
+}
+
+function drawLive(canvas: HTMLCanvasElement, time: number) {
+  const r = gl();
+  const ctx = canvas.getContext("2d");
+  if (!r || !ctx) return;
+  const s = liveScene();
+  const color = hexToRGB(canvas.dataset.color ?? "#c71a21");
+  const shipKey = `${canvas.dataset.ship ?? "default"}|${canvas.dataset.color}`;
+  if (s.shipKey !== shipKey) {
+    s.shipKey = shipKey;
+    s.ship.clear();
+    s.ship.add(meshes(modelFor("longship", canvas.dataset.ship ?? "default").model, color));
+  }
+  // Sail the course in six seconds, rest a moment at the far side, begin again.
+  const phase = Number(canvas.dataset.phase ?? 0);
+  const t = Math.min(1, (((time + phase) % 7.2) / 6));
+  const n = Math.max(2, Math.round(t * (LIVE_POINTS - 1)) + 1);
+  for (let i = 0; i < n; i++) {
+    const u = (t * i) / (n - 1);
+    liveX[i] = courseX(u);
+    liveZ[i] = courseZ(u);
+  }
+  s.ribbon.begin(time);
+  if (t > 0.02) s.ribbon.add(liveX, liveZ, n, 0.06, 1.7, trailFor(canvas.dataset.trail), color);
+  s.ribbon.end();
+  const dx = courseX(t + 0.01) - courseX(t - 0.01);
+  const dz = courseZ(t + 0.01) - courseZ(t - 0.01);
+  s.ship.position.set(courseX(t), Math.sin(time * 2.2 + phase) * 0.05, courseZ(t));
+  s.ship.rotation.set(Math.sin(time * 1.6 + phase) * 0.04, Math.atan2(dx, dz), Math.sin(time * 1.9) * 0.06, "YXZ");
+  s.ship.scale.setScalar(1.05);
+  r.setClearColor(0x000000, 0);
+  r.render(s.scene, s.cam);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(r.domElement, 0, 0, canvas.width, canvas.height);
+}
+
+function liveFrame() {
+  const canvases = Array.from(document.querySelectorAll<HTMLCanvasElement>("canvas.live-trail"));
+  if (canvases.length === 0) {
+    liveRunning = false;
+    return;
+  }
+  const time = performance.now() / 1000;
+  const h = window.innerHeight;
+  for (const c of canvases) {
+    // Only the cards actually in view are worth a render.
+    const box = c.getBoundingClientRect();
+    if (box.width === 0 || box.bottom < 0 || box.top > h) continue;
+    try {
+      drawLive(c, time);
+    } catch (e) {
+      console.warn("trail preview failed", e);
+      c.classList.remove("live-trail");
+    }
+  }
+  requestAnimationFrame(liveFrame);
+}
+
+/** The markup for a live trail card; call `startLiveTrails` once it is in the page. */
+export function liveTrailHTML(variant: string, colorHex: string, shipVariant: string, index: number): string {
+  return `<canvas class="live-trail" width="${W}" height="${H}" data-trail="${variant}" data-color="${colorHex}" data-ship="${shipVariant}" data-phase="${(index * 1.37) % 7.2}"></canvas>`;
+}
+
+/** Animate every live trail card now in the page; stops by itself when none are left. */
+export function startLiveTrails() {
+  if (liveRunning || !gl()) return;
+  liveRunning = true;
+  requestAnimationFrame(liveFrame);
+}

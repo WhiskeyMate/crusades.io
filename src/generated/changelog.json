@@ -1,8 +1,13 @@
 {
-  "version": "0.1.40",
+  "version": "0.1.41",
   "builtAt": "2026-10-09",
-  "commits": 40,
+  "commits": 41,
   "entries": [
+    {
+      "hash": "eca01d7",
+      "date": "2026-10-09",
+      "subject": "Sea trails are translucent and soft-edged so they sit in the water"
+    },
     {
       "hash": "ac8a00b",
       "date": "2026-10-09",

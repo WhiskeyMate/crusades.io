@@ -134,6 +134,30 @@ export class Hud {
     el("hint").hidden = text === null;
   }
 
+  private lastAim: boolean | null | undefined = undefined;
+
+  /**
+   * While aiming a fireball or dragon: say whether the flight drawn on the
+   * map is clear (false), covered by a ballista tower (true), or cannot be
+   * drawn because no mage tower is ready (null).
+   */
+  aimWarning(doomed: boolean | null) {
+    const type = this.placing;
+    const aiming = type === UnitType.AtomBomb || type === UnitType.HydrogenBomb;
+    const state = aiming ? doomed : undefined;
+    if (state === this.lastAim) return;
+    this.lastAim = state;
+    const hint = el("hint");
+    hint.classList.toggle("danger", state === true);
+    hint.classList.toggle("clear", state === false);
+    if (!aiming || !type) return;
+    const name = UNIT_LORE[type].name;
+    hint.textContent =
+      state === true ? `${name}: a ballista tower covers this flight. It will likely be shot down (red line).`
+      : state === false ? `${name}: clear flight, no ballista tower in reach. Click to cast. Esc to cancel.`
+      : `${name}: click the map to place it. Shift-click to place several. Esc to cancel.`;
+  }
+
   place(type: UnitType | null) {
     this.placing = type;
     document.body.classList.toggle("placing", type !== null);

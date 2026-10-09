@@ -412,3 +412,6 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 }
 #acct-custom3 { width: 30px; height: 28px; padding: 0; border: 1px solid var(--edge); background: none; margin: 0; display: inline-block; }
 .pick.auto { line-height: 1; font-size: 12px; padding: 5px 9px; }
+#hint.danger { color: #ffb0a0; border-color: #c0392b; }
+#hint.clear { color: #c8f0b0; }
+.shot canvas { width: 100%; height: 100%; display: block; }

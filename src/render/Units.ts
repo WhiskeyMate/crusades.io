@@ -4,6 +4,7 @@
 
 import * as THREE from "three";
 import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { getParabolaControlPoints } from "@crusades/engine/pathfinding/PathFinder.Parabola";
 import { GameState, UnitState } from "../client/GameState";
 import { RGB } from "../client/Heraldry";
 import { Dragon, Effects } from "./Effects";
@@ -48,6 +49,10 @@ export class Units {
   private pools: Record<string, Pool> = {};
   private tags: LevelTags;
   private marks: Marks;
+  /** Set while the player is aiming a fireball or dragon: what, and at which tile. */
+  aim: { type: UnitType; target: number } | null = null;
+  /** Whether the aimed shot is forecast to be shot down (for the HUD). */
+  aimDoomed: boolean | null = null;
   private trails: SeaTrails;
   private trailX = new Float32Array(TRAIL_POINTS);
   private trailZ = new Float32Array(TRAIL_POINTS);
@@ -334,6 +339,7 @@ export class Units {
     }
     for (const pool of Object.values(this.pools)) pool.end();
     this.tags.end();
+    this.aimLine(S);
     this.marks.end();
     this.trails.end();
   }
@@ -409,6 +415,80 @@ export class Units {
       }
     }
     return false;
+  }
+
+  /**
+   * Before the shot: the arc from the mage tower that would cast it to the
+   * tile under the cursor, red if a ballista tower stands in reach of it.
+   * The engine fires from the caster's nearest ready tower along a fixed
+   * curve, so the same curve is drawn here.
+   */
+  private aimLine(S: number) {
+    this.aimDoomed = null;
+    const aim = this.aim;
+    const me = this.state.me;
+    if (!aim || !me) return;
+    const map = this.state.map;
+    const gx = map.x(aim.target);
+    const gy = map.y(aim.target);
+    let silo: UnitState | null = null;
+    let best = Infinity;
+    for (const u of this.state.units.values()) {
+      if (u.type !== UnitType.MissileSilo || u.ownerID !== me.smallID || u.underConstruction) continue;
+      const d = Math.abs(map.x(u.pos) - gx) + Math.abs(map.y(u.pos) - gy);
+      if (d < best) {
+        best = d;
+        silo = u;
+      }
+    }
+    if (!silo) return;
+    const [p0, p1, p2, p3] = getParabolaControlPoints(map, silo.pos, aim.target, { directionUp: true });
+    const total = Math.max(1, Math.hypot(p3.x - p0.x, p3.y - p0.y));
+    const n = Math.min(90, Math.max(12, Math.round(total / 5)));
+    const xs: number[] = [];
+    const ys: number[] = [];
+    for (let i = 0; i <= n; i++) {
+      const t = i / n;
+      const k = 1 - t;
+      xs.push(k * k * k * p0.x + 3 * k * k * t * p1.x + 3 * k * t * t * p2.x + t * t * t * p3.x);
+      ys.push(k * k * k * p0.y + 3 * k * k * t * p1.y + 3 * k * t * t * p2.y + t * t * t * p3.y);
+    }
+    // The first point of the flight a hostile ballista tower can reach, if any.
+    let hit = -1;
+    for (const sam of this.state.units.values()) {
+      if (sam.type !== UnitType.SAMLauncher || sam.underConstruction || sam.ownerID === me.smallID) continue;
+      const owner = this.state.players.get(sam.ownerID);
+      if (owner && this.state.isAllied(owner, me)) continue;
+      const range = this.state.config.samRange(Math.max(1, sam.level));
+      const sx = map.x(sam.pos);
+      const sy = map.y(sam.pos);
+      for (let i = 0; i <= n; i++) {
+        const dx = xs[i] - sx;
+        const dy = ys[i] - sy;
+        if (dx * dx + dy * dy <= range * range) {
+          if (hit < 0 || i < hit) hit = i;
+          break;
+        }
+      }
+    }
+    this.aimDoomed = hit >= 0;
+    const size = 1.0 * Math.pow(S, 0.8);
+    const dragon = aim.type === UnitType.HydrogenBomb;
+    for (let i = 1; i <= n; i++) {
+      const t = i / n;
+      const tx = Math.min(map.width() - 1, Math.max(0, xs[i]));
+      const ty = Math.min(map.height() - 1, Math.max(0, ys[i]));
+      const y =
+        this.terrain.surfaceAt(tx, ty) +
+        (dragon ? 14 + Math.sin(Math.PI * t) * Math.min(70, 20 + total * 0.12) : 3 + Math.sin(Math.PI * t) * Math.min(120, 22 + total * 0.25));
+      // Gold while it flies free; red from where a tower can reach it.
+      const red = hit >= 0 && i >= hit;
+      const big = i === n || i === hit;
+      this.marks.dot(
+        this.terrain.worldX(tx), i === n ? this.terrain.surfaceAt(tx, ty) + 1 : y, this.terrain.worldZ(ty),
+        big ? size * 2.2 : size, 1.0, red ? 0.22 : 0.86, red ? 0.16 : 0.42,
+      );
+    }
   }
 
   /** The dotted line a fireball or dragon has still to fly: red if a ballista will have it. */
