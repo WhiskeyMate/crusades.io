@@ -53,7 +53,12 @@ export const ClientMessageSchema = z.discriminatedUnion("type", [
     resume: z.object({ clientID: z.string().max(16), secret: z.string().max(64) }).optional(),
   }),
   /** Set or change the house name (needed before creating or joining). */
-  z.object({ type: z.literal("name"), name: UsernameSchema }),
+  z.object({
+    type: z.literal("name"),
+    name: UsernameSchema,
+    /** As in hello: the page often connects before the player has signed in. */
+    token: z.string().max(4000).optional(),
+  }),
   z.object({ type: z.literal("create"), config: LobbyConfigSchema }),
   /** Send me the public games. (They are also pushed when they change.) */
   z.object({ type: z.literal("list") }),

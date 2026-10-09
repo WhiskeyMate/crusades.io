@@ -189,6 +189,12 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     }
   }, 500);
 
+  // The sign-in is often known only after the hall has connected, and
+  // tokens are renewed hourly: keep the connection's copy current.
+  const refreshToken = () =>
+    void account.token().then((t) => online?.setToken(t)).catch(() => undefined);
+  setInterval(refreshToken, 2000);
+
   /** Make sure the server knows our name; false if there isn't one. */
   function named(o: Online): boolean {
     const name = hooks.name();

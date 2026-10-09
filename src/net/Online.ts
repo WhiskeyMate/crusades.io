@@ -63,7 +63,12 @@ export class Online {
   /** The house name to play under. Sent now if connected, else with hello. */
   setName(name: string) {
     this.name = name;
-    if (name) this.post({ type: "name", name });
+    if (name) this.post({ type: "name", name, token: this.token ?? undefined });
+  }
+
+  /** The account may sign in (or its token be renewed) after we connected. */
+  setToken(token: string | null) {
+    this.token = token;
   }
 
   list() {

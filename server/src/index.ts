@@ -618,9 +618,22 @@ async function handle(client: Client, msg: ClientMessage) {
       }
       break;
     }
-    case "name":
+    case "name": {
+      // The page connects on load, often before the sign-in is known: a
+      // token that arrives with the name counts just as one in hello does.
+      if (msg.token) {
+        const who = await identify(msg.token);
+        if (who) {
+          if (client.uid !== who.uid) log(`${client.clientID} signed in as account ${who.uid.slice(0, 8)}`);
+          client.uid = who.uid;
+          client.cosmetic = who.cosmetic;
+        } else if (!client.uid) {
+          log(`${client.clientID}: token sent with name not accepted`);
+        }
+      }
       await claimName(client, msg.name);
       break;
+    }
     case "list":
       send(client, hallMessage());
       break;
