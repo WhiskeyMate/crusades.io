@@ -157,8 +157,8 @@ export class Game {
       case UnitType.Shell:
         this.at(u, (p) => this.effects.puff(p.setY(1.5 * S), 1.2 * S, "spark"));
         break;
+      // Trade ships leave the map quietly: nearly all of them are just arriving.
       case UnitType.Warship:
-      case UnitType.TradeShip:
         this.at(u, (p) => this.effects.puff(p, 2.2 * S, "splash"));
         break;
       case UnitType.City:
