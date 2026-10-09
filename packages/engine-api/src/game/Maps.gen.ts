@@ -7,6 +7,8 @@ export enum GameMapType {
   Europe = "Europe",
   Mediterranean = "Mediterranean",
   Greece = "Greece",
+  Westeros = "Westeros",
+  MiddleEarth = "Middle-earth",
 }
 
 export type GameMapName = keyof typeof GameMapType;

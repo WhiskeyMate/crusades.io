@@ -22,6 +22,8 @@ const REALMS: { map: GameMapType; blurb: string }[] = [
   { map: GameMapType.Mediterranean, blurb: "The sea in the middle" },
   { map: GameMapType.Greece, blurb: "Aegean isles and straits" },
   { map: GameMapType.Earth, blurb: "The whole world, slowly" },
+  { map: GameMapType.Westeros, blurb: "Two continents and a narrow sea" },
+  { map: GameMapType.MiddleEarth, blurb: "The misty spine and the black land" },
 ];
 
 let chosen = GameMapType.Europe;

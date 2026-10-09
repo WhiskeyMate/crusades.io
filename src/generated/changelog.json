@@ -1,8 +1,13 @@
 {
-  "version": "0.1.46",
+  "version": "0.1.47",
   "builtAt": "2026-10-10",
-  "commits": 46,
+  "commits": 47,
   "entries": [
+    {
+      "hash": "56b62db",
+      "date": "2026-10-10",
+      "subject": "Maps rebuilt so sea routes never cross land: no water thinner than four tiles, no hidden ponds"
+    },
     {
       "hash": "f504d66",
       "date": "2026-10-10",
