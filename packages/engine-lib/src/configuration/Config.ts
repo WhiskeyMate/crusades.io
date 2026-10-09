@@ -320,7 +320,8 @@ export class Config {
     if (this.isRandomSpawn()) {
       return 150;
     }
-    return 200;
+    // crusades.io: 30 seconds to choose a spot (OpenFront gives 20).
+    return 300;
   }
 
   maxTroops(player: PlayerLike): number {

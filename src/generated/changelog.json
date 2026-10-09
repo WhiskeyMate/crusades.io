@@ -1,8 +1,13 @@
 {
-  "version": "0.1.32",
+  "version": "0.1.33",
   "builtAt": "2026-10-09",
-  "commits": 32,
+  "commits": 33,
   "entries": [
+    {
+      "hash": "a1faa9e",
+      "date": "2026-10-09",
+      "subject": "Territory runs to the waterline and borders are rounded instead of stepped"
+    },
     {
       "hash": "3e89203",
       "date": "2026-10-09",
