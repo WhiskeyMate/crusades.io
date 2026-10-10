@@ -53,6 +53,8 @@ export class Units {
   private marks: Marks;
   /** War galleys the player has chosen and is about to order: each wears a gold marker. */
   chosen: ReadonlySet<number> = new Set();
+  /** The building a click would raise a level rather than build beside: it is ringed in gold. */
+  upgrading: number | null = null;
 
   /** Where a unit was last drawn, in the world; null if it has not been drawn. */
   drawnAt(id: number, out: THREE.Vector3): THREE.Vector3 | null {
@@ -253,7 +255,23 @@ export class Units {
         if (u.underConstruction) {
           this.put(this.pools.scaffold, wx, wy, wz, memo.yaw, structScale * rise, color);
         } else {
-          this.put(this.pool(structure, look?.buildings ?? "default"), wx, wy, wz, memo.yaw, structScale * grow * rise, color);
+          const marked = u.id === this.upgrading;
+          // About to be raised a level: it swells and settles, inside a turning ring of gold.
+          const swell = marked ? 1.08 + Math.sin(time * 6) * 0.06 : 1;
+          this.put(this.pool(structure, look?.buildings ?? "default"), wx, wy, wz, memo.yaw, structScale * grow * rise * swell, color);
+          if (marked) {
+            const r = structScale * 4.2 * grow;
+            for (let i = 0; i < 14; i++) {
+              const a = time * 1.6 + (i / 14) * Math.PI * 2;
+              this.marks.dot(wx + Math.sin(a) * r, wy + 0.5 * structScale, wz + Math.cos(a) * r, 0.7 * structScale, 1.0, 0.82, 0.3);
+            }
+            // And an arrow of three marks climbing above it.
+            const high = (structure === "mageTower" ? 11 : structure === "keep" ? 8 : 6.2) * structScale * grow;
+            for (let i = 0; i < 3; i++) {
+              const lift = ((time * 1.4 + i / 3) % 1) * 3 * structScale;
+              this.marks.dot(wx, wy + high + lift, wz, (1.3 - i * 0.25) * structScale, 1.0, 0.82, 0.3);
+            }
+          }
           if (showTags) {
             const top = structure === "mageTower" ? 9 : structure === "keep" ? 6 : 4.2;
             this.tags.add(wx, wy + top * structScale * grow + 1.2 * Math.pow(S, 0.6), wz, u.level);

@@ -251,6 +251,39 @@ export class Game {
     return this.wayTo(tile, owner);
   }
 
+  /** What the engine last said about building on the tile under the cursor. */
+  private upgrade = { tile: -1, type: null as UnitType | null, id: null as number | null, at: -Infinity, asking: false };
+
+  /**
+   * While a building is being placed: the one a click here would raise a
+   * level instead, if any. Only the engine knows how near is near enough, so
+   * it is asked, afresh for each tile the cursor comes to rest on.
+   */
+  private wouldUpgrade(): number | null {
+    const placing = this.hud.placing;
+    const tile = this.hoverTile;
+    const u = this.upgrade;
+    if (placing === null || tile === null || !Structures.has(placing)) {
+      u.tile = -1;
+      u.id = null;
+      return null;
+    }
+    const moved = u.tile !== tile || u.type !== placing;
+    const now = performance.now();
+    if (!u.asking && (moved || now - u.at > 500)) {
+      u.asking = true;
+      void this.session.buildables(tile, [placing as never]).then(([b]) => {
+        u.asking = false;
+        u.at = performance.now();
+        u.tile = tile;
+        u.type = placing;
+        u.id = b && b.canUpgrade !== false ? b.canUpgrade : null;
+      });
+    }
+    // An answer for another tile says nothing about this one.
+    return moved ? null : u.id;
+  }
+
   /** What the engine said a click on a realm (or a patch of wilderness) would do, and when it said it. */
   private ways = new Map<string, { kind: CursorKind; at: number; asking: boolean }>();
 
@@ -522,6 +555,9 @@ export class Game {
     this.units.update(alpha, dt, this.time);
     setCursor(this.stage.canvas, this.cursorKind(), this.hud.placing);
     this.hud.aimWarning(this.units.aimDoomed);
+    this.units.upgrading = this.wouldUpgrade();
+    const raised = this.units.upgrading === null ? undefined : this.session.state.units.get(this.units.upgrading);
+    this.hud.upgradeHint(raised ? raised.level : null);
     this.armies.update(dt, this.time);
     this.effects.update(this.time, window.innerHeight, this.stage.camera.fov);
     this.groundNames.update();

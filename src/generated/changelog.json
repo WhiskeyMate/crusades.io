@@ -1,8 +1,13 @@
 {
-  "version": "0.1.92",
+  "version": "0.1.93",
   "builtAt": "2026-10-10",
-  "commits": 92,
+  "commits": 93,
   "entries": [
+    {
+      "hash": "916017a",
+      "date": "2026-10-10",
+      "subject": "The landing page no longer carries the line about the realm behind it"
+    },
     {
       "hash": "efc0502",
       "date": "2026-10-10",

@@ -634,3 +634,5 @@ body:has(#landing:not([hidden])) #ad-corner > div:nth-child(n + 2) { display: no
 #accel p b { font-size: inherit; color: var(--gold); }
 #accel code { background: #120c07; border: 1px solid var(--edge); border-radius: 3px; padding: 1px 5px; font-size: 13px; user-select: all; }
 #accel button { float: right; }
+/* Placing would raise a building that is already there. */
+#hint.upgrade { color: #1b1410; background: rgba(242, 210, 122, 0.95); border-color: #f2d27a; }

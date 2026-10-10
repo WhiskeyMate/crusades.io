@@ -170,7 +170,29 @@ export class Hud {
       : `${name}: click the map to place it. Shift-click to place several. Esc to cancel.`;
   }
 
+  private lastUpgrade: number | null = null;
+
+  /**
+   * While placing a building: says whether the click will raise one that is
+   * already there (and to what level) or build a new one.
+   */
+  upgradeHint(level: number | null) {
+    const type = this.placing;
+    if (level === this.lastUpgrade) return;
+    this.lastUpgrade = level;
+    const hint = el("hint");
+    hint.classList.toggle("upgrade", level !== null);
+    if (!type || type === UnitType.AtomBomb || type === UnitType.HydrogenBomb) return;
+    const name = UNIT_LORE[type].name;
+    hint.textContent =
+      level !== null
+        ? `${name}: click to raise the ringed one to level ${level + 1}, not build a new one. Esc to cancel.`
+        : `${name}: click the map to place it. Shift-click to place several. Esc to cancel.`;
+  }
+
   place(type: UnitType | null) {
+    this.lastUpgrade = null;
+    el("hint").classList.remove("upgrade");
     this.placing = type;
     document.body.classList.toggle("placing", type !== null);
     for (const b of Array.from(el("build").children) as HTMLElement[]) {
