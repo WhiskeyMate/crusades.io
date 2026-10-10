@@ -1,6 +1,7 @@
 // Online play from the hall: the list of public games starting soon,
 // hosting a private lobby, joining by code, and the waiting room.
 
+import { mapStillHTML } from "./MapPreview";
 import { Session } from "../client/Session";
 import { account } from "../account/Account";
 import { GAME_SERVER, Online } from "../net/Online";
@@ -199,6 +200,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
         const inIt = g.code === mine;
         return (
           `<div class="pub${inIt ? " in" : ""}" data-code="${g.code}">` +
+          mapStillHTML(c.map, "pub-thumb") +
           `<div class="pub-map">${esc(c.map)}</div>` +
           `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} clans</div>` +
           `<div class="pub-time"><b>${g.players === 0 ? "—" : s > 0 ? `${s}s` : "…"}</b><span>${g.players === 0 ? "waiting for lords" : s > 0 ? "until it starts" : "starting"}</span></div>` +

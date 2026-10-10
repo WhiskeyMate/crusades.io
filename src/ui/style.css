@@ -439,3 +439,16 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 .pub .pub-time { grid-column: 2; min-width: 70px; }
 .pub .pub-time b { font-size: 19px; }
 .pub button { grid-column: 3; grid-row: 1 / 3; margin-top: 0; padding: 8px 14px; align-self: center; white-space: nowrap; }
+/* Map previews */
+.map-live { position: relative; margin-top: 4px; border: 1px solid var(--edge); border-radius: 6px; overflow: hidden; background: radial-gradient(ellipse at 50% 40%, #24384a, #0f1a26 80%); }
+.map-live canvas { display: block; width: 100%; height: auto; aspect-ratio: 480 / 300; max-height: 200px; object-fit: contain; }
+.map-live b { position: absolute; left: 12px; bottom: 8px; font-size: 18px; color: var(--gold); text-shadow: 0 1px 3px #000, 0 0 8px #000; }
+#opt-maps { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); margin-top: 8px; }
+#opt-maps button { padding: 4px 4px 7px; }
+.map-thumb { width: 100%; aspect-ratio: 480 / 300; object-fit: cover; border-radius: 3px; background: #142230; display: block; }
+.map-thumb:not([src]), .pub-thumb:not([src]) { visibility: hidden; }
+.pub { grid-template-columns: auto 1fr auto auto; column-gap: 10px; }
+.pub .pub-thumb { grid-column: 1; grid-row: 1 / 3; width: 76px; aspect-ratio: 480 / 300; object-fit: cover; border-radius: 4px; background: #142230; border: 1px solid #3a2c1a; }
+.pub .pub-map, .pub .pub-meta { grid-column: 2; }
+.pub .pub-time { grid-column: 3; }
+.pub button { grid-column: 4; }

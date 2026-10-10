@@ -1,8 +1,18 @@
 {
-  "version": "0.1.59",
+  "version": "0.1.61",
   "builtAt": "2026-10-10",
-  "commits": 59,
+  "commits": 61,
   "entries": [
+    {
+      "hash": "66cf44a",
+      "date": "2026-10-10",
+      "subject": "A public game nobody joins is swapped for a different realm, so the list turns over every half minute"
+    },
+    {
+      "hash": "841e452",
+      "date": "2026-10-10",
+      "subject": "New map: The Crown Isles, nine large islands in a ring around a greater one"
+    },
     {
       "hash": "826d6aa",
       "date": "2026-10-10",

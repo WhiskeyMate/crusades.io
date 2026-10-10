@@ -1,5 +1,6 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
+import { mapStillHTML, startLiveMaps } from "./ui/MapPreview";
 import { initAds } from "./ui/Ads";
 import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { account } from "./account/Account";
@@ -56,9 +57,13 @@ function stopAttract() {
 function drawRealms() {
   const box = el("opt-maps");
   box.innerHTML = "";
+  // The chosen realm, large and slowly turning.
+  el("opt-map-live").dataset.map = chosen;
+  el("opt-map-name").textContent = chosen;
+  startLiveMaps();
   for (const r of REALMS) {
     const b = document.createElement("button");
-    b.innerHTML = `${r.map}<small>${r.blurb}</small>`;
+    b.innerHTML = `${mapStillHTML(r.map, "map-thumb")}${r.map}<small>${r.blurb}</small>`;
     b.dataset.map = r.map;
     b.classList.toggle("on", r.map === chosen);
     b.onclick = () => {
