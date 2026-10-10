@@ -23,8 +23,8 @@ const REALMS: { map: GameMapType; blurb: string }[] = [
   { map: GameMapType.Mediterranean, blurb: "The sea in the middle" },
   { map: GameMapType.Greece, blurb: "Aegean isles and straits" },
   { map: GameMapType.Earth, blurb: "The whole world, slowly" },
-  { map: GameMapType.Westeros, blurb: "Two continents and a narrow sea" },
-  { map: GameMapType.MiddleEarth, blurb: "The misty spine and the black land" },
+  { map: GameMapType.SunderedSea, blurb: "Two continents and the strait between" },
+  { map: GameMapType.Ironspine, blurb: "A mountain chain and a walled province" },
 ];
 
 let chosen = GameMapType.Europe;

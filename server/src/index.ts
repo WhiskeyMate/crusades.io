@@ -65,8 +65,8 @@ const PUBLIC_REALMS = [
   GameMapType.Mediterranean,
   GameMapType.Greece,
   GameMapType.Earth,
-  GameMapType.Westeros,
-  GameMapType.MiddleEarth,
+  GameMapType.SunderedSea,
+  GameMapType.Ironspine,
 ];
 
 /**

@@ -27,8 +27,8 @@ export const MAP_DIR: Record<GameMapType, string> = {
   [GameMapType.Europe]: "europe",
   [GameMapType.Mediterranean]: "mediterranean",
   [GameMapType.Greece]: "greece",
-  [GameMapType.Westeros]: "westeros",
-  [GameMapType.MiddleEarth]: "middleearth",
+  [GameMapType.SunderedSea]: "sundered",
+  [GameMapType.Ironspine]: "ironspine",
 };
 
 /** Kingdoms a map holds by default: the counts the upstream maps use. */
@@ -37,8 +37,8 @@ export const DEFAULT_KINGDOMS: Record<GameMapType, number> = {
   [GameMapType.Europe]: 52,
   [GameMapType.Mediterranean]: 38,
   [GameMapType.Greece]: 29,
-  [GameMapType.Westeros]: 60,
-  [GameMapType.MiddleEarth]: 70,
+  [GameMapType.SunderedSea]: 60,
+  [GameMapType.Ironspine]: 70,
 };
 /** Clans (the small AI realms) by default, as upstream. */
 export const DEFAULT_CLANS = 400;

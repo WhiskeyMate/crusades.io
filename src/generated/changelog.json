@@ -1,7 +1,7 @@
 {
-  "version": "0.1.56",
+  "version": "0.1.57",
   "builtAt": "2026-10-10",
-  "commits": 56,
+  "commits": 57,
   "entries": [
     {
       "hash": "afd3add",
@@ -17,11 +17,6 @@
       "hash": "40d1df5",
       "date": "2026-10-10",
       "subject": "Fix the freeze while placing buildings; the server install now really replaces the maps; a realm taken from the server is drawn as the server has it"
-    },
-    {
-      "hash": "e326278",
-      "date": "2026-10-10",
-      "subject": "Two new maps: Westeros and Middle-earth"
     },
     {
       "hash": "56b62db",

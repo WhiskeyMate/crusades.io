@@ -45,6 +45,8 @@ function worthShowing(subject: string): boolean {
   if (s.includes("[skip changelog]")) return false;
   // Payment plumbing is not news for players.
   if (/stripe|checkout|payment|refund|webhook|billing/.test(s)) return false;
+  // Two maps that were withdrawn and replaced: their names stay off the site.
+  if (/westeros|middle-earth/.test(s)) return false;
   return true;
 }
 
