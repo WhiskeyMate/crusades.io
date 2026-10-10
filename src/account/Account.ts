@@ -23,7 +23,14 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const DEV_PREVIEW = import.meta.env.DEV && new URLSearchParams(location.search).has("premium");
 const DEV_KEY = "crusades.dev.account";
 
-export const accountsEnabled = Boolean(URL && KEY) || DEV_PREVIEW;
+/**
+ * The store is closed until VITE_STORE_OPEN=on is set for the build (and
+ * STORE_OPEN=on for the checkout function): no sign-in, no store button, no
+ * purchases. Everything behind it is kept, so opening it again is two
+ * environment variables and a redeploy.
+ */
+export const STORE_OPEN = import.meta.env.VITE_STORE_OPEN === "on";
+export const accountsEnabled = (STORE_OPEN && Boolean(URL && KEY)) || DEV_PREVIEW;
 
 export interface AccountState {
   email: string;

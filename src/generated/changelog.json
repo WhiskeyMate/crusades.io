@@ -1,8 +1,13 @@
 {
-  "version": "0.1.51",
+  "version": "0.1.52",
   "builtAt": "2026-10-10",
-  "commits": 51,
+  "commits": 52,
   "entries": [
+    {
+      "hash": "afd3add",
+      "date": "2026-10-10",
+      "subject": "A pact shows as linked rings above your ally's label, fading as it runs out and pulsing when it can be renewed"
+    },
     {
       "hash": "a37e994",
       "date": "2026-10-10",

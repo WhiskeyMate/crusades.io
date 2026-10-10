@@ -835,7 +835,7 @@ mapsDir();
 ensurePublicGame();
 http.listen(PORT, HOST, () => {
   log(`crusades.io game server listening on ${HOST}:${PORT}`);
-  log(identityEnabled ? "accounts: on (reserved names and cosmetics are checked with Supabase)" : "accounts: off (set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable)");
+  log(identityEnabled ? "accounts: on (reserved names and cosmetics are checked with Supabase)" : "accounts: off (the store is closed, or Supabase is not set up: needs STORE_OPEN=on, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)");
   log(ADMIN_TOKEN ? "dashboard at /admin?token=… (token in ADMIN_TOKEN)" : "dashboard at /admin, from this machine only (set ADMIN_TOKEN to open it remotely)");
 });
 

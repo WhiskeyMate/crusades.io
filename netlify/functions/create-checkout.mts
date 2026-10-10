@@ -8,6 +8,9 @@ import { admin, caller, explain, json, siteUrl, stripe } from "./_shared.mts";
 
 export default async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
+  // Closed unless switched on: the page hides the store, and this makes sure
+  // nobody can be charged by calling the function directly.
+  if (process.env.STORE_OPEN?.toLowerCase() !== "on") return json({ error: "The store is closed for now." }, 503);
   try {
     const db = admin();
     const user = await caller(req, db);

@@ -7,6 +7,30 @@ those, and a reserved house name. Nothing sold changes how the game plays.
 Everything is off until the environment variables below are set, so the site
 can go on running without it.
 
+## Open or closed
+
+The store is **closed by default**. With it closed there is no sign-in or
+store button on the site and the checkout function refuses every request, so
+nothing can be bought. Nothing is deleted: accounts, Crowns and purchases
+stay in the database.
+
+To open it, set both of these in Netlify (Site configuration > Environment
+variables) and trigger a redeploy:
+
+    VITE_STORE_OPEN=on
+    STORE_OPEN=on
+
+and add this line to `C:\crusades\server.env` on the game server, then
+re-run `server\install-windows.ps1`:
+
+    STORE_OPEN=on
+
+Without that line the game server ignores accounts altogether: no reserved
+names, no cosmetics. (While nobody can sign in, enforcing reserved names
+would only lock their owners out.)
+
+To close it again, remove them (or set anything other than `on`) and redeploy.
+
 ## How the money moves
 
 ```

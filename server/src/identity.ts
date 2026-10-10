@@ -9,7 +9,13 @@
 const URL_ = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const identityEnabled = Boolean(URL_ && KEY);
+/**
+ * Off while the store is closed (STORE_OPEN is not "on"): nobody can sign in
+ * then, so holding reserved names against them would only lock their owners
+ * out of their own names.
+ */
+export const storeOpen = process.env.STORE_OPEN?.toLowerCase() === "on";
+export const identityEnabled = Boolean(URL_ && KEY) && storeOpen;
 
 export interface Cosmetic {
   equipped?: Record<string, string>;
