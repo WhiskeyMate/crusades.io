@@ -1,8 +1,13 @@
 {
-  "version": "0.1.94",
+  "version": "0.1.95",
   "builtAt": "2026-10-10",
-  "commits": 94,
+  "commits": 95,
   "entries": [
+    {
+      "hash": "2c704e7",
+      "date": "2026-10-10",
+      "subject": "While placing, the rings and a marker show where the building will really stand once it has been moved clear of its neighbours"
+    },
     {
       "hash": "4b7d084",
       "date": "2026-10-10",

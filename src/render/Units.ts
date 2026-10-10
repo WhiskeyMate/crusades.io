@@ -57,6 +57,8 @@ export class Units {
   upgrading: number | null = null;
   /** While placing: the tile a new building would really stand on. It wears a marker. */
   landing: number | null = null;
+  /** While placing: the roads the new building would lay, each a run of tiles. Drawn as dotted lines. */
+  roadsToBe: readonly (readonly number[])[] = [];
 
   /** Where a unit was last drawn, in the world; null if it has not been drawn. */
   drawnAt(id: number, out: THREE.Vector3): THREE.Vector3 | null {
@@ -252,6 +254,21 @@ export class Units {
         this.marks.dot(wx + Math.sin(a) * r, wy, wz + Math.cos(a) * r, 0.55 * structScale, 0.95, 0.93, 0.85);
       }
       this.marks.dot(wx, wy + (1 + Math.sin(time * 4) * 0.3) * structScale, wz, 0.9 * structScale, 0.95, 0.93, 0.85);
+    }
+
+    // The roads it would lay: a line of marks along each, creeping toward the neighbour.
+    for (const road of this.roadsToBe) {
+      // Long roads are drawn with fewer, wider-spaced marks.
+      const step = Math.max(2, Math.ceil(road.length / 220));
+      const creep = Math.floor(time * 6) % step;
+      for (let i = creep; i < road.length; i += step) {
+        const rx = map.x(road[i]);
+        const ry = map.y(road[i]);
+        this.marks.dot(
+          this.terrain.worldX(rx), this.terrain.surfaceAt(rx, ry) + 0.3 * structScale, this.terrain.worldZ(ry),
+          0.8 * structScale, 1.0, 0.86, 0.5,
+        );
+      }
     }
 
     for (const u of this.state.units.values()) {

@@ -256,6 +256,8 @@ export class Game {
     tile: -1, type: null as UnitType | null, id: null as number | null,
     /** Where a new building would really stand: the engine moves it clear of its neighbours. */
     land: null as number | null,
+    /** The roads that building would lay to its neighbours, each a run of tiles. */
+    roads: [] as readonly (readonly number[])[],
     at: -Infinity, asking: false,
   };
 
@@ -272,6 +274,7 @@ export class Game {
       u.tile = -1;
       u.id = null;
       u.land = null;
+      u.roads = [];
       return null;
     }
     const moved = u.tile !== tile || u.type !== placing;
@@ -285,10 +288,14 @@ export class Game {
         u.type = placing;
         u.id = b && b.canUpgrade !== false ? b.canUpgrade : null;
         u.land = b && u.id === null && b.canBuild !== false ? b.canBuild : null;
+        u.roads = u.land !== null ? (b.ghostRailPaths ?? []) : [];
       });
     }
     // An answer for another tile says nothing about this one.
-    if (moved) u.land = null;
+    if (moved) {
+      u.land = null;
+      u.roads = [];
+    }
     return moved ? null : u.id;
   }
 
@@ -569,6 +576,7 @@ export class Game {
     this.hud.aimWarning(this.units.aimDoomed);
     this.units.upgrading = this.wouldUpgrade();
     this.units.landing = this.upgrade.land;
+    this.units.roadsToBe = this.upgrade.roads;
     const raised = this.units.upgrading === null ? undefined : this.session.state.units.get(this.units.upgrading);
     this.hud.upgradeHint(raised ? raised.level : null);
     this.armies.update(dt, this.time);
