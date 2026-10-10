@@ -444,7 +444,7 @@ export class Units {
     if (!silo) return;
     const [p0, p1, p2, p3] = getParabolaControlPoints(map, silo.pos, aim.target, { directionUp: true });
     const total = Math.max(1, Math.hypot(p3.x - p0.x, p3.y - p0.y));
-    const n = Math.min(90, Math.max(12, Math.round(total / 5)));
+    const n = Math.min(240, Math.max(30, Math.round(total / 2)));
     const xs: number[] = [];
     const ys: number[] = [];
     for (let i = 0; i <= n; i++) {
@@ -472,7 +472,7 @@ export class Units {
       }
     }
     this.aimDoomed = hit >= 0;
-    const size = 1.0 * Math.pow(S, 0.8);
+    const size = 0.8 * Math.pow(S, 0.8);
     const dragon = aim.type === UnitType.HydrogenBomb;
     for (let i = 1; i <= n; i++) {
       const t = i / n;
@@ -502,8 +502,8 @@ export class Units {
       memo.doomedAt = this.state.tick;
     }
     const last = plan.path.length - 1;
-    const step = Math.max(2, Math.ceil((last - from) / 60));
-    const size = 0.9 * Math.pow(S, 0.8);
+    const step = Math.max(1, Math.ceil((last - from) / 160));
+    const size = 0.72 * Math.pow(S, 0.8);
     const [r, g, b] = memo.doomed ? [1.0, 0.22, 0.16] : [1.0, 0.86, 0.42];
     // Dots are counted back from the target so they stand still as it flies.
     for (let i = last; i > from + 1; i -= step) {
