@@ -568,3 +568,13 @@ body.phone #raids { grid-template-columns: 1fr; width: auto; }
 #wars[hidden] { display: none; }
 #wars .war:only-child { grid-column: 1 / -1; }
 body.phone #wars { grid-template-columns: 1fr; width: auto; }
+/* Each notice is its own box: the lists themselves are just a layout. */
+#wars, #raids { background: none; border: 0; box-shadow: none; padding: 0; gap: 5px 8px; overflow: visible; }
+#raids { max-height: none; }
+#wars .war, #raids .raid {
+  background: var(--wood); border: 1px solid var(--edge); border-radius: 6px; padding: 5px 10px;
+  box-shadow: 0 0 0 1px #0d0906, 0 4px 12px rgba(0, 0, 0, 0.45);
+}
+#wars .war.in { border-color: #a8392e; }
+#raids .raid { border-color: #c0392b; }
+#raids .raid:hover { background: linear-gradient(rgba(192, 57, 43, 0.3), rgba(192, 57, 43, 0.3)), var(--wood); }

@@ -1,8 +1,13 @@
 {
-  "version": "0.1.67",
+  "version": "0.1.68",
   "builtAt": "2026-10-10",
-  "commits": 67,
+  "commits": 68,
   "entries": [
+    {
+      "hash": "b2e9e86",
+      "date": "2026-10-10",
+      "subject": "Attack notices sit two abreast too"
+    },
     {
       "hash": "9aa7faa",
       "date": "2026-10-10",
