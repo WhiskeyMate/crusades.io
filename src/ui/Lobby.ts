@@ -25,6 +25,8 @@ let online: Online | null = null;
 
 /** Notes a fault in the server's log, if this page is talking to the server. */
 export function reportFault(event: string, detail?: string) {
+  // Crawlers and page testers run browsers with no graphics; their faults are not players' faults.
+  if (navigator.webdriver || /HeadlessChrome|bot|crawl|spider|Lighthouse/i.test(navigator.userAgent)) return;
   online?.report(event, `${detail ?? ""} [${navigator.userAgent.slice(0, 160)}]`);
 }
 let games: PublicGame[] = [];

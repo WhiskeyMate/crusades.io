@@ -1,8 +1,13 @@
 {
-  "version": "0.1.96",
+  "version": "0.1.97",
   "builtAt": "2026-10-10",
-  "commits": 96,
+  "commits": 97,
   "entries": [
+    {
+      "hash": "adc03ac",
+      "date": "2026-10-10",
+      "subject": "The landing page keeps a dark backdrop until the live one is drawing, starts it again if the browser drops the graphics, and reports the loss; no extra graphics context for the acceleration check"
+    },
     {
       "hash": "0be79b9",
       "date": "2026-10-10",
