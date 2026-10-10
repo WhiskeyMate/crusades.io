@@ -34,6 +34,9 @@ float fbm2(vec2 p) {
   return vnoise(p) * 0.6 + vnoise(p * 2.7 + 13.1) * 0.4;
 }`;
 
+/** Most range rings and landing circles drawn at once. */
+export const MAX_RINGS = 96;
+
 const TERRAIN_FRAG = /* glsl */ `
 ${COMMON}
 ${CLOTH_GLSL}
@@ -56,7 +59,7 @@ uniform vec4 uBlasts[4];
 // Range rings: x, z, radius (tiles), kind (0 keep, 1 ballista, 2 market,
 // 3 spacing, 4 blast: outer, 5 blast: inner). Rings of one kind are drawn as
 // their union: one outline around the merged area, one flat fill inside.
-uniform vec4 uRings[32];
+uniform vec4 uRings[${MAX_RINGS}];
 uniform int uRingCount;
 varying vec3 vWorld;
 
@@ -211,14 +214,14 @@ void main() {
     // Two passes, each once through the rings. (Comparing every ring with
     // every other for every pixel froze the page once a realm had a few
     // dozen buildings of a kind.) First: which unions is this pixel inside?
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < ${MAX_RINGS}; i++) {
       if (i >= uRingCount) break;
       vec4 r = uRings[i];
       if (distance(vWorld.xz, r.xy) < r.z - lw) insideK[int(r.w + 0.5)] = 1.0;
     }
     // Second: an outline shows only where no ring of its kind covers it. A
     // ring never covers its own outline, so "inside any" is the whole test.
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < ${MAX_RINGS}; i++) {
       if (i >= uRingCount) break;
       vec4 r = uRings[i];
       int k = int(r.w + 0.5);
@@ -441,7 +444,7 @@ export class Terrain {
         value: [0, 1, 2, 3].map(() => new THREE.Vector4(0, 0, 1, 0)),
       },
       uRings: {
-        value: Array.from({ length: 32 }, () => new THREE.Vector4(0, 0, 1, 0)),
+        value: Array.from({ length: MAX_RINGS }, () => new THREE.Vector4(0, 0, 1, 0)),
       },
       uRingCount: { value: 0 },
     };

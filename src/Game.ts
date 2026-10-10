@@ -343,11 +343,17 @@ export class Game {
     }
     // Sorcery in the air: a red circle on the ground where each will land,
     // as wide as its blast.
-    for (const b of this.session.state.units.values()) {
-      if (n >= out.length - 2) break;
-      if ((b.type !== UnitType.AtomBomb && b.type !== UnitType.HydrogenBomb) || b.targetTile === undefined) continue;
-      put(map.x(b.targetTile), map.y(b.targetTile), this.session.state.config.nukeMagnitudes(b.type).outer, 5);
-    }
+    // Fireballs and dragons first: there are few of them and each is a
+    // catastrophe. Then the falling stars of a starfall, as many as fit.
+    const falling = (kinds: UnitType[]) => {
+      for (const b of this.session.state.units.values()) {
+        if (n >= out.length) return;
+        if (!kinds.includes(b.type) || b.targetTile === undefined) continue;
+        put(map.x(b.targetTile), map.y(b.targetTile), this.session.state.config.nukeMagnitudes(b.type).outer, 5);
+      }
+    };
+    falling([UnitType.AtomBomb, UnitType.HydrogenBomb]);
+    falling([UnitType.MIRVWarhead]);
     u.uRingCount.value = n;
   }
 

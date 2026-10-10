@@ -1,8 +1,13 @@
 {
-  "version": "0.1.71",
+  "version": "0.1.72",
   "builtAt": "2026-10-10",
-  "commits": 71,
+  "commits": 72,
   "entries": [
+    {
+      "hash": "c90ac9c",
+      "date": "2026-10-10",
+      "subject": "Fireballs and dragons in flight mark where they will land with a red circle; the in-flight line is gone"
+    },
     {
       "hash": "7f504aa",
       "date": "2026-10-10",
