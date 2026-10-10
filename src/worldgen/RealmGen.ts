@@ -202,11 +202,23 @@ function realmNames(rand: () => number, count: number): string[] {
 }
 
 /** Spread seats of power over the lowlands by farthest-point sampling. */
+/**
+ * Land where no kingdom or player may make their seat: only the clans start
+ * there, and everyone else has to come and take it. On the Crown Isles that
+ * is the great island in the middle (anything within a fifth of the map's
+ * width of its centre; the ring islands lie well outside that).
+ */
+export function seatForbidden(map: GameMapType, x: number, y: number, w: number, h: number): boolean {
+  if (map === GameMapType.CrownIsles) return Math.hypot(x - w / 2, y - h / 2) < w * 0.2;
+  return false;
+}
+
 function seats(
   layer: Layer,
   dist: Uint16Array,
   rand: () => number,
   count: number,
+  map: GameMapType,
 ): [number, number][] {
   const { w, h, land, mag } = layer;
   // Distance from the sea, so seats sit a little inland.
@@ -217,6 +229,7 @@ function seats(
     const y = 6 + ((rand() * (h - 12)) | 0);
     const i = y * w + x;
     if (land[i] !== 1 || mag[i] >= 12) continue;
+    if (seatForbidden(map, x, y, w, h)) continue;
     if (
       land[i - 5] !== 1 ||
       land[i + 5] !== 1 ||
@@ -296,7 +309,7 @@ export function buildRealm(
 
   const rand = mulberry32(opts.seed * 2654435761 + 97);
   const kingdoms = opts.kingdoms ?? 12;
-  const spots = seats({ w, h, land, mag }, dist, rand, kingdoms);
+  const spots = seats({ w, h, land, mag }, dist, rand, kingdoms, opts.map);
   const names = realmNames(rand, kingdoms + 40);
   const nations: Nation[] = spots.map((c, i) => ({ coordinates: c, name: names[i] }));
   const additionalNations = names.slice(spots.length).map((name) => ({ name }));

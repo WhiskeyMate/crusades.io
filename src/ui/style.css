@@ -549,3 +549,13 @@ body.phone #landing section { padding-left: 16px; padding-right: 16px; }
 .offer .row { margin-top: 0; flex: none; }
 body.phone #offers { width: auto; min-width: 0; max-width: none; }
 body.phone .offer { flex-wrap: wrap; }
+/* Longships bound for our shores: bottom centre, click to be shown the ship. */
+#raids { padding: 4px 8px; font-size: 13.5px; min-width: 420px; max-width: 640px; border-color: #c0392b; display: flex; flex-direction: column; gap: 2px; max-height: 108px; overflow-y: auto; }
+#raids[hidden] { display: none; }
+.raid { display: flex; align-items: center; gap: 8px; padding: 3px 4px; border-radius: 4px; cursor: pointer; color: #ffd0c4; }
+.raid:hover { background: rgba(192, 57, 43, 0.28); }
+.raid i { font-style: normal; color: #ff8a70; }
+.raid span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.raid span svg { vertical-align: -3px; }
+.raid b { font-size: 12px; color: var(--gold); white-space: nowrap; }
+body.phone #raids { min-width: 0; max-width: none; font-size: 12.5px; max-height: 76px; }

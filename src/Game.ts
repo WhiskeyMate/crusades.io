@@ -1,5 +1,6 @@
 // One running game: the session, the 3D stage and the HUD, wired together.
 
+import { seatForbidden } from "./worldgen/RealmGen";
 import * as THREE from "three";
 import {
   Nukes,
@@ -187,7 +188,9 @@ export class Game {
     const me = state.me;
 
     if (state.inSpawnPhase) {
-      if (map.isLand(tile) && !map.hasOwner(tile)) {
+      if (seatForbidden(session.setup.info.config.gameMap, hit.x, hit.y, map.width(), map.height())) {
+        this.hud.toast("No house may begin on the great isle. Start on the ring, and sail for it.", "warn");
+      } else if (map.isLand(tile) && !map.hasOwner(tile)) {
         session.send({ type: "spawn", tile });
       } else {
         this.hud.toast("Raise your banner on unclaimed land.", "warn");

@@ -77,6 +77,9 @@ export class Hud {
     el("menu-ctx").hidden = true;
     el("endgame").hidden = true;
     el("offers").innerHTML = "";
+    el("raids").innerHTML = "";
+    el("raids").hidden = true;
+    this.raids.clear();
     el("chronicle").innerHTML = "";
   }
 
@@ -211,7 +214,56 @@ export class Hud {
     return this.session.state.players.get(smallID)?.name ?? "the wilds";
   }
 
+  /** Longships bound for our shores, by unit id, each with its row in the notice. */
+  private raids = new Map<number, HTMLElement>();
+
+  /**
+   * Keeps the "longships approaching" notice in step with the sea: a row for
+   * every hostile longship whose landing place is ours, gone when it lands or
+   * sinks. Clicking a row takes the camera to the ship as it is now.
+   */
+  private watchTheSea() {
+    const state = this.session.state;
+    const me = state.me;
+    const box = el("raids");
+    const seen = new Set<number>();
+    if (me && me.isAlive) {
+      for (const u of state.units.values()) {
+        if (u.type !== UnitType.TransportShip || u.ownerID === me.smallID || u.targetTile === undefined) continue;
+        if (state.map.ownerID(u.targetTile) !== me.smallID) continue;
+        const owner = state.players.get(u.ownerID);
+        if (owner && state.isAllied(owner, me)) continue;
+        seen.add(u.id);
+        let row = this.raids.get(u.id);
+        if (!row) {
+          row = document.createElement("div");
+          row.className = "raid";
+          row.title = "Click to see the ship";
+          const id = u.id;
+          row.onclick = () => {
+            const ship = this.session.state.units.get(id);
+            if (ship) this.onFocus(ship.pos);
+          };
+          this.raids.set(u.id, row);
+          box.appendChild(row);
+        }
+        const text = `${owner ? esc(owner.name) : "Raiders"}: longships approaching${u.troops > 0 ? ` with ${fmtTroops(u.troops)} levies` : ""}`;
+        if (row.dataset.text !== text) {
+          row.dataset.text = text;
+          row.innerHTML = `<i>⚓</i><span>${owner ? shieldSVG(owner.name, owner.color, 15, owner.arms) : ""} ${text}</span>`;
+        }
+      }
+    }
+    for (const [id, row] of this.raids) {
+      if (seen.has(id)) continue;
+      row.remove();
+      this.raids.delete(id);
+    }
+    box.hidden = this.raids.size === 0;
+  }
+
   onTick(delta: TickDelta) {
+    if (delta.tick % 3 === 0) this.watchTheSea();
     const state = this.session.state;
     const me = state.me;
     const u = delta.updates;
