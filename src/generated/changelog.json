@@ -1,8 +1,13 @@
 {
-  "version": "0.1.82",
+  "version": "0.1.83",
   "builtAt": "2026-10-10",
-  "commits": 82,
+  "commits": 83,
   "entries": [
+    {
+      "hash": "9248799",
+      "date": "2026-10-10",
+      "subject": "Five new maps: Mirrormere, The Serpent, The Four Realms, The Shattered Isles and The Maelstrom"
+    },
     {
       "hash": "3c3558d",
       "date": "2026-10-10",

@@ -35,6 +35,11 @@ const GALLEY_HEALTH = 1000;
 const TRAIL_POINTS = 160;
 
 interface Memo {
+  /** Ships steered tile by tile: where the hull is drawn, trailing the tile it is on, and its smoothed way. */
+  gx?: number;
+  gz?: number;
+  hx?: number;
+  hz?: number;
   yaw: number;
   x: number;
   y: number;
@@ -155,7 +160,7 @@ export class Units {
       const back = this.alongPath(plan.path, s - 3);
       const ahead = this.alongPath(plan.path, s + 3);
       out.set(this.terrain.worldX(here[0]), 0, this.terrain.worldZ(here[1]));
-      return { tx: here[0], ty: here[1], dx: ahead[0] - back[0], dy: ahead[1] - back[1] };
+      return { tx: here[0], ty: here[1], dx: ahead[0] - back[0], dy: ahead[1] - back[1], planned: true };
     }
     const x1 = map.x(u.pos);
     const y1 = map.y(u.pos);
@@ -168,7 +173,7 @@ export class Units {
     const tx = x0 + (x1 - x0) * alpha;
     const ty = y0 + (y1 - y0) * alpha;
     out.set(this.terrain.worldX(tx), 0, this.terrain.worldZ(ty));
-    return { tx, ty, dx: x1 - x0, dy: y1 - y0 };
+    return { tx, ty, dx: x1 - x0, dy: y1 - y0, planned: false };
   }
 
   /** Smoothed tile coordinates at fractional step `s` of a path. */
@@ -274,7 +279,37 @@ export class Units {
       }
 
       const w = this.where(u, alpha, pos);
-      if (w.dx !== 0 || w.dy !== 0) {
+      const ship = u.type === UnitType.Warship || u.type === UnitType.TransportShip || u.type === UnitType.TradeShip;
+      if (ship && !w.planned) {
+        // A war galley is steered one tile at a time, zig-zagging along any
+        // slanted course, and pointing it at each step makes it wag. So the
+        // hull glides after its tile instead of sitting on it, and the bow
+        // follows the way the hull is actually travelling, turned slowly.
+        if (memo.gx === undefined || Math.hypot(pos.x - memo.gx, pos.z - memo.gz!) > 25) {
+          memo.gx = pos.x;
+          memo.gz = pos.z;
+          memo.hx = 0;
+          memo.hz = 0;
+        }
+        const follow = Math.min(1, dt * 2.2);
+        const mx = (pos.x - memo.gx) * follow;
+        const mz = (pos.z - memo.gz!) * follow;
+        memo.gx += mx;
+        memo.gz! += mz;
+        if (dt > 0) {
+          const settle = Math.min(1, dt * 1.6);
+          memo.hx! += (mx / dt - memo.hx!) * settle;
+          memo.hz! += (mz / dt - memo.hz!) * settle;
+        }
+        if (Math.hypot(memo.hx!, memo.hz!) > 0.6) {
+          let d = Math.atan2(memo.hx!, memo.hz!) - memo.yaw;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          memo.yaw += d * Math.min(1, dt * 2.5);
+        }
+        pos.x = memo.gx;
+        pos.z = memo.gz!;
+      } else if (w.dx !== 0 || w.dy !== 0) {
         const want = Math.atan2(w.dx, w.dy);
         let d = want - memo.yaw;
         while (d > Math.PI) d -= Math.PI * 2;
