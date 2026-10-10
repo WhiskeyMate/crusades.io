@@ -1,8 +1,13 @@
 {
-  "version": "0.1.66",
+  "version": "0.1.67",
   "builtAt": "2026-10-10",
-  "commits": 66,
+  "commits": 67,
   "entries": [
+    {
+      "hash": "9aa7faa",
+      "date": "2026-10-10",
+      "subject": "Longship notices sit two abreast"
+    },
     {
       "hash": "60e1a03",
       "date": "2026-10-10",

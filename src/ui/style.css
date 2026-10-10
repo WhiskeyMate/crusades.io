@@ -563,3 +563,8 @@ body.phone #raids { min-width: 0; max-width: none; font-size: 12.5px; max-height
 #raids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 10px; min-width: 0; width: min(880px, 94vw); max-width: none; }
 #raids .raid:only-child { grid-column: 1 / -1; }
 body.phone #raids { grid-template-columns: 1fr; width: auto; }
+/* Attack notices two abreast as well. */
+#wars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 14px; min-width: 0; width: min(880px, 94vw); max-width: none; }
+#wars[hidden] { display: none; }
+#wars .war:only-child { grid-column: 1 / -1; }
+body.phone #wars { grid-template-columns: 1fr; width: auto; }
