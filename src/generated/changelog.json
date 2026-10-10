@@ -1,8 +1,13 @@
 {
-  "version": "0.1.58",
+  "version": "0.1.59",
   "builtAt": "2026-10-10",
-  "commits": 58,
+  "commits": 59,
   "entries": [
+    {
+      "hash": "826d6aa",
+      "date": "2026-10-10",
+      "subject": "Three public games are open at once, on different realms, starting half a minute apart"
+    },
     {
       "hash": "bcc5aeb",
       "date": "2026-10-10",

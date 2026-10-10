@@ -25,6 +25,7 @@ const REALMS: { map: GameMapType; blurb: string }[] = [
   { map: GameMapType.Earth, blurb: "The whole world, slowly" },
   { map: GameMapType.SunderedSea, blurb: "Two continents and the strait between" },
   { map: GameMapType.Ironspine, blurb: "A mountain chain and a walled province" },
+  { map: GameMapType.CrownIsles, blurb: "Nine isles in a ring round a tenth" },
 ];
 
 let chosen = GameMapType.Europe;

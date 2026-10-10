@@ -31,7 +31,54 @@ interface Sketch {
 
 const TILES_PER_UNIT = 10;
 
+/** An island as a rough many-sided shape: `lumps` bends its outline in and out. */
+function isle(cx: number, cy: number, rx: number, ry: number, turn: number, lumps: number[]): P[] {
+  const n = lumps.length;
+  return lumps.map((k, i): P => {
+    const a = turn + (i / n) * Math.PI * 2;
+    return [cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k];
+  });
+}
+
+/** The Crown Isles: nine large islands in a ring, each a different shape, around a greater one. */
+function crownIsles(): Sketch {
+  const C = 65;
+  const shapes = [
+    [1.0, 0.8, 1.1, 0.9, 1.15, 0.85, 1.0, 0.9, 1.1, 0.8],
+    [0.9, 1.15, 0.8, 1.0, 0.9, 1.2, 0.85, 1.05, 0.8, 1.1],
+    [1.1, 0.9, 0.85, 1.15, 1.0, 0.8, 1.1, 0.95, 0.85, 1.05],
+  ];
+  const land: P[][] = [];
+  const ranges: Range[] = [];
+  const lakes: Sketch["lakes"] = [];
+  const count = 9;
+  for (let i = 0; i < count; i++) {
+    const a = (i / count) * Math.PI * 2 - Math.PI / 2;
+    // The ring is not quite round, and no two islands are the same size.
+    const reach = 46 + (i % 3 === 1 ? 3 : i % 3 === 2 ? -2 : 0);
+    const cx = C + Math.cos(a) * reach;
+    const cy = C + Math.sin(a) * reach;
+    const along = 12.5 + (i % 2) * 1.5;
+    const across = 9 + ((i * 2) % 3);
+    // Long side lying along the ring.
+    land.push(isle(cx, cy, across, along, a, shapes[i % shapes.length]));
+    ranges.push({ line: [[cx - Math.sin(a) * 5, cy + Math.cos(a) * 5], [cx + Math.sin(a) * 5, cy - Math.cos(a) * 5]], width: 1.8, height: 18 + (i % 3) * 5 });
+    if (i % 3 === 0) lakes.push([cx + Math.cos(a) * 2, cy + Math.sin(a) * 2, 1.8, 1.6]);
+  }
+  // The great island at the centre, with a crater lake ringed by mountains.
+  land.push(isle(C, C, 21, 19, 0.3, [1.0, 0.85, 1.1, 0.9, 1.15, 0.8, 1.05, 0.9, 1.1, 0.85, 1.0, 0.9]));
+  lakes.push([C, C, 4.5, 4]);
+  for (let i = 0; i < 6; i++) {
+    const a0 = (i / 6) * Math.PI * 2;
+    const a1 = ((i + 1) / 6) * Math.PI * 2;
+    ranges.push({ line: [[C + Math.cos(a0) * 10, C + Math.sin(a0) * 9], [C + Math.cos(a1) * 10, C + Math.sin(a1) * 9]], width: 1.8, height: 28 });
+  }
+  return { width: 130, height: 130, seed: 59, land, lakes, ranges };
+}
+
 const SKETCHES: Record<string, Sketch> = {
+  crownisles: crownIsles(),
+
   // The Sundered Sea. A broad continent in the west with a great bay cut
   // into its southern coast; in the east a long one, pinched to an isthmus
   // two thirds of the way down, with a hook of land curling west from its

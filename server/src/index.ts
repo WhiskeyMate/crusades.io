@@ -69,6 +69,7 @@ const PUBLIC_REALMS = [
   GameMapType.Earth,
   GameMapType.SunderedSea,
   GameMapType.Ironspine,
+  GameMapType.CrownIsles,
 ];
 
 /**

@@ -29,6 +29,7 @@ export const MAP_DIR: Record<GameMapType, string> = {
   [GameMapType.Greece]: "greece",
   [GameMapType.SunderedSea]: "sundered",
   [GameMapType.Ironspine]: "ironspine",
+  [GameMapType.CrownIsles]: "crownisles",
 };
 
 /** Kingdoms a map holds by default: the counts the upstream maps use. */
@@ -39,6 +40,7 @@ export const DEFAULT_KINGDOMS: Record<GameMapType, number> = {
   [GameMapType.Greece]: 29,
   [GameMapType.SunderedSea]: 60,
   [GameMapType.Ironspine]: 70,
+  [GameMapType.CrownIsles]: 44,
 };
 /** Clans (the small AI realms) by default, as upstream. */
 export const DEFAULT_CLANS = 400;
