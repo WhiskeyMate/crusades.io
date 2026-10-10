@@ -6,6 +6,7 @@
 // bundles each player's intents into numbered turns that every client feeds
 // to its own copy of the engine (see docs/MULTIPLAYER.md).
 
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
 import { z } from "zod";
 import {
   Difficulty,
@@ -20,8 +21,38 @@ import {
 
 export const LOBBY_CODE = /^[A-Z2-9]{6}$/;
 
+/**
+ * House rules the host of a private game may set. All optional: left out, a
+ * rule is at its usual setting.
+ */
+export const RulesSchema = z.object({
+  /** Buildings go up at once. */
+  instantBuild: z.boolean().optional(),
+  infiniteGold: z.boolean().optional(),
+  infiniteTroops: z.boolean().optional(),
+  /** No pacts may be sworn. */
+  noPacts: z.boolean().optional(),
+  /** Players may not give each other gold, or lend each other levies. */
+  noGoldGifts: z.boolean().optional(),
+  noLevyGifts: z.boolean().optional(),
+  /** Gold everyone starts with. */
+  startingGold: z.number().int().min(0).max(100_000_000).optional(),
+  /** Income is multiplied by this. */
+  goldMultiplier: z.number().min(0.5).max(10).optional(),
+  /** Seconds at the start during which nobody can be attacked. */
+  truceSeconds: z.number().int().min(0).max(900).optional(),
+  /** The game ends after this many minutes and the largest realm wins; 0 for no limit. */
+  limitMinutes: z.number().int().min(0).max(120).optional(),
+  /** How long a pact lasts, in minutes. */
+  pactMinutes: z.number().int().min(1).max(15).optional(),
+  /** Things nobody may build or cast. */
+  banned: z.array(z.enum(UnitType)).max(12).optional(),
+});
+export type Rules = z.infer<typeof RulesSchema>;
+
 /** What the lobby's owner chooses before starting. */
 export const LobbyConfigSchema = z.object({
+  rules: RulesSchema.optional(),
   map: z.enum(GameMapType),
   seed: z.number().int().min(1).max(999_999_999),
   difficulty: z.enum(Difficulty),
@@ -152,5 +183,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "12";
+export const PROTOCOL_VERSION = "13";
 export const TURN_MS = 100;

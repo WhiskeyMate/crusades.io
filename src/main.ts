@@ -1,5 +1,6 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
+import { drawBans, readRules } from "./client/Rules";
 import { mapStillHTML, startLiveMaps } from "./ui/MapPreview";
 import { initAds } from "./ui/Ads";
 import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
@@ -182,6 +183,7 @@ function openMenu(mode: "solo" | "host") {
       : "Choose the realm, then share the code or link with your friends.";
   el("opt-sandbox-row").hidden = mode === "host";
   el("opt-players-row").hidden = mode === "solo";
+  el("opt-rules").hidden = mode === "solo";
   el("opt-start").textContent = mode === "solo" ? "Enter the realm" : "Open the lobby";
   el("opt-error").hidden = true;
   el("menu").hidden = false;
@@ -217,6 +219,7 @@ function markPhone() {
 markPhone();
 window.addEventListener("resize", markPhone);
 
+drawBans();
 void initAccountPanel();
 initAds();
 const { hostLobby } = initOnline({
@@ -229,6 +232,7 @@ const { hostLobby } = initOnline({
     kingdoms: Number(el<HTMLInputElement>("opt-kingdoms").value),
     clans: Number(el<HTMLInputElement>("opt-clans").value),
     maxPlayers: Number(el<HTMLInputElement>("opt-players").value),
+    rules: readRules(),
   }),
 });
 // The changelog and version, generated from git at build time (tools/changelog.ts).

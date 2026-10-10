@@ -581,3 +581,12 @@ body.phone #wars { grid-template-columns: 1fr; width: auto; }
 .stat small { color: var(--dim); font-size: 11px; }
 /* Shift-drag selection box. */
 .marquee { position: fixed; z-index: 5; pointer-events: none; border: 1.5px solid #f2d27a; background: rgba(242, 210, 122, 0.14); box-shadow: 0 0 0 1px rgba(27, 20, 16, 0.8); border-radius: 2px; }
+/* House rules on the creation screen. */
+#opt-rules { margin-top: 14px; border: 1px solid var(--edge); border-radius: 6px; padding: 8px 12px; background: rgba(0, 0, 0, 0.18); }
+#opt-rules summary { cursor: pointer; color: var(--gold); font-size: 15px; }
+#opt-rules[open] summary { margin-bottom: 6px; }
+.rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 14px; }
+.rules-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0 12px; }
+.sheet .rules-checks label.check { margin-top: 8px; }
+#lobby-rules { margin: 6px 0 0; padding: 7px 10px; border-left: 3px solid var(--gold); background: #2a1f12; border-radius: 0 4px 4px 0; color: #ffe3ae; }
+#lobby-rules b { color: var(--gold); }

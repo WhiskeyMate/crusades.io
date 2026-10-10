@@ -1,6 +1,7 @@
 // Online play from the hall: the list of public games starting soon,
 // hosting a private lobby, joining by code, and the waiting room.
 
+import { describeRules } from "../client/Rules";
 import { mapStillHTML } from "./MapPreview";
 import { Session } from "../client/Session";
 import { account } from "../account/Account";
@@ -314,6 +315,9 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     const c = lobby.config;
     el("lobby-config").textContent =
       `${c.map} · seed ${c.seed} · ${c.kingdoms} kingdoms · ${c.clans} clans · ${c.difficulty} · up to ${c.maxPlayers} lords`;
+    const rules = describeRules(c.rules);
+    el("lobby-rules").hidden = rules.length === 0;
+    el("lobby-rules").innerHTML = rules.length ? `<b>House rules:</b> ${esc(rules.join(" · "))}` : "";
     el("lobby-start").hidden = !host;
     el("lobby-wait").hidden = host || pub;
     el<HTMLButtonElement>("lobby-start").disabled = lobby.status !== "open";

@@ -235,6 +235,64 @@
         <label id="opt-players-row" hidden>Seats <b id="opt-players-v"></b>
           <input id="opt-players" type="range" min="2" max="64" value="16" />
         </label>
+        <details id="opt-rules" hidden>
+          <summary>House rules <span class="dim">(optional)</span></summary>
+          <div class="rules-grid">
+            <label>Starting gold
+              <select id="rule-start">
+                <option value="0" selected>Usual</option>
+                <option value="1000000">1 million</option>
+                <option value="5000000">5 million</option>
+                <option value="25000000">25 million</option>
+              </select>
+            </label>
+            <label>Income
+              <select id="rule-income">
+                <option value="1" selected>Usual</option>
+                <option value="2">Double</option>
+                <option value="4">Fourfold</option>
+                <option value="0.5">Half</option>
+              </select>
+            </label>
+            <label>Truce at the start
+              <select id="rule-truce">
+                <option value="0" selected>Usual (brief)</option>
+                <option value="60">1 minute</option>
+                <option value="180">3 minutes</option>
+                <option value="300">5 minutes</option>
+                <option value="600">10 minutes</option>
+              </select>
+            </label>
+            <label>Time limit
+              <select id="rule-limit">
+                <option value="0" selected>None</option>
+                <option value="15">15 minutes</option>
+                <option value="30">30 minutes</option>
+                <option value="45">45 minutes</option>
+                <option value="60">1 hour</option>
+              </select>
+            </label>
+            <label>Pacts last
+              <select id="rule-pact">
+                <option value="0" selected>Usual (5 minutes)</option>
+                <option value="1">1 minute</option>
+                <option value="2">2 minutes</option>
+                <option value="10">10 minutes</option>
+                <option value="15">15 minutes</option>
+              </select>
+            </label>
+          </div>
+          <div class="rules-checks">
+            <label class="check"><input id="rule-instant" type="checkbox" /> Instant building</label>
+            <label class="check"><input id="rule-gold" type="checkbox" /> Endless gold</label>
+            <label class="check"><input id="rule-levies" type="checkbox" /> Endless levies</label>
+            <label class="check"><input id="rule-nopacts" type="checkbox" /> No pacts</label>
+            <label class="check"><input id="rule-nogold" type="checkbox" /> No gifts of gold</label>
+            <label class="check"><input id="rule-nolevy" type="checkbox" /> No lending of levies</label>
+          </div>
+          <div class="field-label">Banned: nobody may build or cast these</div>
+          <div id="rule-bans" class="rules-checks"></div>
+        </details>
         <button id="opt-start" class="primary">Enter the realm</button>
         <p id="opt-error" class="bad" hidden></p>
               </div>
@@ -246,6 +304,7 @@
         <p id="lobby-countdown" class="countdown" hidden></p>
         <div id="lobby-invite" class="inline"><input id="lobby-link" readonly /><button id="lobby-copy">Copy link</button></div>
         <p id="lobby-config" class="dim small"></p>
+        <p id="lobby-rules" class="small" hidden></p>
         <ul id="lobby-members"></ul>
         <p id="lobby-wait" class="dim">Waiting for the host to start…</p>
         <div class="row">

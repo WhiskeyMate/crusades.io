@@ -325,6 +325,8 @@ class Lobby {
 
   private begin() {
     const c = this.config;
+    // Public games are always played by the standard rules.
+    const rules = this.kind === "private" ? (c.rules ?? {}) : {};
     // Load first: if the realm can't be built nothing else has changed.
     this.realm = loadRealmFromDisk(c.map, c.seed, c.kingdoms);
     this.hash = realmHash(this.realm);
@@ -336,17 +338,24 @@ class Lobby {
       config: {
         gameMap: c.map,
         difficulty: c.difficulty,
-        donateGold: true,
-        donateTroops: true,
+        donateGold: !rules.noGoldGifts,
+        donateTroops: !rules.noLevyGifts,
         gameType: GameType.Private,
         gameMode: GameMode.FFA,
         gameMapSize: GameMapSize.Normal,
         nations: c.kingdoms > 0 ? "default" : "disabled",
         bots: c.clans,
-        infiniteGold: false,
-        infiniteTroops: false,
-        instantBuild: false,
+        infiniteGold: rules.infiniteGold ?? false,
+        infiniteTroops: rules.infiniteTroops ?? false,
+        instantBuild: rules.instantBuild ?? false,
         randomSpawn: false,
+        ...(rules.noPacts ? { disableAlliances: true } : {}),
+        ...(rules.startingGold ? { startingGold: rules.startingGold } : {}),
+        ...(rules.goldMultiplier && rules.goldMultiplier !== 1 ? { goldMultiplier: rules.goldMultiplier } : {}),
+        ...(rules.truceSeconds ? { spawnImmunityDuration: rules.truceSeconds * 10 } : {}),
+        ...(rules.limitMinutes ? { maxTimerValue: rules.limitMinutes } : {}),
+        ...(rules.pactMinutes ? { customAllianceDuration: rules.pactMinutes } : {}),
+        ...(rules.banned && rules.banned.length > 0 ? { disabledUnits: rules.banned } : {}),
       },
       players: [...this.members.values()].map((m) => ({
         clientID: m.clientID,
