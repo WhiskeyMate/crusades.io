@@ -1,11 +1,14 @@
-// Advertising, kept out of the way: a banner on the landing page, one in the
-// lobby while the lords gather, one on the screen that ends a game. Never
-// over the map, never while a game is being played.
+// Advertising: a banner on the landing page, one in the lobby while the lords
+// gather, one on the screen that ends a game, and a small one in the bottom
+// left corner that stays on screen throughout, in a game or out of one.
+// Buying a bundle takes them all away.
 //
 // Each place is a <div data-ad="name"> in index.html. It is filled the first
-// time it comes into view.
+// time it comes into view; the corner is filled once, soon after the page
+// opens.
 
 import { account } from "../account/Account";
+import { BUNDLES } from "../store/Catalog";
 
 /** The AdSense publisher id. Public: it is in the page source of every site that shows ads. */
 export const AD_CLIENT = "ca-pub-1153759936707012";
@@ -18,12 +21,51 @@ const SLOTS: Record<string, string | undefined> = {
   landing: unit(import.meta.env.VITE_AD_SLOT_LANDING, "6933794104"),
   lobby: unit(import.meta.env.VITE_AD_SLOT_LOBBY, "8692674897"),
   end: unit(import.meta.env.VITE_AD_SLOT_END, "9368385756"),
+  // Until the corner has an ad unit of its own it borrows the landing page's.
+  corner: unit(import.meta.env.VITE_AD_SLOT_CORNER, "6933794104"),
 };
 
-/** Anyone who has bought something plays without ads. */
+/** Anyone who has bought a bundle plays without ads. */
 function adFree(): boolean {
   const s = account.state;
-  return Boolean(s && (s.owned.size > 0 || s.username));
+  return Boolean(s && BUNDLES.some((b) => b.items.every((i) => s.owned.has(i))));
+}
+
+/**
+ * The corner banner: a fixed size, chosen once to suit the window. It keeps
+ * to a column 250 wide, clear of the build bar in the middle of the bottom
+ * edge: a square where the window is tall enough, a strip where it is not.
+ * A phone, which has no corner to spare, gets none.
+ */
+function corner(local: boolean) {
+  const box = document.querySelector<HTMLElement>('[data-ad="corner"]');
+  const slot = SLOTS.corner;
+  if (!box || !slot || adFree() || box.dataset.filled) return;
+  if (document.body.classList.contains("phone")) return;
+  const [w, h] = window.innerHeight >= 760 && window.innerWidth >= 1100 ? [250, 250] : [234, 60];
+  box.dataset.filled = "1";
+  box.hidden = false;
+  box.style.width = `${w}px`;
+  box.style.height = `${h}px`;
+  if (local) {
+    // On a developer's machine, an outline where the banner will be.
+    box.classList.add("mock");
+    box.textContent = `Advertisement ${w}×${h}`;
+    return;
+  }
+  box.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:${w}px;height:${h}px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins>`;
+  try {
+    const win = window as unknown as { adsbygoogle?: unknown[] };
+    (win.adsbygoogle = win.adsbygoogle || []).push({});
+  } catch (e) {
+    console.warn("ad not shown", e);
+  }
+  // Bought a bundle while it was showing: it goes.
+  const watch = window.setInterval(() => {
+    if (!adFree()) return;
+    box.remove();
+    window.clearInterval(watch);
+  }, 5000);
 }
 
 function fill(box: HTMLElement) {
@@ -43,9 +85,12 @@ function fill(box: HTMLElement) {
 }
 
 export function initAds() {
-  // Nothing to show on a developer's own machine.
-  if (location.hostname === "localhost" || location.hostname === "127.0.0.1") return;
-  const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-ad]"));
+  const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  // A moment's grace, so that someone signed in who has paid never sees it.
+  window.setTimeout(() => corner(local), 2500);
+  // Nothing else to show on a developer's own machine.
+  if (local) return;
+  const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-ad]")).filter((b) => b.dataset.ad !== "corner");
   if (boxes.length === 0 || !("IntersectionObserver" in window)) return;
   // A place is filled when it is first really on screen, which for the lobby
   // and the end screen is the moment their dialog opens.

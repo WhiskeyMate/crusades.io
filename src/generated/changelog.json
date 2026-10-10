@@ -1,8 +1,13 @@
 {
-  "version": "0.1.86",
+  "version": "0.1.87",
   "builtAt": "2026-10-10",
-  "commits": 86,
+  "commits": 87,
   "entries": [
+    {
+      "hash": "fa4e772",
+      "date": "2026-10-10",
+      "subject": "The dragon's cursor is three fireballs"
+    },
     {
       "hash": "b647298",
       "date": "2026-10-10",
