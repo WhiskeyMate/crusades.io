@@ -1,8 +1,13 @@
 {
-  "version": "0.1.57",
+  "version": "0.1.58",
   "builtAt": "2026-10-10",
-  "commits": 57,
+  "commits": 58,
   "entries": [
+    {
+      "hash": "bcc5aeb",
+      "date": "2026-10-10",
+      "subject": "Two original maps: The Sundered Sea and Ironspine"
+    },
     {
       "hash": "afd3add",
       "date": "2026-10-10",

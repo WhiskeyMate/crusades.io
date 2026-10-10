@@ -202,7 +202,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
           `<div class="pub-map">${esc(c.map)}</div>` +
           `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} clans</div>` +
           `<div class="pub-time"><b>${g.players === 0 ? "—" : s > 0 ? `${s}s` : "…"}</b><span>${g.players === 0 ? "waiting for lords" : s > 0 ? "until it starts" : "starting"}</span></div>` +
-          `<button>${inIt ? "You're in — waiting" : "Join this game"}</button></div>`
+          `<button>${inIt ? "You're in" : "Join"}</button></div>`
         );
       })
       .join("");

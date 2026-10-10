@@ -60,6 +60,8 @@ const STARTED_AT = Date.now();
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 /** A public game starts as soon as this many have joined. */
 const PUBLIC_FULL = 40;
+/** How many public games are open to join at any moment. */
+const PUBLIC_GAMES = Math.min(6, Math.max(1, Math.round(Number(process.env.PUBLIC_GAMES ?? 3)) || 3));
 const PUBLIC_REALMS = [
   GameMapType.Europe,
   GameMapType.Mediterranean,
@@ -432,26 +434,40 @@ function openPublicGames(): Lobby[] {
 }
 
 /** There is always one public game gathering players (unless under maintenance). */
+/**
+ * Keeps PUBLIC_GAMES public games open at once, each on a different realm,
+ * with their start times spread evenly so that one is always about to begin.
+ */
 function ensurePublicGame() {
   if (maintenance) return;
-  if (openPublicGames().length > 0) return;
-  const map = PUBLIC_REALMS[publicRotation++ % PUBLIC_REALMS.length];
-  const lobby = new Lobby(null, {
-    map,
-    seed: 1 + Math.floor(Math.random() * 999_999),
-    difficulty: Difficulty.Medium,
-    kingdoms: DEFAULT_KINGDOMS[map],
-    clans: DEFAULT_CLANS,
-    maxPlayers: PUBLIC_FULL,
-  });
-  lobbies.set(lobby.code, lobby);
-  log(`public game ${lobby.code}: open, ${map}, starts in ${PUBLIC_WAIT_MS / 1000}s`);
+  const gap = PUBLIC_WAIT_MS / PUBLIC_GAMES;
+  for (let open = openPublicGames(); open.length < PUBLIC_GAMES; open = openPublicGames()) {
+    const taken = new Set(open.map((l) => l.config.map));
+    let map = PUBLIC_REALMS[publicRotation++ % PUBLIC_REALMS.length];
+    for (let i = 0; i < PUBLIC_REALMS.length && taken.has(map); i++) {
+      map = PUBLIC_REALMS[publicRotation++ % PUBLIC_REALMS.length];
+    }
+    const lobby = new Lobby(null, {
+      map,
+      seed: 1 + Math.floor(Math.random() * 999_999),
+      difficulty: Difficulty.Medium,
+      kingdoms: DEFAULT_KINGDOMS[map],
+      clans: DEFAULT_CLANS,
+      maxPlayers: PUBLIC_FULL,
+    });
+    // After the latest one already waiting, never sooner than one gap from now.
+    const now = Date.now();
+    lobby.startsAt = Math.max(now + gap, ...open.map((l) => l.startsAt + gap));
+    lobbies.set(lobby.code, lobby);
+    log(`public game ${lobby.code}: open, ${map}, starts in ${Math.round((lobby.startsAt - now) / 1000)}s`);
+  }
 }
 
 function hallMessage(): ServerMessage {
   return {
     type: "lobbies",
-    games: openPublicGames().map((l) => l.summary()),
+    // Soonest first.
+    games: openPublicGames().sort((x, y) => x.startsAt - y.startsAt).map((l) => l.summary()),
     running: [...lobbies.values()].filter((l) => l.status === "running").length,
     online: clients.size,
     now: Date.now(),
