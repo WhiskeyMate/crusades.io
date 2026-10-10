@@ -1,8 +1,13 @@
 {
-  "version": "0.1.95",
+  "version": "0.1.96",
   "builtAt": "2026-10-10",
-  "commits": 95,
+  "commits": 96,
   "entries": [
+    {
+      "hash": "0be79b9",
+      "date": "2026-10-10",
+      "subject": "While placing, the roads the new building would lay are drawn as dotted lines"
+    },
     {
       "hash": "2c704e7",
       "date": "2026-10-10",

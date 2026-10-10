@@ -52,6 +52,7 @@ export class Game {
     const state = this.session.state;
     this.terrain = new Terrain(this.session.realm, state);
     this.stage = new Stage(this.terrain);
+    this.stage.onLost = () => this.onGraphicsLost?.();
     plantWoods(this.session.realm, this.terrain, this.stage.scene);
     this.effects = new Effects();
     this.stage.scene.add(this.effects.group);
@@ -98,6 +99,9 @@ export class Game {
     };
     loop();
   }
+
+  /** Called if the browser takes the graphics away in the middle of the game. */
+  onGraphicsLost?: () => void;
 
   stop() {
     this.stopped = true;

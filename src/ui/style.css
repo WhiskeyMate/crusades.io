@@ -636,3 +636,7 @@ body:has(#landing:not([hidden])) #ad-corner > div:nth-child(n + 2) { display: no
 #accel button { float: right; }
 /* Placing would raise a building that is already there. */
 #hint.upgrade { color: #1b1410; background: rgba(242, 210, 122, 0.95); border-color: #f2d27a; }
+/* The graphics were lost in the middle of a game. */
+#gl-lost { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 46; width: min(460px, 92vw); padding: 18px 20px; text-align: center; border-color: var(--warn); background: rgba(40, 28, 10, 0.97); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6); }
+#gl-lost b { font-size: 18px; color: #ffe3ae; }
+#gl-lost p { margin: 8px 0 14px; font-size: 14.5px; line-height: 1.45; }

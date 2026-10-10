@@ -9,18 +9,19 @@ const SOFTWARE = /swiftshader|llvmpipe|softpipe|software|basic render/i;
 
 type Verdict = "fine" | "software" | "none";
 
-function probe(): Verdict {
+/** What is drawing: the graphics card's name as the browser gives it. */
+export function rendererName(gl: WebGLRenderingContext | WebGL2RenderingContext): string {
   try {
-    const canvas = document.createElement("canvas");
-    const gl = (canvas.getContext("webgl2") ?? canvas.getContext("webgl")) as WebGLRenderingContext | null;
-    if (!gl) return "none";
     const info = gl.getExtension("WEBGL_debug_renderer_info");
-    const renderer = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? "");
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
-    return SOFTWARE.test(renderer) ? "software" : "fine";
+    return String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? "");
   } catch {
-    return "none";
+    return "";
   }
+}
+
+function probe(gl: WebGLRenderingContext | WebGL2RenderingContext | null): Verdict {
+  if (!gl) return "none";
+  return SOFTWARE.test(rendererName(gl)) ? "software" : "fine";
 }
 
 /** Where the setting is, in the browser being used. A page may not link to settings, so it is spelled out. */
@@ -38,7 +39,12 @@ function directions(): string {
   return "Look for <b>hardware</b> or <b>graphics acceleration</b> in your browser's settings, turn it on, and restart the browser.";
 }
 
-export function checkAcceleration() {
+/**
+ * Looks at the context the game is already drawing with (or null if it could
+ * not get one). It does not make a context of its own: every extra one is
+ * another chance for a weak graphics card to drop them all.
+ */
+export function checkAcceleration(gl: WebGLRenderingContext | WebGL2RenderingContext | null) {
   let dismissed = false;
   try {
     dismissed = localStorage.getItem(DISMISSED) === "1";
@@ -46,7 +52,7 @@ export function checkAcceleration() {
     // No storage: ask every time.
   }
   if (dismissed) return;
-  const verdict = probe();
+  const verdict = probe(gl);
   if (verdict === "fine") return;
   const box = document.getElementById("accel");
   if (!box) return;

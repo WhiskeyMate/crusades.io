@@ -15,7 +15,7 @@ import { clearArms, setLiege } from "./client/Heraldry";
 import { BUILD_ORDER, UNIT_LORE } from "./client/Lexicon";
 import { Game } from "./Game";
 import { Session, soloSession } from "./client/Session";
-import { initOnline, leaveOnline, reportOnline } from "./ui/Lobby";
+import { initOnline, leaveOnline, reportFault, reportOnline } from "./ui/Lobby";
 
 /** Where this build's source can be fetched (the AGPL asks for it). */
 const SOURCE_URL = "https://github.com/WhiskeyMate/crusades.io";
@@ -41,23 +41,59 @@ let chosen = GameMapType.Europe;
 let game: Game | null = null;
 let attract: Attract | null = null;
 
-/** The war behind the landing page. Fails quietly where WebGL can't run. */
+/** How many times the backdrop has been lost and started again. */
+let backdropLosses = 0;
+let accelChecked = false;
+
+/**
+ * The war behind the landing page. Fails quietly where WebGL can't run: the
+ * page keeps its plain dark backdrop (the "no-gl" class, which it starts
+ * with) until the live one is really drawing.
+ */
 async function startAttract() {
   if (attract || game) return;
   try {
-    attract = await Attract.create();
-    (window as unknown as { attract: Attract }).attract = attract;
-    await attract.start();
-    el("landing").classList.remove("no-gl");
+    const a = (attract = await Attract.create());
+    (window as unknown as { attract: Attract }).attract = a;
+    a.onLost = () => {
+      // The browser took the graphics away. Back to the plain backdrop at
+      // once, so the page is never left bare, then try again a couple of times.
+      if (attract !== a) return;
+      console.warn("The live backdrop lost its graphics.");
+      reportFault("GRAPHICS LOST", `landing page backdrop, loss ${backdropLosses + 1}`);
+      el("landing").classList.add("no-gl");
+      stopAttract();
+      if (++backdropLosses <= 2) window.setTimeout(() => void startAttract(), 2000);
+    };
+    if (!accelChecked) {
+      accelChecked = true;
+      checkAcceleration(a.context);
+    }
+    await a.start();
+    if (attract === a) el("landing").classList.remove("no-gl");
   } catch (e) {
     console.warn("No live backdrop:", e);
+    reportFault("NO BACKDROP", e instanceof Error ? e.message : String(e));
     attract?.stop();
     attract = null;
     el("landing").classList.add("no-gl");
+    if (!accelChecked) {
+      accelChecked = true;
+      // Find out whether it was 3D graphics as a whole that failed.
+      let gl: WebGLRenderingContext | null = null;
+      try {
+        gl = document.createElement("canvas").getContext("webgl") as WebGLRenderingContext | null;
+      } catch {
+        // No graphics at all.
+      }
+      checkAcceleration(gl);
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    }
   }
 }
 
 function stopAttract() {
+  el("gl-lost").hidden = true;
   attract?.stop();
   attract = null;
 }
@@ -119,6 +155,9 @@ async function launch(session: Session) {
     clearArms();
     setLiege(houseName(), account.skin);
     game = new Game(session, quit);
+    game.onGraphicsLost = () => {
+      el("gl-lost").hidden = false;
+    };
     await game.start();
     track("game_start", { map: String(session.setup.info.config.gameMap) });
     (window as unknown as { crusades: Game }).crusades = game;
@@ -169,6 +208,8 @@ function quit() {
   leaveOnline();
   game?.stop();
   game = null;
+  el("gl-lost").hidden = true;
+  el("landing").classList.add("no-gl");
   el("landing").hidden = false;
   void startAttract();
 }
@@ -231,7 +272,6 @@ drawBans();
 void initAccountPanel();
 initAds();
 initAnalytics();
-checkAcceleration();
 const { hostLobby } = initOnline({
   name: () => houseName(),
   begin: (session) => void launch(session),

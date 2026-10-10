@@ -63,6 +63,12 @@ export class Stage {
       antialias: true,
       powerPreference: "high-performance",
     });
+    // The browser can take the graphics away (a driver fault, too little
+    // video memory, the card being handed to another program). Nothing is
+    // drawn after that, so whoever owns the stage is told.
+    canvas.addEventListener("webglcontextlost", () => {
+      if (!this.closing) this.onLost?.();
+    });
     // Phones have very dense screens and modest graphics chips: draw a little
     // under their full resolution there.
     const phone = window.matchMedia("(pointer: coarse)").matches;
@@ -102,7 +108,13 @@ export class Stage {
     window.addEventListener("blur", () => this.keys.clear(), on);
   }
 
+  /** Called if the browser takes the graphics away while the stage is in use. */
+  onLost?: () => void;
+  private closing = false;
+
   dispose() {
+    this.closing = true;
+    this.canvas.dataset.closing = "1";
     this.life.abort();
     this.renderer.dispose();
     this.renderer.forceContextLoss();

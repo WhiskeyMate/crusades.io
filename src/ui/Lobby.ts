@@ -22,6 +22,11 @@ export interface OnlineHooks {
 }
 
 let online: Online | null = null;
+
+/** Notes a fault in the server's log, if this page is talking to the server. */
+export function reportFault(event: string, detail?: string) {
+  online?.report(event, `${detail ?? ""} [${navigator.userAgent.slice(0, 160)}]`);
+}
 let games: PublicGame[] = [];
 let countdown = 0;
 let retryIn = 2000;
@@ -55,8 +60,10 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
   document.addEventListener(
     "webglcontextlost",
     (e) => {
-      // Only a canvas still on the page counts: the landing page's backdrop gives its context up on purpose.
-      if ((e.target as HTMLElement | null)?.isConnected && !el("hud").hidden) online?.report("GRAPHICS LOST", "the WebGL context was lost");
+      // A canvas being closed gives its context up on purpose; the landing
+      // page's backdrop reports its own losses (see main.ts).
+      const c = e.target as HTMLElement | null;
+      if (c?.isConnected && !c.dataset.closing && !el("hud").hidden) online?.report("GRAPHICS LOST", "the WebGL context was lost in a game");
     },
     true,
   );

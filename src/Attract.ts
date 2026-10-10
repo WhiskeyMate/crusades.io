@@ -70,6 +70,16 @@ export class Attract {
     };
   }
 
+  /** Called if the browser takes the graphics away. */
+  set onLost(fn: () => void) {
+    this.stage.onLost = fn;
+  }
+
+  /** The graphics context the backdrop is drawn with. */
+  get context(): WebGLRenderingContext | WebGL2RenderingContext {
+    return this.stage.renderer.getContext();
+  }
+
   async start() {
     await this.session.start();
     const loop = () => {
