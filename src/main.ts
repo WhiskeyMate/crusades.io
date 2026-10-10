@@ -45,6 +45,58 @@ let attract: Attract | null = null;
 let backdropLosses = 0;
 let accelChecked = false;
 
+// A page that crashes or locks up cannot say so. Instead it leaves a note of
+// what it was doing, and wipes the note once that has gone well or the page
+// is closed in the ordinary way. A note still there on the next visit means
+// the last one died at that step: the live backdrop is then left off, so the
+// page works, and stays off until the player asks for it back.
+const CRUMB = "crusades.loading";
+const BACKDROP_OFF = "crusades.backdrop.off";
+const stored = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+};
+const store = (key: string, value: string | null) => {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // No storage: nothing is remembered.
+  }
+};
+const diedWhile = stored(CRUMB);
+store(CRUMB, null);
+if (diedWhile) {
+  store(BACKDROP_OFF, "1");
+  // Once the page has had time to reach the server.
+  window.setTimeout(() => reportFault("LAST VISIT DIED", `while ${diedWhile}`), 5000);
+}
+window.addEventListener("pagehide", () => store(CRUMB, null));
+
+let backdropDeclined = false;
+
+function offerBackdrop() {
+  const box = el("accel");
+  if (!box.hidden || backdropDeclined) return;
+  box.innerHTML =
+    `<b>The moving world behind this page is switched off.</b>` +
+    `<p>Last time, the page stopped while drawing it. Everything else works as usual; the game itself still needs 3D graphics.</p>` +
+    `<button id="backdrop-off">Leave it off</button><button id="backdrop-on">Try it again</button>`;
+  box.hidden = false;
+  el("backdrop-off").onclick = () => {
+    backdropDeclined = true;
+    box.hidden = true;
+  };
+  el("backdrop-on").onclick = () => {
+    store(BACKDROP_OFF, null);
+    box.hidden = true;
+    void startAttract();
+  };
+}
+
 /**
  * The war behind the landing page. Fails quietly where WebGL can't run: the
  * page keeps its plain dark backdrop (the "no-gl" class, which it starts
@@ -52,8 +104,11 @@ let accelChecked = false;
  */
 async function startAttract() {
   if (attract || game) return;
+  if (stored(BACKDROP_OFF)) return offerBackdrop();
   try {
+    store(CRUMB, "building the backdrop");
     const a = (attract = await Attract.create());
+    store(CRUMB, "drawing the backdrop");
     (window as unknown as { attract: Attract }).attract = a;
     a.onLost = () => {
       // The browser took the graphics away. Back to the plain backdrop at
@@ -71,8 +126,11 @@ async function startAttract() {
     }
     await a.start();
     if (attract === a) el("landing").classList.remove("no-gl");
+    // Still here a few seconds on: it went well.
+    window.setTimeout(() => store(CRUMB, null), 6000);
   } catch (e) {
     console.warn("No live backdrop:", e);
+    store(CRUMB, null);
     reportFault("NO BACKDROP", e instanceof Error ? e.message : String(e));
     attract?.stop();
     attract = null;

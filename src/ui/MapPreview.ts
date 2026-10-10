@@ -1,38 +1,25 @@
-// Small 3D pictures of the realms, for the map pickers and the list of
-// public games. Each is built from the map's half-size terrain file (the
-// same one the engine plans routes on): flat land raised a little above the
-// sea, lit from the side so the coast shows, seen from above at an angle.
-// One hidden renderer draws them all.
+// Small pictures of the realms, for the map pickers and the list of public
+// games. Each is painted from the map's half-size terrain file (the same one
+// the engine plans routes on) and shown as a slab seen from above at an
+// angle: green land, sea darker with depth, a shaded southern coast.
+//
+// They are drawn with the plain 2D canvas, not WebGL. The landing page
+// already has one WebGL context for the world behind it, and a second one
+// is more than some graphics cards and browsers will stand.
 
-import * as THREE from "three";
 import { GameMapType } from "@crusades/engine-api/game/Maps.gen";
 import { MAP_DIR } from "../worldgen/RealmGen";
 
 const W = 480;
 const H = 300;
-
-let renderer: THREE.WebGLRenderer | null = null;
-let broken = false;
-
-function gl(): THREE.WebGLRenderer | null {
-  if (broken) return null;
-  if (!renderer) {
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
-      renderer.setSize(W, H, false);
-      renderer.setPixelRatio(1);
-    } catch {
-      broken = true;
-      return null;
-    }
-  }
-  return renderer;
-}
+/** How far the slab is tipped away from the eye: 1 would be seen from straight above. */
+const TILT = 0.56;
 
 interface Model {
-  mesh: THREE.Mesh;
-  /** Depth of the slab relative to its width (height / width of the map). */
-  aspect: number;
+  /** The map from straight above, one pixel a tile. */
+  flat: HTMLCanvasElement;
+  w: number;
+  h: number;
 }
 
 const models = new Map<GameMapType, Promise<Model | null>>();
@@ -50,41 +37,40 @@ async function build(map: GameMapType): Promise<Model | null> {
     const mh = info.miniHeight;
     const mini = new Uint8Array(bytes);
     if (mini.length !== mw * mh) return null;
-    const aspect = mh / mw;
-    const size = 10;
-    const sx = 200;
-    const sy = Math.max(40, Math.min(260, Math.round(sx * aspect)));
-    const geo = new THREE.PlaneGeometry(size, size * aspect, sx, sy);
-    geo.rotateX(-Math.PI / 2);
-    const pos = geo.attributes.position as THREE.BufferAttribute;
-    const colors = new Float32Array(pos.count * 3);
-    const c = [0, 0, 0];
-    for (let i = 0; i < pos.count; i++) {
-      const u = pos.getX(i) / size + 0.5;
-      const v = pos.getZ(i) / (size * aspect) + 0.5;
-      const b = mini[Math.min(mh - 1, Math.floor(v * mh)) * mw + Math.min(mw - 1, Math.floor(u * mw))];
-      const mag = b & 0x1f;
-      if (b & 0x80) {
-        // Land is one level and one green: the game has no hills to show.
-        pos.setY(i, 0.14);
-        c[0] = 0.4;
-        c[1] = 0.54;
-        c[2] = 0.26;
-      } else {
-        // Water: paler in the shallows, darker out at sea.
-        const d = Math.min(1, mag / 10);
-        pos.setY(i, -0.03);
-        c[0] = 0.2 - 0.13 * d;
-        c[1] = 0.5 - 0.3 * d;
-        c[2] = 0.58 - 0.24 * d;
+    const flat = document.createElement("canvas");
+    flat.width = mw;
+    flat.height = mh;
+    const ctx = flat.getContext("2d");
+    if (!ctx) return null;
+    const img = ctx.createImageData(mw, mh);
+    const px = img.data;
+    // How far south of the coast its shadow falls on the water, in tiles.
+    const shade = Math.max(2, Math.round(mw / 160));
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) {
+        const b = mini[y * mw + x];
+        const o = (y * mw + x) * 4;
+        if (b & 0x80) {
+          // Land is one level and one green: the game has no hills to show.
+          // Its northern edge catches the light.
+          const lit = y > 0 && !(mini[(y - 1) * mw + x] & 0x80) ? 1.18 : 1;
+          px[o] = 104 * lit;
+          px[o + 1] = 140 * lit;
+          px[o + 2] = 68 * lit;
+        } else {
+          // Water: paler in the shallows, darker out at sea, and in shadow
+          // just south of land, which is what makes the land look raised.
+          const d = Math.min(1, (b & 0x1f) / 10);
+          const under = y >= shade && mini[(y - shade) * mw + x] & 0x80 ? 0.62 : 1;
+          px[o] = (51 - 33 * d) * under;
+          px[o + 1] = (128 - 77 * d) * under;
+          px[o + 2] = (148 - 61 * d) * under;
+        }
+        px[o + 3] = 255;
       }
-      colors[i * 3] = c[0];
-      colors[i * 3 + 1] = c[1];
-      colors[i * 3 + 2] = c[2];
     }
-    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-    geo.computeVertexNormals();
-    return { mesh: new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true })), aspect };
+    ctx.putImageData(img, 0, 0);
+    return { flat, w: mw, h: mh };
   } catch (e) {
     console.warn("map preview failed for", map, e);
     return null;
@@ -100,35 +86,33 @@ function model(map: GameMapType): Promise<Model | null> {
   return m;
 }
 
-let scene: THREE.Scene | null = null;
-let cam: THREE.PerspectiveCamera | null = null;
-const holder = new THREE.Group();
-
-function draw(m: Model, turn: number, w: number, h: number): boolean {
-  const r = gl();
-  if (!r) return false;
-  if (!scene) {
-    scene = new THREE.Scene();
-    scene.add(new THREE.HemisphereLight(0xe8f0ff, 0x3a3428, 1.25));
-    const sun = new THREE.DirectionalLight(0xfff1d6, 2.1);
-    sun.position.set(-5, 8, 4);
-    scene.add(sun);
-    scene.add(holder);
-    cam = new THREE.PerspectiveCamera(30, W / H, 0.1, 200);
+/** Paints the slab onto a canvas, turned by `turn` radians about its middle. */
+function draw(ctx: CanvasRenderingContext2D, m: Model, turn: number, w: number, h: number) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  // Big enough to fill the picture, small enough that a turned corner stays inside it.
+  const across = Math.abs(Math.cos(turn)) * m.w + Math.abs(Math.sin(turn)) * m.h;
+  const deep = (Math.abs(Math.sin(turn)) * m.w + Math.abs(Math.cos(turn)) * m.h) * TILT;
+  const thick = Math.max(4, h * 0.035);
+  const s = Math.min((w * 0.94) / across, ((h - thick) * 0.94) / deep);
+  const place = (drop: number) => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.translate(w / 2, (h - thick) / 2 + drop);
+    ctx.scale(1, TILT);
+    ctx.rotate(turn);
+    ctx.scale(s, s);
+  };
+  // The slab's sides: its outline, drawn again and again a little lower.
+  ctx.fillStyle = "#0b2231";
+  for (let drop = thick; drop >= 1; drop -= 1) {
+    place(drop);
+    ctx.fillRect(-m.w / 2, -m.h / 2, m.w, m.h);
   }
-  holder.clear();
-  holder.add(m.mesh);
-  holder.rotation.y = turn;
-  // Stand far enough back for the whole map, wide or tall.
-  const reach = Math.max(1, m.aspect * 1.55) * 13.5;
-  cam!.aspect = w / h;
-  cam!.updateProjectionMatrix();
-  cam!.position.set(0, reach * 0.74, reach * 0.68);
-  cam!.lookAt(0, 0, m.aspect * 0.6);
-  r.setSize(w, h, false);
-  r.setClearColor(0x000000, 0);
-  r.render(scene, cam!);
-  return true;
+  place(0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(m.flat, -m.w / 2, -m.h / 2);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 /**
@@ -142,7 +126,20 @@ export function mapStill(map: GameMapType): string {
     pending.add(map);
     void model(map).then((m) => {
       let url = "";
-      if (m && draw(m, 0, W, H)) url = renderer!.domElement.toDataURL("image/png");
+      if (m) {
+        try {
+          const c = document.createElement("canvas");
+          c.width = W;
+          c.height = H;
+          const ctx = c.getContext("2d");
+          if (ctx) {
+            draw(ctx, m, 0, W, H);
+            url = c.toDataURL("image/png");
+          }
+        } catch (e) {
+          console.warn("map picture failed for", map, e);
+        }
+      }
       stills.set(map, url);
       // Whoever was waiting: fill in the pictures already on the page.
       for (const img of Array.from(document.querySelectorAll<HTMLImageElement>(`img[data-map-still="${map}"]`))) {
@@ -179,9 +176,7 @@ function frame() {
       // The canvas may have moved on to another map while this one loaded.
       if (!m || c.dataset.map !== map) return;
       const ctx = c.getContext("2d");
-      if (!ctx || !draw(m, Math.sin(t * 0.35) * 0.5, c.width, c.height)) return;
-      ctx.clearRect(0, 0, c.width, c.height);
-      ctx.drawImage(renderer!.domElement, 0, 0, c.width, c.height);
+      if (ctx) draw(ctx, m, Math.sin(t * 0.35) * 0.5, c.width, c.height);
     });
   }
   requestAnimationFrame(frame);
@@ -189,7 +184,7 @@ function frame() {
 
 /** Keep every <canvas class="live-map" data-map="…"> on the page turning; stops when there are none. */
 export function startLiveMaps() {
-  if (running || !gl()) return;
+  if (running) return;
   running = true;
   requestAnimationFrame(frame);
 }

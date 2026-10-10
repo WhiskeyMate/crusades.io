@@ -1,8 +1,13 @@
 {
-  "version": "0.1.97",
+  "version": "0.1.98",
   "builtAt": "2026-10-10",
-  "commits": 97,
+  "commits": 98,
   "entries": [
+    {
+      "hash": "e51e666",
+      "date": "2026-10-10",
+      "subject": "Fault reports from crawlers and page testers are left out of the server log"
+    },
     {
       "hash": "adc03ac",
       "date": "2026-10-10",
