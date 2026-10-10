@@ -2,6 +2,7 @@
 // standings, the build bar, the chronicle, wars, pact offers and the
 // right-click menu.
 
+import { drawEndOffer } from "../account/Panel";
 import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   BuildableUnit,
@@ -356,6 +357,7 @@ export class Hud {
     el("end-title").textContent = title;
     el("end-text").textContent = text;
     el("endgame").hidden = false;
+    drawEndOffer();
     el("end-watch").onclick = () => (el("endgame").hidden = true);
     el("end-quit").onclick = () => this.onQuit();
   }

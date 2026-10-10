@@ -1,8 +1,13 @@
 {
-  "version": "0.1.87",
+  "version": "0.1.88",
   "builtAt": "2026-10-10",
-  "commits": 87,
+  "commits": 88,
   "entries": [
+    {
+      "hash": "c42b619",
+      "date": "2026-10-10",
+      "subject": "A banner advertisement stays in the bottom left corner, in a game or out of one; buying a bundle removes all advertising"
+    },
     {
       "hash": "fa4e772",
       "date": "2026-10-10",

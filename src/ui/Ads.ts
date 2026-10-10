@@ -1,14 +1,13 @@
 // Advertising: a banner on the landing page, one in the lobby while the lords
 // gather, one on the screen that ends a game, and a small one in the bottom
 // left corner that stays on screen throughout, in a game or out of one.
-// Buying a bundle takes them all away.
+// Buying anything from the store takes them all away.
 //
 // Each place is a <div data-ad="name"> in index.html. It is filled the first
 // time it comes into view; the corner is filled once, soon after the page
 // opens.
 
 import { account } from "../account/Account";
-import { BUNDLES } from "../store/Catalog";
 
 /** The AdSense publisher id. Public: it is in the page source of every site that shows ads. */
 export const AD_CLIENT = "ca-pub-1153759936707012";
@@ -25,47 +24,51 @@ const SLOTS: Record<string, string | undefined> = {
   corner: unit(import.meta.env.VITE_AD_SLOT_CORNER, "6933794104"),
 };
 
-/** Anyone who has bought a bundle plays without ads. */
-function adFree(): boolean {
+/** Anyone who has bought anything at all plays without ads. */
+export function adFree(): boolean {
   const s = account.state;
-  return Boolean(s && BUNDLES.some((b) => b.items.every((i) => s.owned.has(i))));
+  return Boolean(s && (s.owned.size > 0 || s.username));
 }
 
 /**
- * The corner banner: a fixed size, chosen once to suit the window. It keeps
- * to a column 250 wide, clear of the build bar in the middle of the bottom
- * edge: a square where the window is tall enough, a strip where it is not.
- * A phone, which has no corner to spare, gets none.
+ * The corner: a stack of banners in a column 250 wide, clear of the build bar
+ * in the middle of the bottom edge. How much is stacked depends on the room:
+ * two squares with a strip between them on a tall window, less on a shorter
+ * one. A phone, which has no corner to spare, gets none.
  */
 function corner(local: boolean) {
   const box = document.querySelector<HTMLElement>('[data-ad="corner"]');
   const slot = SLOTS.corner;
   if (!box || !slot || adFree() || box.dataset.filled) return;
   if (document.body.classList.contains("phone")) return;
-  const [w, h] = window.innerHeight >= 760 && window.innerWidth >= 1100 ? [250, 250] : [234, 60];
+  const SQUARE = [250, 250], STRIP = [234, 60];
+  const tall = window.innerHeight, wide = window.innerWidth >= 1100;
+  const stack = !wide ? [STRIP] : tall >= 880 ? [SQUARE, STRIP, SQUARE] : tall >= 700 ? [SQUARE, STRIP, STRIP] : [STRIP, STRIP, STRIP];
   box.dataset.filled = "1";
   box.hidden = false;
-  box.style.width = `${w}px`;
-  box.style.height = `${h}px`;
-  if (local) {
-    // On a developer's machine, an outline where the banner will be.
-    box.classList.add("mock");
-    box.textContent = `Advertisement ${w}×${h}`;
-    return;
-  }
-  box.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:${w}px;height:${h}px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins>`;
-  try {
-    const win = window as unknown as { adsbygoogle?: unknown[] };
-    (win.adsbygoogle = win.adsbygoogle || []).push({});
-  } catch (e) {
-    console.warn("ad not shown", e);
-  }
-  // Bought a bundle while it was showing: it goes.
+  box.innerHTML = stack
+    .map(([w, h]) =>
+      local
+        ? // On a developer's machine, an outline where each banner will be.
+          `<div class="mock" style="width:${w}px;height:${h}px">Advertisement ${w}×${h}</div>`
+        : `<div style="width:${w}px;height:${h}px"><ins class="adsbygoogle" style="display:inline-block;width:${w}px;height:${h}px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins></div>`,
+    )
+    .join("");
+  // Bought something while they were showing: they go.
   const watch = window.setInterval(() => {
     if (!adFree()) return;
     box.remove();
     window.clearInterval(watch);
   }, 5000);
+  if (local) return;
+  const win = window as unknown as { adsbygoogle?: unknown[] };
+  for (let n = 0; n < stack.length; n++) {
+    try {
+      (win.adsbygoogle = win.adsbygoogle || []).push({});
+    } catch (e) {
+      console.warn("ad not shown", e);
+    }
+  }
 }
 
 function fill(box: HTMLElement) {

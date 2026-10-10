@@ -1,6 +1,7 @@
 // The store: sign in, buy Crowns, browse the catalogue with live previews,
 // reserve a house name, design your arms, and choose what to wear.
 
+import { adFree } from "../ui/Ads";
 import { CHARGES, DIVISION_COUNT, DIVISION_NAMES, hexToRGB, shieldSVG, Skin } from "../client/Heraldry";
 import {
   BUNDLES, Bundle, defaultItem, Item, ITEMS, itemById, NAME_COST, PACKS, rarityOf, Slot, SLOT_NAMES,
@@ -385,15 +386,66 @@ function draw() {
   if (note) el("acct-note").textContent = note;
 }
 
+/** Opens the store, on whichever tab is current. */
+function show(message = "", bad = false) {
+  draft = { ...(account.state?.skin ?? DEFAULT) };
+  say(message, bad);
+  draw();
+  el("account").hidden = false;
+}
+
+/**
+ * The offer on the screen that ends a game: three things from the store, and
+ * the news that buying anything at all takes the advertisements away. Shown
+ * only while the store is open, to those who have not yet bought.
+ */
+export function drawEndOffer() {
+  const box = el("end-offer");
+  box.hidden = !accountsEnabled || adFree();
+  if (box.hidden) return;
+  // One each of troops, ships and buildings: the models are what is worth showing.
+  const picks = (["troops", "ships", "buildings"] as Slot[]).flatMap((slot) => {
+    const pool = ITEMS.filter((i) => i.slot === slot && !i.unlisted && i.crowns > 0 && !account.owns(i.id));
+    return pool.length > 0 ? [pool[Math.floor(Math.random() * pool.length)]] : [];
+  });
+  if (picks.length === 0) return void (box.hidden = true);
+  box.innerHTML =
+    `<b>Support crusades.io</b><p>Buy anything from the store and play without advertisements.</p><div class="end-cards">` +
+    picks
+      .map(
+        (i) =>
+          `<button class="card ${rarityOf(i.crowns)}" data-offer="${i.id}">${picture(i)}` +
+          `<div class="meta"><b>${esc(i.name)}</b><span class="price">${i.crowns.toLocaleString("en-US")} ♛</span></div></button>`,
+      )
+      .join("") +
+    `</div>`;
+  for (const b of Array.from(box.querySelectorAll<HTMLButtonElement>("button[data-offer]"))) {
+    b.onclick = async () => {
+      const item = itemById(b.dataset.offer!)!;
+      const s = account.state;
+      tab = item.slot;
+      filter = "all";
+      if (!s) return show(`Sign in to buy ${item.name}.`);
+      if (s.crowns < item.crowns) {
+        tab = "crowns";
+        return show(`You need ${(item.crowns - s.crowns).toLocaleString("en-US")} more ♛ to buy ${item.name}.`, true);
+      }
+      // The question is asked inside the store, so the store opens behind it.
+      show();
+      if (!(await confirmSpend(`Buy ${item.name}?`, item.crowns, `${SLOT_NAMES[item.slot]}. ${esc(item.blurb)}`))) return void (el("account").hidden = true);
+      const err = await account.buyItem(item.id);
+      if (err) return show(err, true);
+      await account.equip(item.slot, item.id);
+      show(`${item.name} is yours, and you are wearing it.`);
+      box.innerHTML = `<b>${esc(item.name)} is yours.</b><p>Thank you. You now play without advertisements.</p>`;
+    };
+  }
+}
+
 export async function initAccountPanel() {
   if (!accountsEnabled) return;
   const dialog = el("account");
-  el("account-open").onclick = () => {
-    draft = { ...(account.state?.skin ?? DEFAULT) };
-    say("");
-    draw();
-    dialog.hidden = false;
-  };
+  el("account-open").onclick = () => show();
   el("acct-close").onclick = () => (dialog.hidden = true);
   el<HTMLFormElement>("acct-form").onsubmit = async (e) => {
     e.preventDefault();

@@ -610,5 +610,15 @@ body.phone #notices { grid-template-columns: 1fr; width: auto; }
 #raids .raid b { display: inline-flex; align-items: center; gap: 5px; }
 #raids .raid svg.boat { width: 18px; height: 15px; flex: none; }
 /* The banner that stays in the bottom left corner. */
-#ad-corner { position: fixed; left: 12px; bottom: 12px; z-index: 40; overflow: hidden; border-radius: 4px; background: rgba(24, 17, 11, 0.6); box-shadow: 0 0 0 1px var(--edge); }
-#ad-corner.mock { display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+#ad-corner { position: fixed; left: 12px; bottom: 12px; z-index: 40; display: flex; flex-direction: column; gap: 6px; }
+#ad-corner > div { overflow: hidden; border-radius: 4px; background: rgba(24, 17, 11, 0.6); box-shadow: 0 0 0 1px var(--edge); }
+#ad-corner .mock { display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+/* The offer on the screen that ends a game. */
+#end-offer { margin: 16px 0 0; padding: 12px 14px 14px; border: 1px solid var(--edge); border-radius: 8px; background: rgba(0, 0, 0, 0.25); }
+#end-offer > b { display: block; font-size: 19px; color: var(--gold); font-weight: normal; }
+#end-offer > p { margin: 4px 0 12px; font-size: 14px; }
+.end-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.end-cards .card { cursor: pointer; color: inherit; font: inherit; text-align: center; }
+.end-cards .card .meta { padding: 7px 8px 9px; gap: 5px; }
+.end-cards .card .meta b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.end-cards .price { display: block; padding: 3px 0; border-radius: 4px; background: #3a2a14; color: var(--gold); font-size: 14px; }
