@@ -1,8 +1,13 @@
 {
-  "version": "0.1.89",
+  "version": "0.1.90",
   "builtAt": "2026-10-10",
-  "commits": 89,
+  "commits": 90,
   "entries": [
+    {
+      "hash": "5a43b97",
+      "date": "2026-10-10",
+      "subject": "Visitor statistics behind a measurement id, a warning when the browser draws without the graphics card, and the corner banners keep off the landing page"
+    },
     {
       "hash": "deac209",
       "date": "2026-10-10",
