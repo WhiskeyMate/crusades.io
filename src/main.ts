@@ -206,6 +206,17 @@ el("lore").innerHTML = BUILD_ORDER.map((t) => {
 if (SOURCE_URL) {
   el("source-link").innerHTML = ` <a href="${SOURCE_URL}" target="_blank" rel="noopener">Read the source.</a>`;
 }
+// A phone gets its own layout (see "Phones" in style.css): a touch screen
+// whose shorter side is small. Checked again when it is turned round.
+function markPhone() {
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const small = Math.min(window.innerWidth, window.innerHeight) < 560 || window.innerWidth < 720;
+  document.body.classList.toggle("phone", (coarse && small) || window.innerWidth < 560);
+  document.body.classList.toggle("touch", coarse);
+}
+markPhone();
+window.addEventListener("resize", markPhone);
+
 void initAccountPanel();
 initAds();
 const { hostLobby } = initOnline({

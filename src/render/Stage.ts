@@ -57,7 +57,10 @@ export class Stage {
       antialias: true,
       powerPreference: "high-performance",
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // Phones have very dense screens and modest graphics chips: draw a little
+    // under their full resolution there.
+    const phone = window.matchMedia("(pointer: coarse)").matches;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, phone ? 1.5 : 2));
     this.scene.background = new THREE.Color(0.66, 0.76, 0.86);
     this.scene.add(new THREE.HemisphereLight(0xcfe2ff, 0x4a4436, 1.25));
     const sun = new THREE.DirectionalLight(0xfff1d6, 2.3);
@@ -70,10 +73,15 @@ export class Stage {
     const on = { signal: this.life.signal };
     window.addEventListener("resize", () => this.resize(), on);
     if (!interactive) return;
-    canvas.addEventListener("pointerdown", (e) => this.down(e));
-    canvas.addEventListener("pointermove", (e) => this.move(e));
-    canvas.addEventListener("pointerup", (e) => this.up(e));
-    canvas.addEventListener("pointercancel", () => (this.drag = null));
+    canvas.addEventListener("pointerdown", (e) => (e.pointerType === "touch" ? this.touchDown(e) : this.down(e)));
+    canvas.addEventListener("pointermove", (e) => (e.pointerType === "touch" ? this.touchMove(e) : this.move(e)));
+    canvas.addEventListener("pointerup", (e) => (e.pointerType === "touch" ? this.touchUp(e) : this.up(e)));
+    canvas.addEventListener("pointercancel", (e) => {
+      this.drag = null;
+      this.fingers.delete(e.pointerId);
+      this.pinch = null;
+      window.clearTimeout(this.pressTimer);
+    });
     canvas.addEventListener("wheel", (e) => this.wheel(e), { passive: false });
     canvas.addEventListener("contextmenu", (e) => e.preventDefault());
     window.addEventListener(
@@ -133,6 +141,104 @@ export class Stage {
     if (direction.y > -0.01) return null;
     const t = -origin.y / direction.y;
     return origin.clone().addScaledVector(direction, t);
+  }
+
+  // ---- Touch: one finger pans, two pinch to zoom and twist to turn, a tap
+  // is a click, and a finger held still is a right-click.
+  private fingers = new Map<number, { x: number; y: number }>();
+  private pinch: { dist: number; angle: number; mx: number; my: number } | null = null;
+  private pressTimer = 0;
+  /** True from a long press until that finger lifts, so the lift is not also a tap. */
+  private pressed = false;
+
+  private touchDown(e: PointerEvent) {
+    this.fingers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    window.clearTimeout(this.pressTimer);
+    if (this.fingers.size === 1) {
+      this.pressed = false;
+      this.down(e);
+      const x = e.clientX;
+      const y = e.clientY;
+      this.pressTimer = window.setTimeout(() => {
+        const d = this.drag;
+        if (!d || d.moved || this.fingers.size !== 1) return;
+        this.pressed = true;
+        this.drag = null;
+        navigator.vibrate?.(12);
+        this.onClick(this.pick(x, y), 2, e);
+      }, 480);
+    } else if (this.fingers.size === 2) {
+      // A second finger: this is a pinch, not a drag or a tap.
+      this.drag = null;
+      this.pinch = this.measure();
+    }
+  }
+
+  private measure() {
+    const [a, b] = Array.from(this.fingers.values());
+    return {
+      dist: Math.max(1, Math.hypot(b.x - a.x, b.y - a.y)),
+      angle: Math.atan2(b.y - a.y, b.x - a.x),
+      mx: (a.x + b.x) / 2,
+      my: (a.y + b.y) / 2,
+    };
+  }
+
+  private touchMove(e: PointerEvent) {
+    const f = this.fingers.get(e.pointerId);
+    if (!f) return;
+    f.x = e.clientX;
+    f.y = e.clientY;
+    if (this.fingers.size === 1) {
+      this.move(e);
+      return;
+    }
+    if (this.fingers.size !== 2 || !this.pinch) return;
+    const now = this.measure();
+    const was = this.pinch;
+    // Zoom about the point between the fingers, as the wheel does about the cursor.
+    const before = this.planePoint(was.mx, was.my);
+    const next = Math.min(2600, Math.max(22, this.goal.distance * (was.dist / now.dist)));
+    if (before) {
+      const k = 1 - next / this.goal.distance;
+      this.goal.x += (before.x - this.goal.x) * k;
+      this.goal.z += (before.z - this.goal.z) * k;
+    }
+    this.goal.distance = next;
+    // Twist to turn.
+    let turn = now.angle - was.angle;
+    if (turn > Math.PI) turn -= Math.PI * 2;
+    if (turn < -Math.PI) turn += Math.PI * 2;
+    this.goal.yaw -= turn;
+    // Both fingers sliding together moves the map.
+    const from = this.planePoint(was.mx, was.my);
+    const to = this.planePoint(now.mx, now.my);
+    if (from && to) {
+      this.goal.x += from.x - to.x;
+      this.goal.z += from.z - to.z;
+    }
+    this.pinch = now;
+  }
+
+  private touchUp(e: PointerEvent) {
+    window.clearTimeout(this.pressTimer);
+    const count = this.fingers.size;
+    this.fingers.delete(e.pointerId);
+    if (count >= 2) {
+      // Lifting out of a pinch: whatever finger remains does not start a drag or count as a tap.
+      this.pinch = null;
+      this.drag = null;
+      this.pressed = true;
+      return;
+    }
+    if (this.pressed) {
+      this.pressed = false;
+      this.drag = null;
+      return;
+    }
+    // There is no hover on a touch screen: tell the game where the finger was first.
+    if (this.drag && !this.drag.moved) this.onHover(this.pick(e.clientX, e.clientY), e);
+    this.up(e);
   }
 
   private down(e: PointerEvent) {
