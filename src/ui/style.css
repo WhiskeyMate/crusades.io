@@ -607,3 +607,5 @@ body.phone #notices { grid-template-columns: 1fr; width: auto; }
 #raids .raid span { color: var(--bad); }
 #raids .raid b { color: inherit; font-size: inherit; }
 #raids .raid:hover { background: var(--wood); border-color: #ff8a70; }
+#raids .raid b { display: inline-flex; align-items: center; gap: 5px; }
+#raids .raid svg.boat { width: 18px; height: 15px; flex: none; }

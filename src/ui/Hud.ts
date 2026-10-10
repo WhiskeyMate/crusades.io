@@ -35,6 +35,13 @@ const NEEDS: Partial<Record<UnitType, UnitType>> = {
   [UnitType.MIRV]: UnitType.MissileSilo,
 };
 
+/** A small longship, drawn beside the number of levies aboard. */
+const BOAT_ICON =
+  `<svg class="boat" viewBox="0 0 24 20" aria-hidden="true">` +
+  `<path d="M2 12h20l-3.5 6h-13z" fill="#8a5a2b" stroke="#1b1410" stroke-width="1.2" stroke-linejoin="round"/>` +
+  `<path d="M12 1.5v10h7z" fill="#f1ead8" stroke="#1b1410" stroke-width="1.2" stroke-linejoin="round"/>` +
+  `<path d="M10.5 3.5v8H5z" fill="#c71a21" stroke="#1b1410" stroke-width="1.2" stroke-linejoin="round"/></svg>`;
+
 export class Hud {
   /** What the next click on the map will build, if anything. */
   placing: UnitType | null = null;
@@ -253,7 +260,7 @@ export class Hud {
         const text = `${who}|${count}`;
         if (row.dataset.text !== text) {
           row.dataset.text = text;
-          row.innerHTML = `<span>⚓ ${who}: longships approaching</span><b>${count}</b>`;
+          row.innerHTML = `<span>${who}: longships approaching</span><b>${BOAT_ICON}${count}</b>`;
         }
       }
     }

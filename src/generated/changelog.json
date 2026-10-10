@@ -1,8 +1,13 @@
 {
-  "version": "0.1.80",
+  "version": "0.1.81",
   "builtAt": "2026-10-10",
-  "commits": 80,
+  "commits": 81,
   "entries": [
+    {
+      "hash": "985b8fa",
+      "date": "2026-10-10",
+      "subject": "Longship notices share the attack notices' columns and look the same"
+    },
     {
       "hash": "48f9fd9",
       "date": "2026-10-10",
