@@ -520,7 +520,7 @@ export class Game {
         ? { type: aiming, target: this.hoverTile }
         : null;
     this.units.update(alpha, dt, this.time);
-    setCursor(this.stage.canvas, this.cursorKind());
+    setCursor(this.stage.canvas, this.cursorKind(), this.hud.placing);
     this.hud.aimWarning(this.units.aimDoomed);
     this.armies.update(dt, this.time);
     this.effects.update(this.time, window.innerHeight, this.stage.camera.fov);

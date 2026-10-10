@@ -1,8 +1,13 @@
 {
-  "version": "0.1.84",
+  "version": "0.1.85",
   "builtAt": "2026-10-10",
-  "commits": 84,
+  "commits": 85,
   "entries": [
+    {
+      "hash": "3ef7c51",
+      "date": "2026-10-10",
+      "subject": "On the real-world maps, kingdoms carry the names of the medieval realms that stood where they start"
+    },
     {
       "hash": "8baf4ea",
       "date": "2026-10-10",
