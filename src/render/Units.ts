@@ -55,6 +55,8 @@ export class Units {
   chosen: ReadonlySet<number> = new Set();
   /** The building a click would raise a level rather than build beside: it is ringed in gold. */
   upgrading: number | null = null;
+  /** While placing: the tile a new building would really stand on. It wears a marker. */
+  landing: number | null = null;
 
   /** Where a unit was last drawn, in the world; null if it has not been drawn. */
   drawnAt(id: number, out: THREE.Vector3): THREE.Vector3 | null {
@@ -236,6 +238,21 @@ export class Units {
     const shipScale = 1.25 * Math.pow(S, 0.4);
     const map = this.state.map;
     const pos = this.v;
+
+    if (this.landing !== null) {
+      // The spot a new building will take: a tight ring of marks and one in the middle.
+      const lx = map.x(this.landing);
+      const ly = map.y(this.landing);
+      const wx = this.terrain.worldX(lx);
+      const wz = this.terrain.worldZ(ly);
+      const wy = this.terrain.surfaceAt(lx, ly) + 0.4 * structScale;
+      const r = structScale * 2.6;
+      for (let i = 0; i < 10; i++) {
+        const a = -time * 1.2 + (i / 10) * Math.PI * 2;
+        this.marks.dot(wx + Math.sin(a) * r, wy, wz + Math.cos(a) * r, 0.55 * structScale, 0.95, 0.93, 0.85);
+      }
+      this.marks.dot(wx, wy + (1 + Math.sin(time * 4) * 0.3) * structScale, wz, 0.9 * structScale, 0.95, 0.93, 0.85);
+    }
 
     for (const u of this.state.units.values()) {
       const color = this.color(u.ownerID);

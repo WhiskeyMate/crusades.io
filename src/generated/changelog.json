@@ -1,8 +1,13 @@
 {
-  "version": "0.1.93",
+  "version": "0.1.94",
   "builtAt": "2026-10-10",
-  "commits": 93,
+  "commits": 94,
   "entries": [
+    {
+      "hash": "4b7d084",
+      "date": "2026-10-10",
+      "subject": "While placing, a building that the click would raise a level is ringed in gold and the hint says so"
+    },
     {
       "hash": "916017a",
       "date": "2026-10-10",

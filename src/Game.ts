@@ -252,7 +252,12 @@ export class Game {
   }
 
   /** What the engine last said about building on the tile under the cursor. */
-  private upgrade = { tile: -1, type: null as UnitType | null, id: null as number | null, at: -Infinity, asking: false };
+  private upgrade = {
+    tile: -1, type: null as UnitType | null, id: null as number | null,
+    /** Where a new building would really stand: the engine moves it clear of its neighbours. */
+    land: null as number | null,
+    at: -Infinity, asking: false,
+  };
 
   /**
    * While a building is being placed: the one a click here would raise a
@@ -266,6 +271,7 @@ export class Game {
     if (placing === null || tile === null || !Structures.has(placing)) {
       u.tile = -1;
       u.id = null;
+      u.land = null;
       return null;
     }
     const moved = u.tile !== tile || u.type !== placing;
@@ -278,9 +284,11 @@ export class Game {
         u.tile = tile;
         u.type = placing;
         u.id = b && b.canUpgrade !== false ? b.canUpgrade : null;
+        u.land = b && u.id === null && b.canBuild !== false ? b.canBuild : null;
       });
     }
     // An answer for another tile says nothing about this one.
+    if (moved) u.land = null;
     return moved ? null : u.id;
   }
 
@@ -475,8 +483,12 @@ export class Game {
         if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
       }
     } else if (placing !== null && this.hoverTile !== null && Structures.has(placing)) {
-      const hx = map.x(this.hoverTile);
-      const hy = map.y(this.hoverTile);
+      // Drawn where the building will stand, which is not always under the
+      // cursor: the engine keeps buildings a set distance apart and moves a
+      // new one to the nearest spot that is clear.
+      const at = this.upgrade.land ?? this.hoverTile;
+      const hx = map.x(at);
+      const hy = map.y(at);
       const own = this.reach(placing, 1);
       if (own) put(hx, hy, own[0], own[1]);
       put(hx, hy, this.session.state.config.structureMinDist(), 3);
@@ -556,6 +568,7 @@ export class Game {
     setCursor(this.stage.canvas, this.cursorKind(), this.hud.placing);
     this.hud.aimWarning(this.units.aimDoomed);
     this.units.upgrading = this.wouldUpgrade();
+    this.units.landing = this.upgrade.land;
     const raised = this.units.upgrading === null ? undefined : this.session.state.units.get(this.units.upgrading);
     this.hud.upgradeHint(raised ? raised.level : null);
     this.armies.update(dt, this.time);
