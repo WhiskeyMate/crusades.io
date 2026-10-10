@@ -1,7 +1,7 @@
 // Small 3D pictures of the realms, for the map pickers and the list of
 // public games. Each is built from the map's half-size terrain file (the
-// same one the engine plans routes on): land raised a little above the sea
-// and coloured by height, lit from the side, seen from above at an angle.
+// same one the engine plans routes on): flat land raised a little above the
+// sea, lit from the side so the coast shows, seen from above at an angle.
 // One hidden renderer draws them all.
 
 import * as THREE from "three";
@@ -39,30 +39,6 @@ const models = new Map<GameMapType, Promise<Model | null>>();
 const stills = new Map<GameMapType, string>();
 const pending = new Set<GameMapType>();
 
-const LAND: [number, [number, number, number]][] = [
-  [0, [0.78, 0.72, 0.5]],
-  [2, [0.38, 0.52, 0.24]],
-  [10, [0.46, 0.55, 0.28]],
-  [18, [0.55, 0.5, 0.36]],
-  [24, [0.56, 0.54, 0.52]],
-  [30, [0.95, 0.96, 0.98]],
-];
-
-function landColor(mag: number, out: number[]) {
-  for (let i = 1; i < LAND.length; i++) {
-    if (mag <= LAND[i][0]) {
-      const [m0, c0] = LAND[i - 1];
-      const [m1, c1] = LAND[i];
-      const t = (mag - m0) / (m1 - m0);
-      out[0] = c0[0] + (c1[0] - c0[0]) * t;
-      out[1] = c0[1] + (c1[1] - c0[1]) * t;
-      out[2] = c0[2] + (c1[2] - c0[2]) * t;
-      return;
-    }
-  }
-  [out[0], out[1], out[2]] = LAND[LAND.length - 1][1];
-}
-
 async function build(map: GameMapType): Promise<Model | null> {
   try {
     const base = `/maps/${MAP_DIR[map]}`;
@@ -89,9 +65,11 @@ async function build(map: GameMapType): Promise<Model | null> {
       const b = mini[Math.min(mh - 1, Math.floor(v * mh)) * mw + Math.min(mw - 1, Math.floor(u * mw))];
       const mag = b & 0x1f;
       if (b & 0x80) {
-        const m = Math.min(30, mag);
-        pos.setY(i, 0.1 + (m / 30) ** 1.4 * 0.55);
-        landColor(m, c);
+        // Land is one level and one green: the game has no hills to show.
+        pos.setY(i, 0.14);
+        c[0] = 0.4;
+        c[1] = 0.54;
+        c[2] = 0.26;
       } else {
         // Water: paler in the shallows, darker out at sea.
         const d = Math.min(1, mag / 10);

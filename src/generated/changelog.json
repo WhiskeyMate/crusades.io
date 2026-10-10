@@ -1,8 +1,13 @@
 {
-  "version": "0.1.61",
+  "version": "0.1.62",
   "builtAt": "2026-10-10",
-  "commits": 61,
+  "commits": 62,
   "entries": [
+    {
+      "hash": "95c91f8",
+      "date": "2026-10-10",
+      "subject": "3D previews of the realms in the map picker and beside each public game"
+    },
     {
       "hash": "66cf44a",
       "date": "2026-10-10",
