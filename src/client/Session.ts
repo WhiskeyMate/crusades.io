@@ -23,6 +23,7 @@ import {
   MainThreadMessage,
   WorkerMessage,
 } from "@crusades/engine-api/worker/WorkerMessages";
+import { SocketTransport } from "../net/SocketTransport";
 import { LocalTransport, Transport } from "../net/Transport";
 import { loadRealm, Realm } from "../worldgen/RealmGen";
 import { Cosmetic, GameState, TickDelta } from "./GameState";
@@ -153,6 +154,8 @@ export class Session {
     this.worker.addEventListener("error", (e) =>
       this.onError(e.message || "The engine worker failed to load."),
     );
+    // Online, hold back turns the engine has not got to yet (see SocketTransport).
+    if (this.transport instanceof SocketTransport) this.transport.ready = () => this.inFlight < 60;
     this.transport.onTurn = (turn) => {
       if (turn.turnNumber !== this.turns) {
         // A missed or repeated turn means this game can never match the others.

@@ -42,7 +42,12 @@ foreach ($d in "$Root", "$Root\bin", "$Root\logs", "$Root\app") {
 
 Write-Host "Copying the server to $Root\app..."
 Copy-Item "$project\server\dist\server.mjs" "$Root\app\server.mjs" -Force
+# Copy-Item puts a folder INSIDE a destination that already exists, so a
+# plain copy only ever worked on the first install and every later one left
+# the old maps in place. Remove the old folder first.
+if (Test-Path "$Root\app\maps") { Remove-Item "$Root\app\maps" -Recurse -Force }
 Copy-Item "$project\public\maps" "$Root\app\maps" -Recurse -Force
+Write-Host ("Maps installed: " + ((Get-ChildItem "$Root\app\maps" -Directory).Name -join ", "))
 # The bundle keeps ws and zod external; give it a tiny package of its own.
 $pkg = @{ name = "crusades-server"; private = $true; type = "module"; dependencies = @{} }
 foreach ($dep in "ws", "zod") {

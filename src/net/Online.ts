@@ -3,7 +3,7 @@
 
 import { GameStartInfo, Intent, Turn } from "@crusades/engine-api/Schemas";
 import { MapManifest } from "@crusades/engine-api/game/MapFiles";
-import { loadRealm, Realm } from "../worldgen/RealmGen";
+import { buildRealm, loadRealm, Realm } from "../worldgen/RealmGen";
 import { realmHash } from "../worldgen/RealmHash";
 import { ClientMessage, LobbyConfig, LobbyView, PROTOCOL_VERSION, PublicGame, ServerMessage, WireCosmetic } from "./Protocol";
 import { SocketTransport } from "./SocketTransport";
@@ -53,6 +53,7 @@ export class Online {
   private pendingStart: ServerMessage & { type: "start" } | null = null;
   private realmWaiters: ((m: ServerMessage & { type: "realm" }) => void)[] = [];
   private pingTimer = 0;
+  private startSeq = 0;
 
   constructor(
     private name: string,
@@ -155,6 +156,8 @@ export class Online {
    * game's start would be taken for a repeat of the last one and ignored.
    */
   private resetGame() {
+    this.startSeq++;
+    this.realmWaiters = [];
     this.pendingStart = null;
     this.transport = null;
   }
@@ -189,7 +192,10 @@ export class Online {
         this.onLobby(null);
         break;
       case "start": {
-        if (this.pendingStart) break;
+        // The same game announced twice is ignored; a different game replaces
+        // one that was still loading.
+        if (this.pendingStart?.info.gameID === msg.info.gameID) break;
+        this.realmWaiters = [];
         // Turns start flowing the instant the game starts, while the map is
         // still downloading. Queue them from this moment; lose none.
         const transport = new SocketTransport(this.sendIntent);
@@ -234,16 +240,21 @@ export class Online {
   /** The game is on: build the realm, check it matches, hand over. */
   private async begin(msg: ServerMessage & { type: "start" }, transport: SocketTransport) {
     this.pendingStart = msg;
+    // A newer start (another game joined while this one was still loading)
+    // makes this one stale: it must not hand over its realm.
+    const seq = ++this.startSeq;
     console.log(`Game ${msg.info.gameID} starting on ${msg.info.config.gameMap}, ${msg.turns.length} turns to catch up`);
     this.report("start received", `${msg.info.config.gameMap}, ${msg.turns.length} turns queued, ${this.lobby ? "lobby known" : "NO LOBBY STATE"}`);
     const t0 = performance.now();
     const c = msg.info.config;
     const lobby = this.lobby;
-    let realm = await loadRealm({
+    const opts = {
       map: c.gameMap,
       seed: lobby?.config.seed ?? 1,
       kingdoms: typeof c.nations === "number" ? c.nations : lobby?.config.kingdoms ?? 12,
-    });
+    };
+    let realm = await loadRealm(opts);
+    if (seq !== this.startSeq) return;
     if (realmHash(realm) !== msg.realmHash) {
       // This browser's maths disagrees with the server's: take its terrain.
       console.warn("Realm hash mismatch; fetching the server's terrain.");
@@ -252,15 +263,30 @@ export class Online {
         this.realmWaiters.push(resolve);
         this.post({ type: "realm" });
       });
+      if (seq !== this.startSeq) return;
       const manifest = theirs.manifest as MapManifest;
-      const mapBin = b64(theirs.mapBin);
-      realm = {
-        ...realm,
-        files: { ...realm.files, manifest, mapBin, map4xBin: b64(theirs.map4xBin) },
-        terrain: mapBin.slice(),
-        numLandTiles: manifest.map.num_land_tiles,
-      };
+      // Build the whole realm again from the server's bytes. Keeping our own
+      // picture of the land with the server's terrain underneath would draw
+      // one map and play another.
+      realm = buildRealm(
+        opts,
+        {
+          source: "server",
+          width: manifest.map.width,
+          height: manifest.map.height,
+          numLandTiles: manifest.map.num_land_tiles,
+          miniWidth: manifest.map4x.width,
+          miniHeight: manifest.map4x.height,
+          miniNumLandTiles: manifest.map4x.num_land_tiles,
+        },
+        b64(theirs.mapBin),
+        b64(theirs.map4xBin),
+      );
+      if (realmHash(realm) !== msg.realmHash) {
+        this.report("realm still differs", `rebuilt ${realmHash(realm)}, server ${msg.realmHash}`);
+      }
     }
+    if (seq !== this.startSeq) return;
     this.report("realm ready", `${Math.round(performance.now() - t0)}ms, ${transport.queued} turns queued`);
     this.onStart({
       realm,

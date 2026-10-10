@@ -46,6 +46,23 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     s.classList.toggle("bad", bad);
   };
 
+  // Tell the server's log when this page breaks or locks up, so a freeze a
+  // player reports can be matched to what their browser was doing.
+  window.addEventListener("error", (e) => online?.report("PAGE ERROR", `${e.message} at ${e.filename?.split("/").pop()}:${e.lineno}`));
+  window.addEventListener("unhandledrejection", (e) => online?.report("PAGE ERROR", `unhandled: ${e.reason instanceof Error ? e.reason.message : String(e.reason)}`));
+  document.addEventListener("webglcontextlost", () => online?.report("GRAPHICS LOST", "the WebGL context was lost"), true);
+  let beat = performance.now();
+  setInterval(() => {
+    const now = performance.now();
+    const gap = now - beat;
+    beat = now;
+    // The timer runs every second; a long gap in a visible tab is a locked-up page.
+    if (gap > 4000 && !document.hidden) {
+      const mem = (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory;
+      online?.report("PAGE STALLED", `${Math.round(gap)}ms${mem ? `, heap ${Math.round(mem.usedJSHeapSize / 1048576)}MB` : ""}`);
+    }
+  }, 1000);
+
   /** Connect (once) and keep the hall's list fresh. Reconnects while in the hall. */
   async function connect(): Promise<Online | null> {
     if (online) return online;

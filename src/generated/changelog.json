@@ -1,8 +1,13 @@
 {
-  "version": "0.1.47",
+  "version": "0.1.49",
   "builtAt": "2026-10-10",
-  "commits": 47,
+  "commits": 49,
   "entries": [
+    {
+      "hash": "e326278",
+      "date": "2026-10-10",
+      "subject": "Two new maps: Westeros and Middle-earth"
+    },
     {
       "hash": "56b62db",
       "date": "2026-10-10",

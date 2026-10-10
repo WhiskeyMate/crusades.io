@@ -311,7 +311,7 @@ export class Game {
         towers.push({ u: b, d: dx * dx + dy * dy });
       }
       towers.sort((a, b) => a.d - b.d);
-      for (const { u: b } of towers.slice(0, 28)) {
+      for (const { u: b } of towers.slice(0, 20)) {
         const r = this.reach(b.type, b.level);
         if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
       }
@@ -330,7 +330,7 @@ export class Game {
         near.push({ u: b, d: dx * dx + dy * dy });
       }
       near.sort((a, b) => a.d - b.d);
-      for (const { u: b } of near.slice(0, 29)) {
+      for (const { u: b } of near.slice(0, 14)) {
         const r = this.reach(b.type, b.level);
         if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
       }

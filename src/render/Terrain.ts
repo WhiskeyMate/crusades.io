@@ -201,31 +201,30 @@ void main() {
   if (uSpawnPulse > 0.0 && held && o == 0) {
     lit += vec3(0.25, 0.22, 0.08) * uSpawnPulse * (0.5 + 0.5 * sin(uTime * 3.0));
   }
-  {
+  if (uRingCount > 0) {
     float fw = max(fwidth(tile.x), fwidth(tile.y));
     float lw = max(0.7, fw * 1.6);
     // Per kind: are we inside the union, and how close to its outline.
     float insideK[6];
     float lineK[6];
     for (int k = 0; k < 6; k++) { insideK[k] = 0.0; lineK[k] = 0.0; }
+    // Two passes, each once through the rings. (Comparing every ring with
+    // every other for every pixel froze the page once a realm had a few
+    // dozen buildings of a kind.) First: which unions is this pixel inside?
+    for (int i = 0; i < 32; i++) {
+      if (i >= uRingCount) break;
+      vec4 r = uRings[i];
+      if (distance(vWorld.xz, r.xy) < r.z - lw) insideK[int(r.w + 0.5)] = 1.0;
+    }
+    // Second: an outline shows only where no ring of its kind covers it. A
+    // ring never covers its own outline, so "inside any" is the whole test.
     for (int i = 0; i < 32; i++) {
       if (i >= uRingCount) break;
       vec4 r = uRings[i];
       int k = int(r.w + 0.5);
-      float d = distance(vWorld.xz, r.xy);
-      if (d < r.z - lw) insideK[k] = 1.0;
-      float line = 1.0 - smoothstep(0.0, lw, abs(d - r.z));
+      if (insideK[k] > 0.5) continue;
+      float line = 1.0 - smoothstep(0.0, lw, abs(distance(vWorld.xz, r.xy) - r.z));
       if (line <= 0.0) continue;
-      // Only an outline not buried inside another ring of the same kind.
-      bool buried = false;
-      for (int j = 0; j < 32; j++) {
-        if (j >= uRingCount) break;
-        if (j == i) continue;
-        vec4 q = uRings[j];
-        if (int(q.w + 0.5) != k) continue;
-        if (distance(vWorld.xz, q.xy) < q.z - lw) { buried = true; break; }
-      }
-      if (buried) continue;
       if (k == 3) {
         // Spacing ring: dashed, so it reads as a limit rather than a reach.
         float ang = atan(vWorld.z - r.y, vWorld.x - r.x);
