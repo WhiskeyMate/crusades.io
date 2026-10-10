@@ -594,3 +594,16 @@ body.phone #wars { grid-template-columns: 1fr; width: auto; }
 #wars .war:only-child, #raids .raid:only-child { grid-column: auto; }
 .offer { cursor: pointer; }
 .offer:hover { border-color: #fff0b8; }
+/* Attack and longship notices share one pair of columns: the two lists are
+   only groupings, and their notices flow together into the same grid. */
+#notices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 8px; width: min(880px, 94vw); }
+#notices:not(:has(.war, .raid)) { display: none; }
+#wars, #raids { display: contents; }
+#wars[hidden], #raids[hidden] { display: none !important; }
+body.phone #notices { grid-template-columns: 1fr; width: auto; }
+/* Longship notices look like the attack notices beside them; only the anchor and the click differ. */
+#raids { font-size: 13px; }
+#raids .raid { border-color: #a8392e; color: inherit; gap: 8px; padding: 5px 10px; cursor: pointer; }
+#raids .raid span { color: var(--bad); }
+#raids .raid b { color: inherit; font-size: inherit; }
+#raids .raid:hover { background: var(--wood); border-color: #ff8a70; }

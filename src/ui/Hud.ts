@@ -237,7 +237,7 @@ export class Hud {
         let row = this.raids.get(u.id);
         if (!row) {
           row = document.createElement("div");
-          row.className = "raid";
+          row.className = "war in raid";
           row.title = "Click to see the ship";
           const id = u.id;
           row.onclick = () => {
@@ -247,10 +247,13 @@ export class Hud {
           this.raids.set(u.id, row);
           box.appendChild(row);
         }
-        const text = `${owner ? esc(owner.name) : "Raiders"}: longships approaching${u.troops > 0 ? ` with ${fmtTroops(u.troops)} levies` : ""}`;
+        // Built like an attack notice: what is happening, then how many.
+        const who = owner ? esc(owner.name) : "Raiders";
+        const count = u.troops > 0 ? fmtTroops(u.troops) : "";
+        const text = `${who}|${count}`;
         if (row.dataset.text !== text) {
           row.dataset.text = text;
-          row.innerHTML = `<i>⚓</i><span>${owner ? shieldSVG(owner.name, owner.color, 15, owner.arms) : ""} ${text}</span>`;
+          row.innerHTML = `<span>⚓ ${who}: longships approaching</span><b>${count}</b>`;
         }
       }
     }
