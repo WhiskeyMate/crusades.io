@@ -24,6 +24,11 @@ export class Stage {
 
   onClick: (hit: PickHit | null, button: number, ev: PointerEvent) => void = () => {};
   onHover: (hit: PickHit | null, ev: PointerEvent) => void = () => {};
+  /** A box dragged out with shift held, in screen pixels: for choosing units. */
+  onBox: (x0: number, y0: number, x1: number, y1: number) => void = () => {};
+  /** True while the map is being dragged, so the cursor can show a closed hand. */
+  dragging = false;
+  private marquee: HTMLElement | null = null;
 
   private goal = { x: 0, z: 0, distance: 700, yaw: 0, pitch: 0.95 };
   private keys = new Set<string>();
@@ -33,6 +38,7 @@ export class Stage {
     sx: number;
     sy: number;
     moved: boolean;
+    box: boolean;
     grab: THREE.Vector3 | null;
   } | null = null;
 
@@ -248,7 +254,8 @@ export class Stage {
       sx: e.clientX,
       sy: e.clientY,
       moved: false,
-      grab: e.button === 0 ? this.planePoint(e.clientX, e.clientY) : null,
+      grab: e.button === 0 && !e.shiftKey ? this.planePoint(e.clientX, e.clientY) : null,
+      box: e.button === 0 && e.shiftKey,
     };
   }
 
@@ -262,6 +269,21 @@ export class Stage {
       d.moved = true;
     }
     if (!d.moved) return;
+    if (d.box) {
+      // Shift-drag: stretch a selection box instead of moving the map.
+      if (!this.marquee) {
+        this.marquee = document.createElement("div");
+        this.marquee.className = "marquee";
+        document.body.appendChild(this.marquee);
+      }
+      const m = this.marquee.style;
+      m.left = `${Math.min(d.sx, e.clientX)}px`;
+      m.top = `${Math.min(d.sy, e.clientY)}px`;
+      m.width = `${Math.abs(e.clientX - d.sx)}px`;
+      m.height = `${Math.abs(e.clientY - d.sy)}px`;
+      return;
+    }
+    this.dragging = true;
     if (d.button === 0 && d.grab) {
       const now = this.planePoint(e.clientX, e.clientY);
       if (now) {
@@ -280,6 +302,15 @@ export class Stage {
   private up(e: PointerEvent) {
     const d = this.drag;
     this.drag = null;
+    this.dragging = false;
+    if (this.marquee) {
+      this.marquee.remove();
+      this.marquee = null;
+    }
+    if (d && d.box && d.moved) {
+      this.onBox(Math.min(d.sx, e.clientX), Math.min(d.sy, e.clientY), Math.max(d.sx, e.clientX), Math.max(d.sy, e.clientY));
+      return;
+    }
     if (d && !d.moved) this.onClick(this.pick(e.clientX, e.clientY), d.button, e);
   }
 

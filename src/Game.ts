@@ -1,5 +1,6 @@
 // One running game: the session, the 3D stage and the HUD, wired together.
 
+import { CursorKind, setCursor } from "./ui/Cursor";
 import { seatForbidden } from "./worldgen/RealmGen";
 import * as THREE from "three";
 import {
@@ -44,6 +45,7 @@ export class Game {
   private stopped = false;
   /** War galleys picked with a click, waiting for somewhere to sail. */
   private fleet: number[] = [];
+  private v3 = new THREE.Vector3();
 
   constructor(session: Session, onQuit: () => void) {
     this.session = session;
@@ -63,7 +65,8 @@ export class Game {
     this.attackLabels = new AttackLabels(document.getElementById("labels")!, this.session, this.stage, this.terrain, state);
 
     this.hud.onQuit = onQuit;
-    this.hud.onCancel = () => (this.fleet = []);
+    this.hud.onCancel = () => this.choose([]);
+    this.stage.onBox = (x0, y0, x1, y1) => this.boxSelect(x0, y0, x1, y1);
     this.hud.onFocus = (tile) =>
       this.stage.focus(state.map.x(tile), state.map.y(tile), Math.min(this.stage.distance, 260));
     this.stage.onClick = (hit, button, ev) => void this.click(hit, button, ev);
@@ -73,6 +76,8 @@ export class Game {
       this.hoverTile = tile;
       this.hoverUnit = hit ? this.structureNear(hit.x, hit.y, 4) : null;
       this.hud.hover(tile, ev.clientX, ev.clientY, this.hoverUnit ?? undefined);
+      this.hoverShift = ev.shiftKey;
+      this.hoverHit = hit;
     };
     this.session.onTick = (d) => this.tick(d);
     // Keep whatever handler the lobby installed (it reports to the server).
@@ -173,6 +178,98 @@ export class Game {
     }
   }
 
+  private hoverShift = false;
+  private hoverHit: PickHit | null = null;
+
+  /** Takes command of these war galleys (or none): marks them and says what a click will do. */
+  private choose(ids: number[]) {
+    this.fleet = ids;
+    this.units.chosen = new Set(ids);
+    if (ids.length === 0) {
+      this.hud.hint(null);
+      return;
+    }
+    this.hud.hint(
+      `${ids.length === 1 ? "War galley" : `${ids.length} war galleys`} chosen: click the water to send ${ids.length === 1 ? "it" : "them"} there. Esc to cancel.`,
+    );
+  }
+
+  /** Shift-drag: every war galley of ours inside the box on screen. */
+  private boxSelect(x0: number, y0: number, x1: number, y1: number) {
+    const state = this.session.state;
+    const me = state.me;
+    if (!me || !me.isAlive) return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const ids: number[] = [];
+    for (const u of state.units.values()) {
+      if (u.type !== UnitType.Warship || u.ownerID !== me.smallID) continue;
+      const p = this.units.drawnAt(u.id, this.v3);
+      if (!p) continue;
+      p.project(this.stage.camera);
+      if (p.z > 1) continue;
+      const sx = (p.x * 0.5 + 0.5) * w;
+      const sy = (-p.y * 0.5 + 0.5) * h;
+      if (sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1) ids.push(u.id);
+    }
+    this.choose(ids);
+    if (ids.length === 0) this.hud.toast("No war galleys of yours in that box.", "info");
+  }
+
+  /** What a click under the cursor would do, as a cursor. */
+  private cursorKind(): CursorKind {
+    const state = this.session.state;
+    const map = state.map;
+    const me = state.me;
+    const hit = this.hoverHit;
+    if (this.stage.dragging) return "drag";
+    if (this.hoverShift) return "box";
+    if (!hit) return "pan";
+    const tile = map.ref(hit.x, hit.y);
+    const land = map.isLand(tile);
+    if (state.inSpawnPhase) {
+      if (!land) return "pan";
+      return map.hasOwner(tile) || seatForbidden(this.session.setup.info.config.gameMap, hit.x, hit.y, map.width(), map.height()) ? "barred" : "raise";
+    }
+    if (!me || !me.isAlive) return "pan";
+    const placing = this.hud.placing;
+    if (placing !== null) return Nukes.has(placing) ? "cast" : "build";
+    if (!land) {
+      if (this.fleet.length > 0) return "fleet";
+      // Near enough to one of our galleys to take command of it?
+      const reach = 5 * this.stage.unitScale;
+      for (const u of state.units.values()) {
+        if (u.type !== UnitType.Warship || u.ownerID !== me.smallID) continue;
+        if (Math.hypot(map.x(u.pos) - hit.x, map.y(u.pos) - hit.y) <= reach) return "choose";
+      }
+      return "pan";
+    }
+    const owner = map.ownerID(tile);
+    if (owner === me.smallID) return this.hoverUnit ? "choose" : "own";
+    const them = state.players.get(owner);
+    if (them && state.isAllied(them, me)) return "ally";
+    // Ours to march on if it touches our border; otherwise it means ships.
+    return this.borders(tile, me.smallID) ? "march" : "sail";
+  }
+
+  /** Whether any land of ours lies within a few tiles of this one. */
+  private borders(tile: number, mine: number): boolean {
+    const map = this.session.state.map;
+    const x = map.x(tile);
+    const y = map.y(tile);
+    const w = map.width();
+    const h = map.height();
+    for (let r = 1; r <= 3; r++) {
+      for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r], [r, r], [-r, r], [r, -r], [-r, -r]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        if (map.ownerID(map.ref(nx, ny)) === mine) return true;
+      }
+    }
+    return false;
+  }
+
   private async click(hit: PickHit | null, button: number, ev: PointerEvent) {
     if (!hit) return;
     const session = this.session;
@@ -218,8 +315,7 @@ export class Game {
       // On the water: send the chosen galleys here, or choose the ones nearby.
       if (this.fleet.length > 0) {
         session.send({ type: "move_warship", unitIds: this.fleet as [number, ...number[]], tile });
-        this.fleet = [];
-        this.hud.hint(null);
+        this.choose([]);
         return;
       }
       const reach = 5 * this.stage.unitScale;
@@ -228,15 +324,10 @@ export class Game {
         if (u.type !== UnitType.Warship || u.ownerID !== me.smallID) continue;
         if (Math.hypot(map.x(u.pos) - hit.x, map.y(u.pos) - hit.y) <= reach) near.push(u.id);
       }
-      if (near.length > 0) {
-        this.fleet = near;
-        this.hud.hint(
-          `${near.length === 1 ? "War galley" : `${near.length} war galleys`} chosen: click the water to send ${near.length === 1 ? "it" : "them"} there. Esc to cancel.`,
-        );
-      }
+      if (near.length > 0) this.choose(near);
       return;
     }
-    this.fleet = [];
+    this.choose([]);
     if (map.ownerID(tile) === me.smallID) return;
     const actions = await session.actions(tile, [UnitType.TransportShip]);
     if (!actions) return;
@@ -397,6 +488,7 @@ export class Game {
         ? { type: aiming, target: this.hoverTile }
         : null;
     this.units.update(alpha, dt, this.time);
+    setCursor(this.stage.canvas, this.cursorKind());
     this.hud.aimWarning(this.units.aimDoomed);
     this.armies.update(dt, this.time);
     this.effects.update(this.time, window.innerHeight, this.stage.camera.fov);

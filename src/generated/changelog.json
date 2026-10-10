@@ -1,8 +1,13 @@
 {
-  "version": "0.1.72",
+  "version": "0.1.73",
   "builtAt": "2026-10-10",
-  "commits": 72,
+  "commits": 73,
   "entries": [
+    {
+      "hash": "f6134d6",
+      "date": "2026-10-10",
+      "subject": "Starfall marks where each falling star will land with a red circle"
+    },
     {
       "hash": "c90ac9c",
       "date": "2026-10-10",

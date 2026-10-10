@@ -46,6 +46,15 @@ export class Units {
   private pools: Record<string, Pool> = {};
   private tags: LevelTags;
   private marks: Marks;
+  /** War galleys the player has chosen and is about to order: each wears a gold marker. */
+  chosen: ReadonlySet<number> = new Set();
+
+  /** Where a unit was last drawn, in the world; null if it has not been drawn. */
+  drawnAt(id: number, out: THREE.Vector3): THREE.Vector3 | null {
+    const m = this.memo.get(id);
+    return m && m.seen ? out.set(m.x, m.y, m.z) : null;
+  }
+
   /** Set while the player is aiming a fireball or dragon: what, and at which tile. */
   aim: { type: UnitType; target: number } | null = null;
   /** Whether the aimed shot is forecast to be shot down (for the HUD). */
@@ -290,6 +299,10 @@ export class Units {
           this.put(pool, pos.x, bob + 0.05, pos.z, memo.yaw, size, color, hurt, Math.sin(time * 1.1 + u.id) * 0.04, roll);
           if (hurt < 1 && Math.random() < 0.15) {
             this.effects.trail(this.p.set(pos.x, 2 * shipScale, pos.z), 0.5 * shipScale);
+          }
+          if (this.chosen.has(u.id)) {
+            // Chosen: a gold marker bobbing over the mast.
+            this.marks.dot(pos.x, bob + 6.2 * size + Math.sin(time * 4) * 0.25 * size, pos.z, 1.1 * size, 1.0, 0.82, 0.3);
           }
           if (u.type === UnitType.Warship && u.health !== undefined && this.stage.distance < 700) {
             this.marks.bar(pos.x, bob + 4.6 * size, pos.z, 2.6 * size, u.health / GALLEY_HEALTH);
