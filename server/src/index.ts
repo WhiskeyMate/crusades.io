@@ -60,6 +60,7 @@ const STARTED_AT = Date.now();
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 /** A public game starts as soon as this many have joined. */
 const PUBLIC_FULL = 40;
+let booted = false;
 /** How many public games are open to join at any moment. */
 const PUBLIC_GAMES = Math.min(6, Math.max(1, Math.round(Number(process.env.PUBLIC_GAMES ?? 3)) || 3));
 const PUBLIC_REALMS = [
@@ -460,7 +461,8 @@ function ensurePublicGame() {
     const now = Date.now();
     lobby.startsAt = Math.max(now + gap, ...open.map((l) => l.startsAt + gap));
     lobbies.set(lobby.code, lobby);
-    log(`public game ${lobby.code}: open, ${map}, starts in ${Math.round((lobby.startsAt - now) / 1000)}s`);
+    // Routine once the server is up: empty games are replaced every half minute.
+    if (verbose || !booted) log(`public game ${lobby.code}: open, ${map}, starts in ${Math.round((lobby.startsAt - now) / 1000)}s`);
   }
 }
 
@@ -483,14 +485,18 @@ function broadcastHall() {
   }
 }
 
-// The public game's timer. With nobody in it the clock just keeps resetting.
+// The public games' timers. One that nobody joined is swapped for another realm.
 setInterval(() => {
   const now = Date.now();
   for (const l of openPublicGames()) {
     if (now < l.startsAt) continue;
     if (l.members.size > 0) l.start();
     else {
-      l.startsAt = now + PUBLIC_WAIT_MS;
+      // Nobody came: retire it and offer a different realm in its place, so
+      // the list keeps turning over instead of showing the same three maps.
+      lobbies.delete(l.code);
+      if (verbose) log(`public game ${l.code}: nobody joined ${l.config.map}; replacing it`);
+      ensurePublicGame();
       broadcastHall();
     }
   }
@@ -887,6 +893,7 @@ setInterval(purgeOldLogs, 86_400_000);
 
 mapsDir();
 ensurePublicGame();
+booted = true;
 http.listen(PORT, HOST, () => {
   log(`crusades.io game server listening on ${HOST}:${PORT}`);
   log(identityEnabled ? "accounts: on (reserved names and cosmetics are checked with Supabase)" : "accounts: off (the store is closed, or Supabase is not set up: needs STORE_OPEN=on, SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY)");
