@@ -6,6 +6,8 @@
     <title>crusades.io</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 26'><path d='M2 2h20v10c0 7-5 10-10 12C7 22 2 19 2 12z' fill='%23c71a21' stroke='%231b1410' stroke-width='1.6'/><path d='M12 2v22M2 11h20' stroke='%23e8d9a0' stroke-width='3'/></svg>" />
     <link rel="stylesheet" href="/src/ui/style.css" />
+    <!-- Advertising (Google AdSense). Ads appear only in the places marked data-ad; see src/ui/Ads.ts. -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1153759936707012" crossorigin="anonymous"></script>
   </head>
   <body>
     <canvas id="stage"></canvas>
@@ -82,6 +84,7 @@
             <button id="end-watch">Keep watching</button>
             <button id="end-quit" class="primary">Return to the hall</button>
           </div>
+          <div class="ad-slot" data-ad="end" hidden></div>
         </div>
       </div>
     </div>
@@ -146,6 +149,8 @@
             <article><b>⛵</b><h3>The sea matters</h3><p>Longships carry an invasion to any coast. War galleys sink them, and seize the merchant cogs that make your rivals rich.</p></article>
           </div>
         </section>
+
+        <div class="ad-slot" data-ad="landing" hidden></div>
 
         <section id="l-how">
           <h2>How a game goes</h2>
@@ -242,6 +247,7 @@
           <button id="lobby-leave">Leave</button>
           <button id="lobby-start" class="primary">Start the game</button>
         </div>
+        <div class="ad-slot" data-ad="lobby" hidden></div>
       </div>
     </div>
     <div id="account" hidden>

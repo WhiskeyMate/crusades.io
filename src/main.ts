@@ -1,5 +1,6 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
+import { initAds } from "./ui/Ads";
 import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { account } from "./account/Account";
 import { initAccountPanel } from "./account/Panel";
@@ -200,6 +201,7 @@ if (SOURCE_URL) {
   el("source-link").innerHTML = ` <a href="${SOURCE_URL}" target="_blank" rel="noopener">Read the source.</a>`;
 }
 void initAccountPanel();
+initAds();
 const { hostLobby } = initOnline({
   name: () => houseName(),
   begin: (session) => void launch(session),

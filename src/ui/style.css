@@ -429,3 +429,7 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 .label-pact svg { width: 1.75em; height: 1.05em; filter: drop-shadow(0 1px 1px #000); }
 .label-pact.renew { animation: pact-renew 0.9s ease-in-out infinite; }
 @keyframes pact-renew { 50% { transform: scale(1.25); filter: brightness(1.6); } }
+.ad-slot { margin: 18px auto 0; max-width: 760px; text-align: center; }
+.ad-slot.pending { min-height: 4px; }
+.ad-slot .ad-label { display: block; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
+#landing > .ad-slot { padding: 0 16px; margin: 8px auto 28px; }
