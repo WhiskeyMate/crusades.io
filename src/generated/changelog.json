@@ -1,8 +1,13 @@
 {
-  "version": "0.1.73",
+  "version": "0.1.74",
   "builtAt": "2026-10-10",
-  "commits": 73,
+  "commits": 74,
   "entries": [
+    {
+      "hash": "c1b5112",
+      "date": "2026-10-10",
+      "subject": "The cursor shows what a click will do; shift-drag a box round war galleys to command them together"
+    },
     {
       "hash": "f6134d6",
       "date": "2026-10-10",
