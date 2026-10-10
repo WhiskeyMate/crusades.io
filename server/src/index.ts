@@ -34,7 +34,7 @@ import {
   TURN_MS,
 } from "../../src/net/Protocol";
 import { buildRealm, DEFAULT_CLANS, DEFAULT_KINGDOMS, MAP_DIR, MapInfoFile, Realm } from "../../src/worldgen/RealmGen";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { realmHash } from "../../src/worldgen/RealmHash";
@@ -830,6 +830,43 @@ setInterval(() => {
     c.ws.ping();
   }
 }, 30_000);
+
+/**
+ * Logs hold IP addresses and house names, and the privacy policy promises
+ * they are not kept for ever: delete log files not written to for 90 days.
+ * The installer has the service start a new file each day, so no file holds
+ * more than a day of entries. LOGS_DIR, else ../logs beside the app (the
+ * installed layout); when run from source there is no such folder and
+ * nothing is done.
+ */
+const LOG_DAYS = 90;
+function purgeOldLogs() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const dir = process.env.LOGS_DIR ?? join(here, "..", "logs");
+  if (!existsSync(dir)) return;
+  const cutoff = Date.now() - LOG_DAYS * 86_400_000;
+  let removed = 0;
+  try {
+    for (const name of readdirSync(dir)) {
+      if (!/\.log$/i.test(name)) continue;
+      const file = join(dir, name);
+      const info = statSync(file);
+      if (!info.isFile() || info.mtimeMs >= cutoff) continue;
+      try {
+        unlinkSync(file);
+        removed++;
+      } catch {
+        // In use, or not ours to delete: try again tomorrow.
+      }
+    }
+  } catch (e) {
+    log(`log clean-up failed: ${e instanceof Error ? e.message : e}`);
+    return;
+  }
+  if (removed > 0) log(`log clean-up: deleted ${removed} log file(s) older than ${LOG_DAYS} days from ${dir}`);
+}
+purgeOldLogs();
+setInterval(purgeOldLogs, 86_400_000);
 
 mapsDir();
 ensurePublicGame();

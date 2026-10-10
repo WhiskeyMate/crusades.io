@@ -82,8 +82,12 @@ function Service($name, $exe, $appArgs, $log) {
     & $nssm set $name AppDirectory "$Root\app" | Out-Null
     & $nssm set $name AppStdout "$Root\logs\$log" | Out-Null
     & $nssm set $name AppStderr "$Root\logs\$log" | Out-Null
+    # A new log file each day, also while the service is running, so that the
+    # server can delete whole files once they are 90 days old (see index.ts).
     & $nssm set $name AppRotateFiles 1 | Out-Null
-    & $nssm set $name AppRotateBytes 10485760 | Out-Null
+    & $nssm set $name AppRotateOnline 1 | Out-Null
+    & $nssm set $name AppRotateSeconds 86400 | Out-Null
+    & $nssm set $name AppRotateBytes 0 | Out-Null
     & $nssm set $name AppExit Default Restart | Out-Null
     & $nssm set $name AppRestartDelay 3000 | Out-Null
     & $nssm set $name Start SERVICE_AUTO_START | Out-Null
