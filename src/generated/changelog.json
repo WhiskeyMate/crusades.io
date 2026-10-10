@@ -1,8 +1,13 @@
 {
-  "version": "0.1.83",
+  "version": "0.1.84",
   "builtAt": "2026-10-10",
-  "commits": 83,
+  "commits": 84,
   "entries": [
+    {
+      "hash": "8baf4ea",
+      "date": "2026-10-10",
+      "subject": "War galleys hold a steady heading instead of wagging at every tile"
+    },
     {
       "hash": "9248799",
       "date": "2026-10-10",

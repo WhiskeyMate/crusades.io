@@ -8,6 +8,7 @@
 //
 // The terrain files are OpenFront map data (CC BY-SA 4.0, see NOTICE.md).
 
+import { historicNames } from "./History";
 import { GameMapSize, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { MapFiles, MapManifest, Nation } from "@crusades/engine-api/game/MapFiles";
 
@@ -321,7 +322,10 @@ export function buildRealm(
   const kingdoms = opts.kingdoms ?? 12;
   const spots = seats({ w, h, land, mag }, dist, rand, kingdoms, opts.map);
   const names = realmNames(rand, kingdoms + 40);
-  const nations: Nation[] = spots.map((c, i) => ({ coordinates: c, name: names[i] }));
+  // On the maps of the real world, a kingdom takes the name of the medieval
+  // realm that stood where its seat is (see History.ts).
+  const real = historicNames(opts.map, spots, w, h);
+  const nations: Nation[] = spots.map((c, i) => ({ coordinates: c, name: real[i] ?? names[i] }));
   const additionalNations = names.slice(spots.length).map((name) => ({ name }));
 
   const manifest: MapManifest = {
