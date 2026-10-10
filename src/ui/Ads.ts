@@ -3,19 +3,21 @@
 // over the map, never while a game is being played.
 //
 // Each place is a <div data-ad="name"> in index.html. It is filled the first
-// time it comes into view, and only if its ad unit has been set up: the slot
-// ids come from the build's environment (VITE_AD_SLOT_LANDING, _LOBBY, _END),
-// so a place with no id simply stays empty and hidden.
+// time it comes into view.
 
 import { account } from "../account/Account";
 
 /** The AdSense publisher id. Public: it is in the page source of every site that shows ads. */
 export const AD_CLIENT = "ca-pub-1153759936707012";
 
+// The ad units, as created in AdSense (Ads > By ad unit). Like the publisher
+// id these are public. A build can override one through its environment, or
+// switch a place off by setting its variable to "off".
+const unit = (fromEnv: string | undefined, id: string) => (fromEnv === "off" ? undefined : fromEnv || id);
 const SLOTS: Record<string, string | undefined> = {
-  landing: import.meta.env.VITE_AD_SLOT_LANDING,
-  lobby: import.meta.env.VITE_AD_SLOT_LOBBY,
-  end: import.meta.env.VITE_AD_SLOT_END,
+  landing: unit(import.meta.env.VITE_AD_SLOT_LANDING, "6933794104"),
+  lobby: unit(import.meta.env.VITE_AD_SLOT_LOBBY, "8692674897"),
+  end: unit(import.meta.env.VITE_AD_SLOT_END, "9368385756"),
 };
 
 /** Anyone who has bought something plays without ads. */
