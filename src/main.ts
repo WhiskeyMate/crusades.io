@@ -2,7 +2,9 @@
 
 import { drawBans, readRules } from "./client/Rules";
 import { mapStillHTML, startLiveMaps } from "./ui/MapPreview";
+import { checkAcceleration } from "./ui/Acceleration";
 import { initAds } from "./ui/Ads";
+import { initAnalytics, track } from "./ui/Analytics";
 import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { account } from "./account/Account";
 import { initAccountPanel } from "./account/Panel";
@@ -118,6 +120,7 @@ async function launch(session: Session) {
     setLiege(houseName(), account.skin);
     game = new Game(session, quit);
     await game.start();
+    track("game_start", { map: String(session.setup.info.config.gameMap) });
     (window as unknown as { crusades: Game }).crusades = game;
   } catch (e) {
     console.error(e);
@@ -227,6 +230,8 @@ window.addEventListener("resize", markPhone);
 drawBans();
 void initAccountPanel();
 initAds();
+initAnalytics();
+checkAcceleration();
 const { hostLobby } = initOnline({
   name: () => houseName(),
   begin: (session) => void launch(session),

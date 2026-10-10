@@ -1,6 +1,7 @@
 // Advertising: a banner on the landing page, one in the lobby while the lords
 // gather, one on the screen that ends a game, and a small one in the bottom
-// left corner that stays on screen throughout, in a game or out of one.
+// left corner that stays on screen once the landing page is left, in a game
+// or out of one.
 // Buying anything from the store takes them all away.
 //
 // Each place is a <div data-ad="name"> in index.html. It is filled the first
@@ -41,6 +42,10 @@ function corner(local: boolean) {
   const slot = SLOTS.corner;
   if (!box || !slot || adFree() || box.dataset.filled) return;
   if (document.body.classList.contains("phone")) return;
+  // The landing page has its own banner and its words are where the stack
+  // would sit, so the stack waits until the page is left for the hall or a game.
+  const landing = document.getElementById("landing");
+  if (landing && !landing.hidden) return void window.setTimeout(() => corner(local), 1000);
   const SQUARE = [250, 250], STRIP = [234, 60];
   const tall = window.innerHeight, wide = window.innerWidth >= 1100;
   const stack = !wide ? [STRIP] : tall >= 880 ? [SQUARE, STRIP, SQUARE] : tall >= 700 ? [SQUARE, STRIP, STRIP] : [STRIP, STRIP, STRIP];

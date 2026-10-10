@@ -611,6 +611,7 @@ body.phone #notices { grid-template-columns: 1fr; width: auto; }
 #raids .raid svg.boat { width: 18px; height: 15px; flex: none; }
 /* The banner that stays in the bottom left corner. */
 #ad-corner { position: fixed; left: 12px; bottom: 12px; z-index: 40; display: flex; flex-direction: column; gap: 6px; }
+body:has(#landing:not([hidden])) #ad-corner { visibility: hidden; pointer-events: none; }
 #ad-corner > div { overflow: hidden; border-radius: 4px; background: rgba(24, 17, 11, 0.6); box-shadow: 0 0 0 1px var(--edge); }
 #ad-corner .mock { display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
 /* The offer on the screen that ends a game. */
@@ -622,3 +623,10 @@ body.phone #notices { grid-template-columns: 1fr; width: auto; }
 .end-cards .card .meta { padding: 7px 8px 9px; gap: 5px; }
 .end-cards .card .meta b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .end-cards .price { display: block; padding: 3px 0; border-radius: 4px; background: #3a2a14; color: var(--gold); font-size: 14px; }
+/* The warning that the browser is drawing without the graphics card. */
+#accel { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 45; width: min(620px, 94vw); padding: 12px 16px 12px; border-color: var(--warn); background: rgba(40, 28, 10, 0.97); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6); }
+#accel b { color: #ffe3ae; font-size: 16px; }
+#accel p { margin: 5px 0 10px; font-size: 14px; line-height: 1.45; }
+#accel p b { font-size: inherit; color: var(--gold); }
+#accel code { background: #120c07; border: 1px solid var(--edge); border-radius: 3px; padding: 1px 5px; font-size: 13px; user-select: all; }
+#accel button { float: right; }

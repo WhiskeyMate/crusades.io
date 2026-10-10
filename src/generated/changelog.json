@@ -1,8 +1,13 @@
 {
-  "version": "0.1.88",
+  "version": "0.1.89",
   "builtAt": "2026-10-10",
-  "commits": 88,
+  "commits": 89,
   "entries": [
+    {
+      "hash": "deac209",
+      "date": "2026-10-10",
+      "subject": "Three banners stacked in the bottom left corner; the end of a game offers three things from the store; buying anything removes all advertising"
+    },
     {
       "hash": "c42b619",
       "date": "2026-10-10",
