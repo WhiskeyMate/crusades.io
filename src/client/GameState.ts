@@ -135,7 +135,8 @@ export class GameState {
     return id === 0 ? null : (this.players.get(id) ?? null);
   }
 
-  maxTroops(p: PlayerState): number {
+  /** The little of a player that the engine's own sums need to see. */
+  private likeness(p: PlayerState) {
     const cities: { isUnderConstruction(): boolean; level(): number }[] = [];
     for (const u of this.units.values()) {
       if (u.type === UnitType.City && u.ownerID === p.smallID) {
@@ -145,13 +146,22 @@ export class GameState {
         });
       }
     }
-    return this.config.maxTroops({
+    return {
       type: () => p.type,
       numTilesOwned: () => p.tilesOwned,
       troops: () => p.troops,
       isLobbyCreator: () => false,
       units: () => cities,
-    } as never);
+    } as never;
+  }
+
+  maxTroops(p: PlayerState): number {
+    return this.config.maxTroops(this.likeness(p));
+  }
+
+  /** Levies this player gains each turn, by the engine's own rule. */
+  troopRate(p: PlayerState): number {
+    return this.config.troopIncreaseRate(this.likeness(p));
   }
 
   isAllied(a: PlayerState, b: PlayerState): boolean {

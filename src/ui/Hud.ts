@@ -402,7 +402,9 @@ export class Hud {
       el("me-troops").textContent = `${fmtTroops(me.troops)} / ${fmtTroops(max)}`;
       (el("me-bar").firstElementChild as HTMLElement).style.width =
         `${Math.min(100, (me.troops / Math.max(1, max)) * 100)}%`;
-      el("me-land").textContent = `${((me.tilesOwned / land) * 100).toFixed(1)}%`;
+      // Levies gained each turn (shown in the same units as the levy count).
+      const rate = Math.max(0, state.troopRate(me)) / 10;
+      el("me-rate").textContent = `+${rate >= 100 ? fmt(rate) : rate.toFixed(1)}`;
       this.ratioText();
     }
 

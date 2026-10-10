@@ -578,3 +578,4 @@ body.phone #wars { grid-template-columns: 1fr; width: auto; }
 #wars .war.in { border-color: #a8392e; }
 #raids .raid { border-color: #c0392b; }
 #raids .raid:hover { background: linear-gradient(rgba(192, 57, 43, 0.3), rgba(192, 57, 43, 0.3)), var(--wood); }
+.stat small { color: var(--dim); font-size: 11px; }

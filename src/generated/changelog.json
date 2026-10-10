@@ -1,8 +1,13 @@
 {
-  "version": "0.1.68",
+  "version": "0.1.69",
   "builtAt": "2026-10-10",
-  "commits": 68,
+  "commits": 69,
   "entries": [
+    {
+      "hash": "f6d0e56",
+      "date": "2026-10-10",
+      "subject": "Each attack and longship notice is its own box"
+    },
     {
       "hash": "b2e9e86",
       "date": "2026-10-10",
