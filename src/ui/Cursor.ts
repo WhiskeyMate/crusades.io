@@ -76,6 +76,10 @@ const WOODEN = "#8a5a2b";
 const RED = "#c71a21";
 const placing = (body: string) => cursor(POINT + body, 4, 4, "crosshair");
 
+const FLAME =
+  outlined("M19 8c2 4 8 6 8 13a8 8 0 0 1-16 0c0-4 2-5 3-8 1 2 2 3 3 3 0-3 1-5 2-8z", "#ff8a1c") +
+  outlined("M19 17c1 2 4 3 4 6a4 4 0 0 1-8 0c0-2 2-3 4-6z", "#ffe27a", 1);
+
 const PLACING: Record<string, string> = {
   // Town: two houses, one behind the other.
   City: placing(
@@ -114,14 +118,10 @@ const PLACING: Record<string, string> = {
       `<circle cx="19" cy="5" r="2.4" fill="#9ff3ff" stroke="${INK}" stroke-width="1.1"/>`,
   ),
   // Fireball.
-  "Atom Bomb": placing(
-    outlined("M19 8c2 4 8 6 8 13a8 8 0 0 1-16 0c0-4 2-5 3-8 1 2 2 3 3 3 0-3 1-5 2-8z", "#ff8a1c") +
-      outlined("M19 17c1 2 4 3 4 6a4 4 0 0 1-8 0c0-2 2-3 4-6z", "#ffe27a", 1),
-  ),
-  // Dragon: a horned head, jaws open.
+  "Atom Bomb": placing(FLAME),
+  // Dragon: three fireballs, for it burns far more than one does.
   "Hydrogen Bomb": placing(
-    outlined("M9 28V18l3-6-2-6 6 4 5 1 7 4 2 3-1 2h-8l6 4-8 2-3 3z", "#2f8a4a") +
-      outlined("M23 21l8 1.5-5 1.5z", "#ff8a1c", 1) + `<circle cx="19.5" cy="14.5" r="1.5" fill="${GOLD}" stroke="${INK}" stroke-width="0.8"/>`,
+    [[7.4, 1.2], [0.4, 12.2], [13.4, 12.2]].map(([x, y]) => `<g transform="translate(${x} ${y}) scale(0.6)">${FLAME}</g>`).join(""),
   ),
   // Starfall: three stars coming down.
   MIRV: placing(

@@ -1,8 +1,13 @@
 {
-  "version": "0.1.85",
+  "version": "0.1.86",
   "builtAt": "2026-10-10",
-  "commits": 85,
+  "commits": 86,
   "entries": [
+    {
+      "hash": "b647298",
+      "date": "2026-10-10",
+      "subject": "While placing, the cursor is a picture of what is being placed"
+    },
     {
       "hash": "3ef7c51",
       "date": "2026-10-10",
