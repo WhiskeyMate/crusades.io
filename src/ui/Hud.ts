@@ -358,6 +358,15 @@ export class Hud {
     box.innerHTML =
       `<div>${shieldSVG(from.name, from.color, 22, from.arms)} <b>${esc(from.name)}</b> offers a pact.</div>` +
       `<div class="row"><button class="yes">Swear it</button><button class="no">Refuse</button></div>`;
+    // Click the notice itself (not its buttons) to be shown who is asking.
+    box.title = "Click to see their realm";
+    box.onclick = (e) => {
+      if ((e.target as HTMLElement).closest("button")) return;
+      const p = this.session.state.players.get(requestorID);
+      if (!p || p.nameSize <= 0) return;
+      const map = this.session.state.map;
+      this.onFocus(map.ref(Math.round(p.nameX), Math.round(p.nameY)));
+    };
     (box.querySelector(".yes") as HTMLElement).onclick = () => {
       this.session.send({ type: "allianceRequest", recipient: from.id });
       close();

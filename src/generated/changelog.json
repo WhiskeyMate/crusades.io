@@ -1,8 +1,13 @@
 {
-  "version": "0.1.78",
+  "version": "0.1.79",
   "builtAt": "2026-10-10",
-  "commits": 78,
+  "commits": 79,
   "entries": [
+    {
+      "hash": "57e54ae",
+      "date": "2026-10-10",
+      "subject": "A single attack or longship notice stays in the left column"
+    },
     {
       "hash": "7869281",
       "date": "2026-10-10",
