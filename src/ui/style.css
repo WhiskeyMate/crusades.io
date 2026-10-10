@@ -640,3 +640,9 @@ body:has(#landing:not([hidden])) #ad-corner > div:nth-child(n + 2) { display: no
 #gl-lost { position: fixed; left: 50%; top: 40%; transform: translate(-50%, -50%); z-index: 46; width: min(460px, 92vw); padding: 18px 20px; text-align: center; border-color: var(--warn); background: rgba(40, 28, 10, 0.97); box-shadow: 0 10px 34px rgba(0, 0, 0, 0.6); }
 #gl-lost b { font-size: 18px; color: #ffe3ae; }
 #gl-lost p { margin: 8px 0 14px; font-size: 14.5px; line-height: 1.45; }
+/* The request to turn a blocker off. */
+#support-note { position: fixed; left: 12px; bottom: 12px; z-index: 41; width: min(290px, calc(100vw - 24px)); padding: 11px 34px 11px 14px; background: rgba(28, 20, 12, 0.96); box-shadow: 0 8px 26px rgba(0, 0, 0, 0.55); }
+#support-note b { color: var(--gold); font-size: 15px; }
+#support-note p { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: #d9ccae; }
+#support-close { position: absolute; right: 6px; top: 6px; padding: 0 6px; line-height: 20px; font-size: 12px; }
+body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top)); left: 8px; }

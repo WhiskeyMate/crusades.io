@@ -1,8 +1,13 @@
 {
-  "version": "0.1.99",
+  "version": "0.1.100",
   "builtAt": "2026-10-10",
-  "commits": 99,
+  "commits": 100,
   "entries": [
+    {
+      "hash": "c7fcfbf",
+      "date": "2026-10-10",
+      "subject": "Ad blockers no longer blank the page: the class that moves the page over for the banners had a name their lists hide, and sat on the whole page"
+    },
     {
       "hash": "1274e00",
       "date": "2026-10-10",

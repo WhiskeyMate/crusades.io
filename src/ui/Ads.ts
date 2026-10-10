@@ -112,12 +112,45 @@ function fill(box: HTMLElement) {
   }
 }
 
+// The names here keep clear of "ad": a blocker would hide the note itself.
+const NOTE_PUT_OFF = "crusades.support.later";
+
+/**
+ * A small note asking for the blocker to be turned off, shown when Google's
+ * script has not loaded some seconds after the page has. Dismissing it puts
+ * it off for a week.
+ */
+function askForSupport(force = false) {
+  const google = (window as unknown as { adsbygoogle?: { loaded?: boolean } }).adsbygoogle;
+  if (!force && (google?.loaded || adFree())) return;
+  try {
+    if (!force && Date.now() < Number(localStorage.getItem(NOTE_PUT_OFF) ?? 0)) return;
+  } catch {
+    // No storage: it will ask each visit.
+  }
+  const box = document.getElementById("support-note");
+  if (!box) return;
+  box.hidden = false;
+  document.getElementById("support-close")!.onclick = () => {
+    box.hidden = true;
+    try {
+      localStorage.setItem(NOTE_PUT_OFF, String(Date.now() + 7 * 24 * 3600 * 1000));
+    } catch {
+      // Then it asks again next visit.
+    }
+  };
+}
+
 export function initAds() {
   const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   // A moment's grace, so that someone signed in who has paid never sees it.
   window.setTimeout(() => corner(local), 2500);
-  // Nothing else to show on a developer's own machine.
-  if (local) return;
+  // Nothing else to show on a developer's own machine (?blocked shows the note, to look at it).
+  if (local) {
+    if (new URLSearchParams(location.search).has("blocked")) askForSupport(true);
+    return;
+  }
+  window.setTimeout(() => askForSupport(), 8000);
   const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-ad]")).filter((b) => b.dataset.ad !== "corner");
   if (boxes.length === 0 || !("IntersectionObserver" in window)) return;
   // A place is filled when it is first really on screen, which for the lobby
