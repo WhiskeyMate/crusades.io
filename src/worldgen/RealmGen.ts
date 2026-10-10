@@ -30,6 +30,11 @@ export const MAP_DIR: Record<GameMapType, string> = {
   [GameMapType.SunderedSea]: "sundered",
   [GameMapType.Ironspine]: "ironspine",
   [GameMapType.CrownIsles]: "crownisles",
+  [GameMapType.Mirrormere]: "mirrormere",
+  [GameMapType.Serpent]: "serpent",
+  [GameMapType.FourRealms]: "fourrealms",
+  [GameMapType.ShatteredIsles]: "shattered",
+  [GameMapType.Maelstrom]: "maelstrom",
 };
 
 /** Kingdoms a map holds by default: the counts the upstream maps use. */
@@ -41,6 +46,11 @@ export const DEFAULT_KINGDOMS: Record<GameMapType, number> = {
   [GameMapType.SunderedSea]: 60,
   [GameMapType.Ironspine]: 70,
   [GameMapType.CrownIsles]: 44,
+  [GameMapType.Mirrormere]: 56,
+  [GameMapType.Serpent]: 48,
+  [GameMapType.FourRealms]: 56,
+  [GameMapType.ShatteredIsles]: 40,
+  [GameMapType.Maelstrom]: 40,
 };
 /** Clans (the small AI realms) by default, as upstream. */
 export const DEFAULT_CLANS = 400;

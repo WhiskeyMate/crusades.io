@@ -28,6 +28,11 @@ const REALMS: { map: GameMapType; blurb: string }[] = [
   { map: GameMapType.SunderedSea, blurb: "Two continents and the strait between" },
   { map: GameMapType.Ironspine, blurb: "A mountain chain and a walled province" },
   { map: GameMapType.CrownIsles, blurb: "Nine isles in a ring; the tenth must be taken" },
+  { map: GameMapType.Mirrormere, blurb: "A ring of land round an inland sea" },
+  { map: GameMapType.Serpent, blurb: "One long land, pinched at every bend" },
+  { map: GameMapType.FourRealms, blurb: "Four lands, a cross of sea, one isle between" },
+  { map: GameMapType.ShatteredIsles, blurb: "No mainland: thirty islands" },
+  { map: GameMapType.Maelstrom, blurb: "A land coiled round a stronghold" },
 ];
 
 let chosen = GameMapType.Europe;

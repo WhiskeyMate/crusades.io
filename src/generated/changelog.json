@@ -1,8 +1,13 @@
 {
-  "version": "0.1.81",
+  "version": "0.1.82",
   "builtAt": "2026-10-10",
-  "commits": 81,
+  "commits": 82,
   "entries": [
+    {
+      "hash": "3c3558d",
+      "date": "2026-10-10",
+      "subject": "Longship notices show a boat beside the levy count"
+    },
     {
       "hash": "985b8fa",
       "date": "2026-10-10",

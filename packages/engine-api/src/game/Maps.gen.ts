@@ -10,6 +10,11 @@ export enum GameMapType {
   SunderedSea = "The Sundered Sea",
   Ironspine = "Ironspine",
   CrownIsles = "The Crown Isles",
+  Mirrormere = "Mirrormere",
+  Serpent = "The Serpent",
+  FourRealms = "The Four Realms",
+  ShatteredIsles = "The Shattered Isles",
+  Maelstrom = "The Maelstrom",
 }
 
 export type GameMapName = keyof typeof GameMapType;

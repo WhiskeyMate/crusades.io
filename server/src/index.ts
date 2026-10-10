@@ -71,6 +71,11 @@ const PUBLIC_REALMS = [
   GameMapType.SunderedSea,
   GameMapType.Ironspine,
   GameMapType.CrownIsles,
+  GameMapType.Mirrormere,
+  GameMapType.Serpent,
+  GameMapType.FourRealms,
+  GameMapType.ShatteredIsles,
+  GameMapType.Maelstrom,
 ];
 
 /**

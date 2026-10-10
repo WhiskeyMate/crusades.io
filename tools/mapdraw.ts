@@ -27,6 +27,10 @@ interface Sketch {
   /** Inland water: [centre x, centre y, radius x, radius y]. */
   lakes: [number, number, number, number][];
   ranges: Range[];
+  /** Water cut out of the land after the lakes: channels, gulfs. */
+  water?: P[][];
+  /** Land put back last of all: islands standing in a lake or channel. */
+  isles?: P[][];
 }
 
 const TILES_PER_UNIT = 10;
@@ -76,8 +80,192 @@ function crownIsles(): Sketch {
   return { width: 130, height: 130, seed: 59, land, lakes, ranges };
 }
 
+/** A deterministic stream of numbers for the sketches that scatter things. */
+function dice(seed: number) {
+  let a = seed | 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A smooth line through the given points (Catmull-Rom), `per` samples to each span. */
+function curve(points: P[], per = 10): P[] {
+  const out: P[] = [];
+  const at = (i: number) => points[Math.min(points.length - 1, Math.max(0, i))];
+  for (let i = 0; i < points.length - 1; i++) {
+    const [p0, p1, p2, p3] = [at(i - 1), at(i), at(i + 1), at(i + 2)];
+    for (let k = 0; k < per; k++) {
+      const t = k / per;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      out.push([
+        0.5 * (2 * p1[0] + (p2[0] - p0[0]) * t + (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 + (3 * p1[0] - p0[0] - 3 * p2[0] + p3[0]) * t3),
+        0.5 * (2 * p1[1] + (p2[1] - p0[1]) * t + (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 + (3 * p1[1] - p0[1] - 3 * p2[1] + p3[1]) * t3),
+      ]);
+    }
+  }
+  out.push(points[points.length - 1]);
+  return out;
+}
+
+/** A band of land along a line: `half(t)` is its half-width at fraction t of the way. */
+function band(line: P[], half: (t: number) => number): P[] {
+  const left: P[] = [];
+  const right: P[] = [];
+  for (let i = 0; i < line.length; i++) {
+    const a = line[Math.max(0, i - 1)];
+    const b = line[Math.min(line.length - 1, i + 1)];
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const nx = -(b[1] - a[1]) / len;
+    const ny = (b[0] - a[0]) / len;
+    const hw = half(i / (line.length - 1));
+    left.push([line[i][0] + nx * hw, line[i][1] + ny * hw]);
+    right.push([line[i][0] - nx * hw, line[i][1] - ny * hw]);
+  }
+  return [...left, ...right.reverse()];
+}
+
+const lumpy = (rnd: () => number, n = 10) => Array.from({ length: n }, () => 0.82 + rnd() * 0.36);
+
+/** Mirrormere: a ring of land round an inland sea, with one strait out to the ocean. */
+function mirrormere(): Sketch {
+  const C = 65;
+  const rnd = dice(71);
+  const outer = isle(C, C, 56, 54, 0.2, lumpy(rnd, 16));
+  return {
+    width: 130,
+    height: 130,
+    seed: 71,
+    land: [outer],
+    lakes: [[C, C + 1, 27, 24]],
+    // The strait: south, out of the mere to the open sea.
+    water: [[[C - 4, C + 18], [C + 4, C + 18], [C + 7, 130], [C - 7, 130]]],
+    isles: [
+      isle(C - 7, C - 5, 6.5, 5, 0.4, lumpy(rnd, 9)),
+      isle(C + 10, C + 4, 4.5, 5.5, 1.1, lumpy(rnd, 8)),
+      isle(C - 1, C + 12, 3.2, 2.8, 2.0, lumpy(rnd, 8)),
+    ],
+    ranges: [
+      { line: [[22, 40], [20, 62], [26, 86]], width: 2.4, height: 28 },
+      { line: [[44, 18], [66, 14], [90, 20]], width: 2.2, height: 26 },
+      { line: [[108, 44], [112, 66], [104, 90]], width: 2.4, height: 28 },
+      { line: [[38, 106], [50, 112]], width: 2.0, height: 22 },
+      { line: [[82, 110], [94, 104]], width: 2.0, height: 22 },
+    ],
+  };
+}
+
+/** The Serpent: one long land winding from corner to corner, pinched to a neck at every bend. */
+function serpent(): Sketch {
+  const spine = curve(
+    [[10, 16], [48, 12], [96, 14], [138, 22], [148, 40], [126, 52], [84, 50], [42, 48], [16, 58], [14, 76], [40, 88], [84, 86], [124, 84], [150, 90]],
+    12,
+  );
+  // Broad along the straights, narrow where it turns back on itself.
+  const half = (t: number) => 6.2 + 4.2 * Math.abs(Math.sin(t * Math.PI * 4.5)) ** 1.5;
+  const rnd = dice(83);
+  return {
+    width: 160,
+    height: 100,
+    seed: 83,
+    land: [
+      band(spine, half),
+      // Islands in the bights, where the coils leave room.
+      isle(60, 31, 6, 4, 0.3, lumpy(rnd, 9)),
+      isle(108, 34, 5, 4.2, 1.2, lumpy(rnd, 9)),
+      isle(62, 68, 6.5, 4.4, 0.7, lumpy(rnd, 9)),
+      isle(104, 68, 5, 4, 2.1, lumpy(rnd, 9)),
+      isle(142, 64, 4.5, 4, 0.9, lumpy(rnd, 8)),
+    ],
+    lakes: [],
+    ranges: [
+      { line: [[40, 12], [70, 13], [100, 15]], width: 1.8, height: 24 },
+      { line: [[110, 51], [80, 50], [50, 48]], width: 1.8, height: 26 },
+      { line: [[50, 88], [80, 86], [112, 85]], width: 1.8, height: 24 },
+    ],
+  };
+}
+
+/** The Four Realms: four lands at the corners, a cross of sea between them, and one isle where the arms meet. */
+function fourRealms(): Sketch {
+  const rnd = dice(97);
+  const land: P[][] = [];
+  const ranges: Range[] = [];
+  const lakes: Sketch["lakes"] = [];
+  const corners: P[] = [[34, 34], [106, 34], [34, 106], [106, 106]];
+  corners.forEach(([cx, cy], i) => {
+    // Each realm is its own shape and leans a different way.
+    land.push(isle(cx, cy, 27 + (i % 2) * 3, 28 - (i % 2) * 3, i * 0.7, lumpy(rnd, 14)));
+    const out = [cx < 70 ? -1 : 1, cy < 70 ? -1 : 1];
+    ranges.push({ line: [[cx + out[0] * 14, cy - out[1] * 6], [cx + out[0] * 6, cy + out[1] * 12]], width: 2.2, height: 22 + i * 2 });
+    if (i % 2 === 0) lakes.push([cx - out[0] * 4, cy - out[1] * 4, 2.6, 2.2]);
+  });
+  // The isle at the crossing, and stepping stones along each arm.
+  land.push(isle(70, 70, 8, 8, 0.4, lumpy(rnd, 10)));
+  for (const [x, y] of [[70, 30], [70, 110], [30, 70], [110, 70]] as P[]) land.push(isle(x, y, 3.6, 3.6, rnd() * 3, lumpy(rnd, 8)));
+  return { width: 140, height: 140, seed: 97, land, lakes, ranges };
+}
+
+/** The Shattered Isles: no mainland at all, only islands, large and small. */
+function shatteredIsles(): Sketch {
+  const rnd = dice(113);
+  const land: P[][] = [];
+  const ranges: Range[] = [];
+  const placed: [number, number, number][] = [];
+  let guard = 0;
+  while (placed.length < 30 && guard++ < 4000) {
+    // Fewer big ones, many middling.
+    const r = placed.length < 6 ? 11 + rnd() * 4 : 5 + rnd() * 5;
+    const x = r + 3 + rnd() * (160 - 2 * r - 6);
+    const y = r + 3 + rnd() * (110 - 2 * r - 6);
+    if (placed.some(([px, py, pr]) => Math.hypot(px - x, py - y) < pr + r + 4.5)) continue;
+    placed.push([x, y, r]);
+    land.push(isle(x, y, r * (0.85 + rnd() * 0.35), r * (0.85 + rnd() * 0.35), rnd() * 6, lumpy(rnd, 11)));
+    if (r > 10) {
+      const a = rnd() * Math.PI;
+      ranges.push({ line: [[x - Math.cos(a) * r * 0.5, y - Math.sin(a) * r * 0.5], [x + Math.cos(a) * r * 0.5, y + Math.sin(a) * r * 0.5]], width: 1.8, height: 22 });
+    }
+  }
+  return { width: 160, height: 110, seed: 113, land, lakes: [], ranges };
+}
+
+/** The Maelstrom: a single land coiled round and round to a stronghold at its heart. */
+function maelstrom(): Sketch {
+  const C = 65;
+  const pts: P[] = [];
+  const turns = 2.35;
+  for (let i = 0; i <= 150; i++) {
+    const t = i / 150;
+    const a = t * turns * Math.PI * 2 + 0.6;
+    const r = 9 + t * 47;
+    pts.push([C + Math.cos(a) * r, C + Math.sin(a) * r]);
+  }
+  const rnd = dice(131);
+  return {
+    width: 130,
+    height: 130,
+    seed: 131,
+    // The arm keeps its width; the sea between the coils is as wide again.
+    land: [band(pts, (t) => 5.2 + Math.sin(t * Math.PI * 9) * 0.9), isle(C, C, 9.5, 9, 0.2, lumpy(rnd, 10))],
+    lakes: [],
+    ranges: [
+      { line: [[C - 3, C - 3], [C + 3, C + 3]], width: 2.4, height: 30 },
+      { line: [[C + Math.cos(2.2) * 30, C + Math.sin(2.2) * 30], [C + Math.cos(2.9) * 34, C + Math.sin(2.9) * 34]], width: 1.6, height: 22 },
+      { line: [[C + Math.cos(5.4) * 46, C + Math.sin(5.4) * 46], [C + Math.cos(6.0) * 49, C + Math.sin(6.0) * 49]], width: 1.6, height: 22 },
+    ],
+  };
+}
+
 const SKETCHES: Record<string, Sketch> = {
   crownisles: crownIsles(),
+  mirrormere: mirrormere(),
+  serpent: serpent(),
+  fourrealms: fourRealms(),
+  shattered: shatteredIsles(),
+  maelstrom: maelstrom(),
 
   // The Sundered Sea. A broad continent in the west with a great bay cut
   // into its southern coast; in the east a long one, pinched to an isthmus
@@ -263,6 +451,12 @@ for (const [cx, cy, rx, ry] of sketch.lakes) {
     pts.push([cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r]);
   }
   fill(land, w, h, roughen(pts, rand, sketch.width, sketch.height).map(([x, y]): P => [x * S, y * S]), 0);
+}
+for (const poly of sketch.water ?? []) {
+  fill(land, w, h, roughen(poly, rand, sketch.width, sketch.height).map(([x, y]): P => [x * S, y * S]), 0);
+}
+for (const poly of sketch.isles ?? []) {
+  fill(land, w, h, roughen(poly, rand, sketch.width, sketch.height).map(([x, y]): P => [x * S, y * S]), 1);
 }
 
 // Heights: gentle rolling country, rising into the ranges.
