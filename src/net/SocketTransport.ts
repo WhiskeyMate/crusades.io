@@ -15,6 +15,8 @@ export class SocketTransport implements Transport {
    * backlog goes in only as fast as the engine clears it.
    */
   ready: () => boolean = () => true;
+  /** Turns received from the server so far: where to carry on from after a dropped connection. */
+  received = 0;
   private queue: Turn[] = [];
   private head = 0;
   private running = false;
@@ -29,6 +31,7 @@ export class SocketTransport implements Transport {
 
   /** From the Online client, in order. */
   push(turn: Turn) {
+    this.received++;
     this.queue.push(turn);
     if (this.running) this.drain();
   }

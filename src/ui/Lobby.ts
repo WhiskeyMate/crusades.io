@@ -50,7 +50,14 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
   // player reports can be matched to what their browser was doing.
   window.addEventListener("error", (e) => online?.report("PAGE ERROR", `${e.message} at ${e.filename?.split("/").pop()}:${e.lineno}`));
   window.addEventListener("unhandledrejection", (e) => online?.report("PAGE ERROR", `unhandled: ${e.reason instanceof Error ? e.reason.message : String(e.reason)}`));
-  document.addEventListener("webglcontextlost", () => online?.report("GRAPHICS LOST", "the WebGL context was lost"), true);
+  document.addEventListener(
+    "webglcontextlost",
+    (e) => {
+      // Only a canvas still on the page counts: the landing page's backdrop gives its context up on purpose.
+      if ((e.target as HTMLElement | null)?.isConnected && !el("hud").hidden) online?.report("GRAPHICS LOST", "the WebGL context was lost");
+    },
+    true,
+  );
   let beat = performance.now();
   setInterval(() => {
     const now = performance.now();
@@ -92,6 +99,15 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       if (!el("hud").hidden) status("Lost the game server.", true);
       el("public-list").innerHTML = `<p class="dim small">Lost the game server. Trying again…</p>`;
       scheduleRetry();
+    };
+    o.onLink = (state) => {
+      const game = (window as unknown as { crusades?: { hud?: { toast(t: string, k: string): void } } }).crusades;
+      const banner = el("link-lost");
+      banner.hidden = state !== "lost";
+      if (state === "lost") game?.hud?.toast("Connection to the server lost. Reconnecting…", "bad");
+      else if (state === "back") game?.hud?.toast("Reconnected. Carrying on.", "good");
+      else if (state === "replay") resync("Reconnected, but the game must be replayed");
+      else game?.hud?.toast("Could not get back into the game: it has ended, or your seat is gone. Return to the hall.", "bad");
     };
     o.onNotice = (m) => {
       const game = (window as unknown as { crusades?: { hud?: { toast(t: string, k: string): void } } }).crusades;

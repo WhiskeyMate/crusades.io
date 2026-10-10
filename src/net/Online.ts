@@ -46,6 +46,12 @@ export class Online {
   onEnded: () => void = () => {};
   onClose: () => void = () => {};
   onNotice: (message: string) => void = () => {};
+  /**
+   * The connection during a game: "lost" (trying to get it back), "back",
+   * "replay" (back, but the game must be replayed from its first turn), or
+   * "gone" (the game cannot be rejoined).
+   */
+  onLink: (state: "lost" | "back" | "replay" | "gone") => void = () => {};
 
   private ws: WebSocket | null = null;
   private secret = "";
@@ -54,6 +60,8 @@ export class Online {
   private realmWaiters: ((m: ServerMessage & { type: "realm" }) => void)[] = [];
   private pingTimer = 0;
   private startSeq = 0;
+  private rejoining = false;
+  private awaitingResume = false;
 
   constructor(
     private name: string,
@@ -82,19 +90,21 @@ export class Online {
   }
 
   /** Opens the socket and says hello; resolves once the server answers. */
-  connect(server: string): Promise<void> {
+  connect(server: string, fromTurn?: number): Promise<void> {
     return new Promise((resolve, reject) => {
       const ws = new WebSocket(server);
       this.ws = ws;
       let welcomed = false;
       ws.onopen = () => {
-        let resume: { clientID: string; secret: string } | undefined;
+        let resume: { clientID: string; secret: string; fromTurn?: number } | undefined;
         try {
           const saved = JSON.parse(sessionStorage.getItem(SEAT_KEY) ?? "null");
           if (saved && saved.server === server) resume = saved;
         } catch {
           // No saved seat.
         }
+        // Coming back to a game still running in this page: ask for the turns missed.
+        if (fromTurn !== undefined && this.secret) resume = { clientID: this.clientID, secret: this.secret, fromTurn };
         this.post({ type: "hello", name: this.name || undefined, token: this.token ?? undefined, resume });
       };
       ws.onmessage = (e) => {
@@ -114,6 +124,7 @@ export class Online {
           this.clientID = msg.clientID;
           this.secret = msg.secret;
           sessionStorage.setItem(SEAT_KEY, JSON.stringify({ server, clientID: msg.clientID, secret: msg.secret }));
+          window.clearInterval(this.pingTimer);
           this.pingTimer = window.setInterval(() => this.post({ type: "ping", t: performance.now() }), 5000);
           resolve();
           return;
@@ -123,12 +134,49 @@ export class Online {
       ws.onerror = () => {
         if (!welcomed) reject(new Error("Could not reach the game server."));
       };
-      ws.onclose = () => {
+      ws.onclose = (e) => {
+        if (this.ws !== ws) return; // An older socket, already replaced.
         window.clearInterval(this.pingTimer);
         if (!welcomed) reject(new Error("The game server closed the connection."));
+        else if (this.transport && this.pendingStart) this.rejoin(server, e.code);
         else this.onClose();
       };
     });
+  }
+
+  /**
+   * The connection dropped in the middle of a game. The game itself is still
+   * here, in this page: open a new connection, ask for the turns missed, and
+   * carry on. Tries for three minutes before giving the game up.
+   */
+  private rejoin(server: string, code: number) {
+    if (this.rejoining) return;
+    this.rejoining = true;
+    const lost = performance.now();
+    this.onLink("lost");
+    const attempt = (n: number) => {
+      const transport = this.transport;
+      if (!transport) {
+        this.rejoining = false;
+        return;
+      }
+      this.awaitingResume = true;
+      this.connect(server, transport.received).then(
+        () => this.report("reconnected", `after ${Math.round((performance.now() - lost) / 1000)}s, attempt ${n}, close code ${code}, from turn ${transport.received}`),
+        () => {
+          if (performance.now() - lost > 180_000) {
+            this.rejoining = false;
+            this.awaitingResume = false;
+            this.onLink("gone");
+            this.resetGame();
+            this.onClose();
+          } else {
+            window.setTimeout(() => attempt(n + 1), Math.min(8000, 1000 * n));
+          }
+        },
+      );
+    };
+    attempt(1);
   }
 
   close() {
@@ -183,6 +231,13 @@ export class Online {
         this.onLobby(msg.lobby);
         break;
       case "lobbies":
+        if (this.awaitingResume) {
+          // We asked for our seat back and got the hall instead: the game is over, or the seat is gone.
+          this.awaitingResume = false;
+          this.rejoining = false;
+          this.resetGame();
+          this.onLink("gone");
+        }
         this.clockOffset = msg.now - Date.now();
         this.onHall(msg.games, msg.running, msg.online);
         break;
@@ -194,7 +249,16 @@ export class Online {
       case "start": {
         // The same game announced twice is ignored; a different game replaces
         // one that was still loading.
-        if (this.pendingStart?.info.gameID === msg.info.gameID) break;
+        if (this.pendingStart?.info.gameID === msg.info.gameID) {
+          // Unless we asked to carry on and the server could only offer the
+          // whole game again (an older server): then replay it from the top.
+          if (this.awaitingResume) {
+            this.awaitingResume = false;
+            this.rejoining = false;
+            this.onLink("replay");
+          }
+          break;
+        }
         this.realmWaiters = [];
         // Turns start flowing the instant the game starts, while the map is
         // still downloading. Queue them from this moment; lose none.
@@ -211,6 +275,12 @@ export class Online {
       }
       case "turn":
         this.transport?.push(msg.turn);
+        break;
+      case "resumed":
+        for (const t of msg.turns) this.transport?.push(t);
+        this.rejoining = false;
+        this.awaitingResume = false;
+        this.onLink("back");
         break;
       case "realm":
         for (const w of this.realmWaiters) w(msg);

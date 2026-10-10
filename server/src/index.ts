@@ -245,6 +245,12 @@ class Lobby {
   drop(client: Client) {
     const m = this.members.get(client.clientID);
     if (!m) return;
+    if (m.client !== client) {
+      // An old connection closing after its seat was taken back on a new
+      // one. The seat is in use: leave it alone.
+      client.lobby = null;
+      return;
+    }
     log(`lobby ${this.code}: ${m.name} (${client.clientID}) dropped during ${this.status}; seat ${this.status === "open" ? "freed" : "kept for resume"}`);
     m.client = null;
     client.lobby = null;
@@ -270,16 +276,28 @@ class Lobby {
   }
 
   /** A member came back on a new connection. */
-  resume(client: Client, m: Member) {
-    log(`lobby ${this.code}: resuming ${m.name}; status ${this.status}, ${this.turns.length} turns to replay`);
+  resume(client: Client, m: Member, fromTurn?: number) {
+    // A page whose game is still running asks only for what it missed.
+    const carryOn = this.status === "running" && fromTurn !== undefined && fromTurn <= this.turns.length;
+    log(
+      `lobby ${this.code}: resuming ${m.name}; status ${this.status}, ` +
+        (carryOn ? `carrying on from turn ${fromTurn} (${this.turns.length - fromTurn!} missed)` : `${this.turns.length} turns to replay`),
+    );
+    const old = m.client;
     m.client = client;
+    if (old && old !== client) {
+      // The seat was still held by a connection that has gone quiet.
+      old.lobby = null;
+      old.ws.terminate();
+    }
     client.lobby = this;
     client.name = m.name;
     this.emptySince = null;
     send(client, { type: "lobby", lobby: this.view(), now: Date.now() });
     if (this.status === "running" && this.info) {
       this.pending.push({ type: "mark_disconnected", isDisconnected: false, clientID: client.clientID });
-      send(client, { type: "start", info: this.info, realmHash: this.hash, turns: this.turns, cosmetics: this.cosmetics() });
+      if (carryOn) send(client, { type: "resumed", turns: this.turns.slice(fromTurn) });
+      else send(client, { type: "start", info: this.info, realmHash: this.hash, turns: this.turns, cosmetics: this.cosmetics() });
     }
     this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
   }
@@ -625,7 +643,7 @@ async function handle(client: Client, msg: ClientMessage) {
         client.secret = seat.member.secret;
         send(client, { type: "welcome", clientID: client.clientID, secret: client.secret, version: PROTOCOL_VERSION });
         log(`lobby ${seat.lobby.code}: ${client.name} took seat ${client.clientID} back`);
-        seat.lobby.resume(client, seat.member);
+        seat.lobby.resume(client, seat.member, msg.resume?.fromTurn);
       } else {
         send(client, { type: "welcome", clientID: client.clientID, secret: client.secret, version: PROTOCOL_VERSION });
         send(client, hallMessage());
@@ -803,6 +821,8 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
 setInterval(() => {
   for (const c of clients) {
     if (!c.alive) {
+      // Say so: otherwise this shows only as an unexplained "code 1006".
+      log(`no answer from ${c.name || c.clientID} to a ping for 30s; closing the connection`);
       c.ws.terminate();
       continue;
     }

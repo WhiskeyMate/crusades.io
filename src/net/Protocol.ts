@@ -50,7 +50,17 @@ export const ClientMessageSchema = z.discriminatedUnion("type", [
     /** The signed-in account's access token: brings a reserved name and cosmetics. */
     token: z.string().max(4000).optional(),
     /** A client id and secret from an earlier welcome, to take that seat back. */
-    resume: z.object({ clientID: z.string().max(16), secret: z.string().max(64) }).optional(),
+    resume: z
+      .object({
+        clientID: z.string().max(16),
+        secret: z.string().max(64),
+        /**
+         * "My game is still running and has played this many turns: send me
+         * only the ones after." Left out, the whole game is replayed.
+         */
+        fromTurn: z.number().int().min(0).optional(),
+      })
+      .optional(),
   }),
   /** Set or change the house name (needed before creating or joining). */
   z.object({
@@ -125,6 +135,8 @@ export type ServerMessage =
       cosmetics: Record<string, WireCosmetic>;
     }
   | { type: "turn"; turn: Turn }
+  /** Back after a dropped connection: the turns missed, to carry straight on. */
+  | { type: "resumed"; turns: Turn[] }
   | {
       type: "realm";
       manifest: unknown;

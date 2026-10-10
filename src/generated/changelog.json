@@ -1,8 +1,13 @@
 {
-  "version": "0.1.49",
+  "version": "0.1.50",
   "builtAt": "2026-10-10",
-  "commits": 49,
+  "commits": 50,
   "entries": [
+    {
+      "hash": "40d1df5",
+      "date": "2026-10-10",
+      "subject": "Fix the freeze while placing buildings; the server install now really replaces the maps; a realm taken from the server is drawn as the server has it"
+    },
     {
       "hash": "e326278",
       "date": "2026-10-10",
