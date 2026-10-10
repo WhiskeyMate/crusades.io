@@ -1,8 +1,13 @@
 {
-  "version": "0.1.90",
+  "version": "0.1.91",
   "builtAt": "2026-10-10",
-  "commits": 90,
+  "commits": 91,
   "entries": [
+    {
+      "hash": "7ecab89",
+      "date": "2026-10-10",
+      "subject": "On the landing page the banners stand in a rail down the left edge and the page moves over for them"
+    },
     {
       "hash": "5a43b97",
       "date": "2026-10-10",

@@ -1,7 +1,7 @@
 // Advertising: a banner on the landing page, one in the lobby while the lords
 // gather, one on the screen that ends a game, and a small one in the bottom
-// left corner that stays on screen throughout, in a game or out of one. On
-// the landing page that stack stands in a rail down the left edge.
+// left corner that stays on screen throughout: one box on the landing page,
+// a stack of them in a game.
 // Buying anything from the store takes them all away.
 //
 // Each place is a <div data-ad="name"> in index.html. It is filled the first
@@ -32,10 +32,11 @@ export function adFree(): boolean {
 }
 
 /**
- * The corner: a stack of banners in a column 250 wide, clear of the build bar
- * in the middle of the bottom edge. How much is stacked depends on the room:
- * two squares with a strip between them on a tall window, less on a shorter
- * one. A phone, which has no corner to spare, gets none.
+ * The corner: banners in a column 250 wide, clear of the build bar in the
+ * middle of the bottom edge. On the landing page there is one box; in a game
+ * it becomes a stack, as tall as the window has room for: two squares with a
+ * strip between them on a tall window, less on a shorter one. A phone, which
+ * has no corner to spare, gets none.
  */
 function corner(local: boolean) {
   const box = document.querySelector<HTMLElement>('[data-ad="corner"]');
@@ -44,39 +45,46 @@ function corner(local: boolean) {
   if (document.body.classList.contains("phone")) return;
   const SQUARE = [250, 250], STRIP = [234, 60];
   const tall = window.innerHeight, wide = window.innerWidth >= 1100;
-  // On the landing page a wide window gives the stack a rail of its own down
-  // the left edge and moves the page over to make room (see style.css). A
-  // narrow one has no room for that, so there the strip waits for a game.
-  const landing = document.getElementById("landing");
-  if (!wide && landing && !landing.hidden) return void window.setTimeout(() => corner(local), 1000);
-  document.body.classList.toggle("ad-rail", wide);
   const stack = !wide ? [STRIP] : tall >= 880 ? [SQUARE, STRIP, SQUARE] : tall >= 700 ? [SQUARE, STRIP, STRIP] : [STRIP, STRIP, STRIP];
+  const landing = document.getElementById("landing");
+  // A narrow window has no room beside the landing page's words, so there the
+  // strip waits for a game. A wide one makes room (see body.ad-on in style.css).
+  if (!wide && landing && !landing.hidden) return void window.setTimeout(() => corner(local), 1000);
+  document.body.classList.toggle("ad-on", wide);
   box.dataset.filled = "1";
   box.hidden = false;
-  box.innerHTML = stack
-    .map(([w, h]) =>
-      local
-        ? // On a developer's machine, an outline where each banner will be.
-          `<div class="mock" style="width:${w}px;height:${h}px">Advertisement ${w}×${h}</div>`
-        : `<div style="width:${w}px;height:${h}px"><ins class="adsbygoogle" style="display:inline-block;width:${w}px;height:${h}px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins></div>`,
-    )
-    .join("");
-  // Bought something while they were showing: they go.
-  const watch = window.setInterval(() => {
-    if (!adFree()) return;
-    box.remove();
-    document.body.classList.remove("ad-rail");
-    window.clearInterval(watch);
-  }, 5000);
-  if (local) return;
   const win = window as unknown as { adsbygoogle?: unknown[] };
-  for (let n = 0; n < stack.length; n++) {
+  const add = ([w, h]: number[]) => {
+    const one = document.createElement("div");
+    one.style.width = `${w}px`;
+    one.style.height = `${h}px`;
+    if (local) {
+      // On a developer's machine, an outline where each banner will be.
+      one.className = "mock";
+      one.textContent = `Advertisement ${w}×${h}`;
+    } else {
+      one.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:${w}px;height:${h}px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins>`;
+    }
+    box.appendChild(one);
+    if (local) return;
     try {
       (win.adsbygoogle = win.adsbygoogle || []).push({});
     } catch (e) {
       console.warn("ad not shown", e);
     }
-  }
+  };
+  // The first box now; the rest of the stack the first time a game is on
+  // screen, so that no advertisement is fetched only to sit hidden.
+  add(stack[0]);
+  const watch = window.setInterval(() => {
+    // Bought something while they were showing: they go.
+    if (adFree()) {
+      box.remove();
+      document.body.classList.remove("ad-on");
+      return window.clearInterval(watch);
+    }
+    if (box.children.length < stack.length && landing?.hidden) for (const size of stack.slice(1)) add(size);
+  }, 1000);
 }
 
 function fill(box: HTMLElement) {
