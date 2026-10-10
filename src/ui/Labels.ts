@@ -9,8 +9,19 @@ import { fmtTroops } from "../client/Lexicon";
 import { Stage } from "../render/Stage";
 import { Terrain } from "../render/Terrain";
 
+/** Two linked rings: a pact in force. */
+const PACT_SVG =
+  `<svg viewBox="0 0 34 20" aria-hidden="true"><g fill="none" stroke-width="3.4">` +
+  `<circle cx="12" cy="10" r="7" stroke="#1b1410" stroke-width="5.6"/><circle cx="22" cy="10" r="7" stroke="#1b1410" stroke-width="5.6"/>` +
+  `<circle cx="12" cy="10" r="7" stroke="#8fe08a"/><circle cx="22" cy="10" r="7" stroke="#f2d27a"/>` +
+  `<path d="M15.6 4a7 7 0 0 1 0 12" stroke="#8fe08a"/></g></svg>`;
+
 interface Label {
   root: HTMLElement;
+  /** Shown above the name while we have a pact with this house. */
+  pact: HTMLElement;
+  pactShown: boolean;
+  pactLook: string;
   troops: HTMLElement;
   shown: boolean;
   lastTroops: string;
@@ -39,9 +50,13 @@ export class Labels {
     name.lastElementChild!.textContent = p.name;
     const troops = document.createElement("div");
     troops.className = "label-troops";
-    root.append(name, troops);
+    const pact = document.createElement("div");
+    pact.className = "label-pact";
+    pact.innerHTML = PACT_SVG;
+    pact.style.display = "none";
+    root.append(pact, name, troops);
     this.layer.appendChild(root);
-    return { root, troops, shown: true, lastTroops: "", size: 0 };
+    return { root, pact, pactShown: false, pactLook: "", troops, shown: true, lastTroops: "", size: 0 };
   }
 
   update() {
@@ -49,6 +64,15 @@ export class Labels {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const pxPerUnit = h / (2 * Math.tan((cam.fov * Math.PI) / 360));
+    // Our pacts, by the other house's id.
+    const me = this.state.me;
+    const tick = this.state.tick;
+    const renewWindow = this.state.config.allianceExtensionPromptOffset();
+    let pacts: Map<string, { createdAt: number; expiresAt: number }> | null = null;
+    if (me && me.alliances.length > 0) {
+      pacts = new Map();
+      for (const a of me.alliances) pacts.set(a.other, a);
+    }
     for (const p of this.state.players.values()) {
       let l = this.labels.get(p.smallID);
       // Clans are lettered on the ground instead (render/GroundNames.ts).
@@ -94,6 +118,31 @@ export class Labels {
         l.size = fs;
       }
       l.root.style.transform = `translate(${Math.round(sx)}px, ${Math.round(sy)}px) translate(-50%, -50%)`;
+      // A pact with us: the linked rings, bright when freshly sworn and
+      // fading as it runs out, then pulsing once it can be renewed.
+      const pact = pacts?.get(p.id);
+      if (!pact) {
+        if (l.pactShown) {
+          l.pact.style.display = "none";
+          l.pactShown = false;
+        }
+      } else {
+        const left = Math.max(0, pact.expiresAt - tick);
+        const span = Math.max(1, pact.expiresAt - pact.createdAt);
+        const renew = left <= renewWindow;
+        // Steps of a twentieth: no need to touch the page every frame.
+        const look = `${(0.25 + 0.75 * Math.round(Math.min(1, left / span) * 20) / 20).toFixed(2)}${renew ? "r" : ""}`;
+        if (!l.pactShown) {
+          l.pact.style.display = "";
+          l.pactShown = true;
+        }
+        if (look !== l.pactLook) {
+          l.pactLook = look;
+          l.pact.style.opacity = look.replace("r", "");
+          l.pact.classList.toggle("renew", renew);
+          l.pact.title = renew ? "Pact about to lapse: renew it" : "Pact in force";
+        }
+      }
       const t = fmtTroops(p.troops);
       if (t !== l.lastTroops) {
         l.troops.textContent = t;

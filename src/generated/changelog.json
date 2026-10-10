@@ -1,8 +1,13 @@
 {
-  "version": "0.1.50",
+  "version": "0.1.51",
   "builtAt": "2026-10-10",
-  "commits": 50,
+  "commits": 51,
   "entries": [
+    {
+      "hash": "a37e994",
+      "date": "2026-10-10",
+      "subject": "A dropped connection mid-game now reconnects by itself and carries on from the turn it missed"
+    },
     {
       "hash": "40d1df5",
       "date": "2026-10-10",

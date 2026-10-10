@@ -425,3 +425,7 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 #store-confirm .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 #store-confirm .row button { padding: 8px 16px; font-size: 15px; }
 #link-lost { position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 6; padding: 9px 20px; font-size: 15px; color: #ffd0c4; border-color: #c0392b; background: rgba(60, 14, 10, 0.94); }
+.label-pact { line-height: 0; margin-bottom: 0.05em; transition: opacity 0.4s; }
+.label-pact svg { width: 1.75em; height: 1.05em; filter: drop-shadow(0 1px 1px #000); }
+.label-pact.renew { animation: pact-renew 0.9s ease-in-out infinite; }
+@keyframes pact-renew { 50% { transform: scale(1.25); filter: brightness(1.6); } }
