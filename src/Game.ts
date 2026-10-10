@@ -248,8 +248,40 @@ export class Game {
     if (owner === me.smallID) return this.hoverUnit ? "choose" : "own";
     const them = state.players.get(owner);
     if (them && state.isAllied(them, me)) return "ally";
-    // Ours to march on if it touches our border; otherwise it means ships.
-    return this.borders(tile, me.smallID) ? "march" : "sail";
+    return this.wayTo(tile, owner);
+  }
+
+  /** What the engine said a click on a realm (or a patch of wilderness) would do, and when it said it. */
+  private ways = new Map<string, { kind: CursorKind; at: number; asking: boolean }>();
+
+  /**
+   * March or sail? Only the engine knows whether our border touches that
+   * realm, so it is asked: once per realm, again every second or so, since
+   * borders move. Until the first answer comes back, a guess from what is
+   * nearby.
+   */
+  private wayTo(tile: number, owner: number): CursorKind {
+    const map = this.session.state.map;
+    // Unclaimed land is asked about by neighbourhood: one patch may touch us, another not.
+    const key = owner !== 0 ? `p${owner}` : `w${map.x(tile) >> 4},${map.y(tile) >> 4}`;
+    let way = this.ways.get(key);
+    if (!way) {
+      way = { kind: this.borders(tile, this.session.state.me!.smallID) ? "march" : "sail", at: -Infinity, asking: false };
+      this.ways.set(key, way);
+    }
+    const now = performance.now();
+    if (!way.asking && now - way.at > 1000) {
+      way.asking = true;
+      const w = way;
+      void this.session.actions(tile, [UnitType.TransportShip]).then((actions) => {
+        w.asking = false;
+        w.at = performance.now();
+        if (!actions) return;
+        w.kind = actions.canAttack ? "march" : canSail(actions.buildableUnits) ? "sail" : "barred";
+      });
+      if (this.ways.size > 400) this.ways.clear();
+    }
+    return way.kind;
   }
 
   /** Whether any land of ours lies within a few tiles of this one. */
