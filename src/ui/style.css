@@ -433,3 +433,4 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 .ad-slot.pending { min-height: 4px; }
 .ad-slot .ad-label { display: block; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-bottom: 4px; }
 #landing > .ad-slot { padding: 0 16px; margin: 8px auto 28px; }
+#landing > footer a, #acct-out a { color: var(--gold); }
