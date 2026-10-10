@@ -559,3 +559,7 @@ body.phone .offer { flex-wrap: wrap; }
 .raid span svg { vertical-align: -3px; }
 .raid b { font-size: 12px; color: var(--gold); white-space: nowrap; }
 body.phone #raids { min-width: 0; max-width: none; font-size: 12.5px; max-height: 76px; }
+/* Longship notices sit two abreast, so twice as many fit before the list scrolls. */
+#raids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 10px; min-width: 0; width: min(880px, 94vw); max-width: none; }
+#raids .raid:only-child { grid-column: 1 / -1; }
+body.phone #raids { grid-template-columns: 1fr; width: auto; }

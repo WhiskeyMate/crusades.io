@@ -1,8 +1,13 @@
 {
-  "version": "0.1.65",
+  "version": "0.1.66",
   "builtAt": "2026-10-10",
-  "commits": 65,
+  "commits": 66,
   "entries": [
+    {
+      "hash": "60e1a03",
+      "date": "2026-10-10",
+      "subject": "A notice when longships are bound for your shores (click it to see the ship); on the Crown Isles nobody starts on the great isle"
+    },
     {
       "hash": "78745a7",
       "date": "2026-10-10",
