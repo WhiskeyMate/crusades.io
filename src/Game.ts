@@ -341,6 +341,13 @@ export class Game {
       const r = this.reach(this.hoverUnit.type, this.hoverUnit.level);
       if (r) put(map.x(this.hoverUnit.pos), map.y(this.hoverUnit.pos), r[0], r[1]);
     }
+    // Sorcery in the air: a red circle on the ground where each will land,
+    // as wide as its blast.
+    for (const b of this.session.state.units.values()) {
+      if (n >= out.length - 2) break;
+      if ((b.type !== UnitType.AtomBomb && b.type !== UnitType.HydrogenBomb) || b.targetTile === undefined) continue;
+      put(map.x(b.targetTile), map.y(b.targetTile), this.session.state.config.nukeMagnitudes(b.type).outer, 5);
+    }
     u.uRingCount.value = n;
   }
 

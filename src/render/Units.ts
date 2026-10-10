@@ -35,9 +35,6 @@ const GALLEY_HEALTH = 1000;
 const TRAIL_POINTS = 160;
 
 interface Memo {
-  /** Sorcery only: will a ballista tower reach it? Worked out now and then. */
-  doomed?: boolean;
-  doomedAt?: number;
   yaw: number;
   x: number;
   y: number;
@@ -393,31 +390,6 @@ export class Units {
   }
 
   /**
-   * Will a ballista tower reach this fireball or dragon? True if what is left
-   * of its path passes inside the range of a finished tower belonging to
-   * someone who is not its caster's ally. A forecast, not a promise: a tower
-   * that is reloading, or busy with another target, can still let it through.
-   */
-  private doomed(u: UnitState, path: Uint32Array, from: number): boolean {
-    const map = this.state.map;
-    const caster = this.state.players.get(u.ownerID);
-    for (const sam of this.state.units.values()) {
-      if (sam.type !== UnitType.SAMLauncher || sam.underConstruction || sam.ownerID === u.ownerID) continue;
-      const owner = this.state.players.get(sam.ownerID);
-      if (caster && owner && this.state.isAllied(owner, caster)) continue;
-      const range = this.state.config.samRange(Math.max(1, sam.level));
-      const sx = map.x(sam.pos);
-      const sy = map.y(sam.pos);
-      for (let i = from; i < path.length - 1; i += 2) {
-        const dx = map.x(path[i]) - sx;
-        const dy = map.y(path[i]) - sy;
-        if (dx * dx + dy * dy <= range * range) return true;
-      }
-    }
-    return false;
-  }
-
-  /**
    * Before the shot: the arc from the mage tower that would cast it to the
    * tile under the cursor, red if a ballista tower stands in reach of it.
    * The engine fires from the caster's nearest ready tower along a fixed
@@ -491,34 +463,11 @@ export class Units {
     }
   }
 
-  /** The dotted line a fireball or dragon has still to fly: red if a ballista will have it. */
-  private flightLine(u: UnitState, memo: Memo, S: number) {
-    const plan = this.state.plans.gridPlans().get(u.id);
-    if (!plan || plan.path.length < 3) return;
-    const s = (this.state.tick - plan.startTick) / Math.max(1, plan.ticksPerStep);
-    const from = Math.max(0, Math.floor(s));
-    if (memo.doomed === undefined || this.state.tick - (memo.doomedAt ?? 0) >= 10) {
-      memo.doomed = this.doomed(u, plan.path, from);
-      memo.doomedAt = this.state.tick;
-    }
-    const last = plan.path.length - 1;
-    const step = Math.max(1, Math.ceil((last - from) / 160));
-    const size = 0.72 * Math.pow(S, 0.8);
-    const [r, g, b] = memo.doomed ? [1.0, 0.22, 0.16] : [1.0, 0.86, 0.42];
-    // Dots are counted back from the target so they stand still as it flies.
-    for (let i = last; i > from + 1; i -= step) {
-      const [tx, ty] = this.alongPath(plan.path, i);
-      const { y } = this.arc(u, tx, ty);
-      this.marks.dot(this.terrain.worldX(tx), y, this.terrain.worldZ(ty), i === last ? size * 2 : size, r, g, b);
-    }
-  }
-
   /** Flight of a fireball, dragon, rising star or falling star. */
   private sorcery(
     u: UnitState, tx: number, ty: number, pos: THREE.Vector3, memo: Memo, S: number, time: number,
   ) {
     const { y, t } = this.arc(u, tx, ty);
-    if (u.type === UnitType.AtomBomb || u.type === UnitType.HydrogenBomb) this.flightLine(u, memo, S);
     const prevY = memo.seen ? memo.y : y;
     memo.y = y;
     const color = this.color(u.ownerID);

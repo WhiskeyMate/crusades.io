@@ -1,8 +1,13 @@
 {
-  "version": "0.1.70",
+  "version": "0.1.71",
   "builtAt": "2026-10-10",
-  "commits": 70,
+  "commits": 71,
   "entries": [
+    {
+      "hash": "7f504aa",
+      "date": "2026-10-10",
+      "subject": "Flight lines for fireballs and dragons are drawn with many more dots"
+    },
     {
       "hash": "92541e1",
       "date": "2026-10-10",
