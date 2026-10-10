@@ -541,3 +541,11 @@ body.phone #landing section { padding-left: 16px; padding-right: 16px; }
   body.phone #feed { bottom: 128px; left: auto; width: 46vw; }
   body.phone #side tbody tr:nth-child(n + 3):not(.me) { display: none; }
 }
+/* Pact offers: bottom centre, with the attack notices. */
+#offers { width: auto; min-width: 420px; max-width: 640px; }
+#offers:empty { display: none; }
+.offer { display: flex; align-items: center; gap: 12px; padding: 6px 10px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5); }
+.offer > div:first-child { flex: 1; }
+.offer .row { margin-top: 0; flex: none; }
+body.phone #offers { width: auto; min-width: 0; max-width: none; }
+body.phone .offer { flex-wrap: wrap; }

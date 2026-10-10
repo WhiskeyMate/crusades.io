@@ -1,8 +1,13 @@
 {
-  "version": "0.1.63",
+  "version": "0.1.64",
   "builtAt": "2026-10-10",
-  "commits": 63,
+  "commits": 64,
   "entries": [
+    {
+      "hash": "6fb0ab3",
+      "date": "2026-10-10",
+      "subject": "A phone layout with touch controls; public games shown as large pictures of their realms"
+    },
     {
       "hash": "95c91f8",
       "date": "2026-10-10",
