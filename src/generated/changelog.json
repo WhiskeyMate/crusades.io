@@ -1,8 +1,13 @@
 {
-  "version": "0.1.98",
+  "version": "0.1.99",
   "builtAt": "2026-10-10",
-  "commits": 98,
+  "commits": 99,
   "entries": [
+    {
+      "hash": "1274e00",
+      "date": "2026-10-10",
+      "subject": "Map pictures are painted without WebGL, so the landing page holds one graphics context, not two; a visit that died while drawing the backdrop leaves it off next time and is reported"
+    },
     {
       "hash": "e51e666",
       "date": "2026-10-10",

@@ -38,19 +38,28 @@ export function adFree(): boolean {
  * strip between them on a tall window, less on a shorter one. A phone, which
  * has no corner to spare, gets none.
  */
-function corner(local: boolean) {
+function corner(local: boolean, tries = 0) {
   const box = document.querySelector<HTMLElement>('[data-ad="corner"]');
   const slot = SLOTS.corner;
   if (!box || !slot || adFree() || box.dataset.filled) return;
   if (document.body.classList.contains("phone")) return;
+  // An ad blocker stops Google's script from loading. Then there is nothing
+  // to show: no empty boxes, and the page is not moved over for them.
+  const google = (window as unknown as { adsbygoogle?: { loaded?: boolean } }).adsbygoogle;
+  if (!local && !google?.loaded) {
+    if (tries < 12) window.setTimeout(() => corner(local, tries + 1), 1000);
+    return;
+  }
   const SQUARE = [250, 250], STRIP = [234, 60];
   const tall = window.innerHeight, wide = window.innerWidth >= 1100;
   const stack = !wide ? [STRIP] : tall >= 880 ? [SQUARE, STRIP, SQUARE] : tall >= 700 ? [SQUARE, STRIP, STRIP] : [STRIP, STRIP, STRIP];
   const landing = document.getElementById("landing");
   // A narrow window has no room beside the landing page's words, so there the
-  // strip waits for a game. A wide one makes room (see body.ad-on in style.css).
-  if (!wide && landing && !landing.hidden) return void window.setTimeout(() => corner(local), 1000);
-  document.body.classList.toggle("ad-on", wide);
+  // strip waits for a game. A wide one makes room (see body.with-banners in
+  // style.css; the name avoids "ad", since ad blockers hide anything so named,
+  // and this class sits on the whole page).
+  if (!wide && landing && !landing.hidden) return void window.setTimeout(() => corner(local, tries), 1000);
+  document.body.classList.toggle("with-banners", wide);
   box.dataset.filled = "1";
   box.hidden = false;
   const win = window as unknown as { adsbygoogle?: unknown[] };
@@ -80,7 +89,7 @@ function corner(local: boolean) {
     // Bought something while they were showing: they go.
     if (adFree()) {
       box.remove();
-      document.body.classList.remove("ad-on");
+      document.body.classList.remove("with-banners");
       return window.clearInterval(watch);
     }
     if (box.children.length < stack.length && landing?.hidden) for (const size of stack.slice(1)) add(size);
