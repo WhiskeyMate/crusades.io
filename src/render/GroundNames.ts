@@ -1,4 +1,4 @@
-// Clan names, lettered onto the ground like names on a map. Each is a strip
+// Tribe names, lettered onto the ground like names on a map. Each is a strip
 // of mesh that follows the terrain's height, textured from one shared atlas
 // of names, so hundreds of them cost a single draw call.
 
@@ -14,7 +14,7 @@ const CELL_W = 512;
 const CELL_H = 64;
 const MAX = COLS * ROWS;
 
-// The levies of each clan, lettered under its name. Numbers change, so they
+// The levies of each tribe, lettered under its name. Numbers change, so they
 // have a small atlas of their own that is cheap to redraw and send again.
 const N_COLS = 16;
 const N_ROWS = 32;
@@ -153,7 +153,7 @@ export class GroundNames {
   private nText = new Map<number, string>();
   private frame = 0;
 
-  /** Letters a clan's levies into its cell of the number atlas, if they have changed. */
+  /** Letters a tribe's levies into its cell of the number atlas, if they have changed. */
   private count(slot: number, text: string): boolean {
     if (this.nText.get(slot) === text) return false;
     this.nText.set(slot, text);

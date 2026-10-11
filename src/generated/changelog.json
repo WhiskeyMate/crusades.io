@@ -1,8 +1,13 @@
 {
-  "version": "0.1.113",
+  "version": "0.1.114",
   "builtAt": "2026-10-11",
-  "commits": 113,
+  "commits": 114,
   "entries": [
+    {
+      "hash": "f27cc10",
+      "date": "2026-10-11",
+      "subject": "While the wheel is open the pointer is a plain arrow everywhere"
+    },
     {
       "hash": "80e657b",
       "date": "2026-10-11",

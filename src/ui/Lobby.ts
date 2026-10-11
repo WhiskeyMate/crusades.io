@@ -212,7 +212,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
           `<div class="pub${inIt ? " in" : ""}" data-code="${g.code}">` +
           mapStillHTML(c.map, "pub-thumb") +
           `<div class="pub-map">${esc(c.map)}</div>` +
-          `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} clans</div>` +
+          `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} tribes</div>` +
           `<div class="pub-time"><b>${g.players === 0 ? "—" : s > 0 ? `${s}s` : "…"}</b><span>${g.players === 0 ? "waiting for lords" : s > 0 ? "until it starts" : "starting"}</span></div>` +
           `<button>${inIt ? "You're in" : "Join"}</button></div>`
         );
@@ -323,7 +323,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       .join("");
     const c = lobby.config;
     el("lobby-config").textContent =
-      `${c.map} · seed ${c.seed} · ${c.kingdoms} kingdoms · ${c.clans} clans · ${c.difficulty} · up to ${c.maxPlayers} lords`;
+      `${c.map} · seed ${c.seed} · ${c.kingdoms} kingdoms · ${c.clans} tribes · ${c.difficulty} · up to ${c.maxPlayers} lords`;
     const rules = describeRules(c.rules);
     el("lobby-rules").hidden = rules.length === 0;
     el("lobby-rules").innerHTML = rules.length ? `<b>House rules:</b> ${esc(rules.join(" · "))}` : "";

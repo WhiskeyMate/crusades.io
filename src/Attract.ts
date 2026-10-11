@@ -1,5 +1,5 @@
 // The landing page's backdrop: a real game with no human in it. AI kingdoms
-// and clans fight over a generated realm while the camera drifts around it.
+// and tribes fight over a generated realm while the camera drifts around it.
 
 import { Difficulty, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";

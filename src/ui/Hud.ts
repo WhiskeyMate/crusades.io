@@ -580,7 +580,7 @@ export class Hud {
     const owner = state.owner(tile);
     let text: string;
     if (owner) {
-      const kind = owner === state.me ? "Your realm" : owner.type === PlayerType.Bot ? "Clan" : "Kingdom";
+      const kind = owner === state.me ? "Your realm" : owner.type === PlayerType.Bot ? "Tribe" : "Kingdom";
       text =
         `<b>${shieldSVG(owner.name, owner.color, 14, owner.arms)} ${esc(owner.name)}</b>` +
         `<span>${kind} · ${fmtTroops(owner.troops)} levies${state.me && state.me.allies.includes(owner.smallID) ? " · sworn pact" : ""}</span>`;
@@ -700,7 +700,7 @@ export class Hud {
     const actions = owner === me ? undefined : await this.session.actions(tile, [UnitType.TransportShip]);
     const it = actions?.interaction;
     const menu = el("menu-ctx");
-    const kind = owner === me ? "Your realm" : owner.type === PlayerType.Bot ? "Clan" : owner.type === PlayerType.Human ? "Rival lord" : "Kingdom";
+    const kind = owner === me ? "Your realm" : owner.type === PlayerType.Bot ? "Tribe" : owner.type === PlayerType.Human ? "Rival lord" : "Kingdom";
     const share = ((owner.tilesOwned / state.map.numLandTiles()) * 100).toFixed(1);
     const sworn = owner !== me && me.allies.includes(owner.smallID);
     const left = it?.allianceInfo ? Math.max(0, Math.round((it.allianceInfo.expiresAt - state.tick) / 10)) : 0;

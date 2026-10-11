@@ -111,7 +111,7 @@ export class Labels {
     }
     for (const p of this.state.players.values()) {
       let l = this.labels.get(p.smallID);
-      // Clans are lettered on the ground instead (render/GroundNames.ts).
+      // Tribes are lettered on the ground instead (render/GroundNames.ts).
       const want =
         p.type !== PlayerType.Bot && p.isAlive && p.nameSize > 0 && p.tilesOwned > 0;
       if (!want) {

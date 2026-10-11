@@ -53,7 +53,7 @@ export const DEFAULT_KINGDOMS: Record<GameMapType, number> = {
   [GameMapType.ShatteredIsles]: 40,
   [GameMapType.Maelstrom]: 40,
 };
-/** Clans (the small AI realms) by default, as upstream. */
+/** Tribes (the small AI realms; "clans" in the code, from before players had clans of their own) by default, as upstream. */
 export const DEFAULT_CLANS = 400;
 export const MAX_KINGDOMS = 120;
 export const MAX_CLANS = 400;
@@ -214,7 +214,7 @@ function realmNames(rand: () => number, count: number): string[] {
 
 /** Spread seats of power over the lowlands by farthest-point sampling. */
 /**
- * Land where no kingdom or player may make their seat: only the clans start
+ * Land where no kingdom or player may make their seat: only the tribes start
  * there, and everyone else has to come and take it. On the Crown Isles that
  * is the great island in the middle (anything within a fifth of the map's
  * width of its centre; the ring islands lie well outside that).

@@ -296,7 +296,7 @@ function openMenu(mode: "solo" | "host") {
   el("menu-title").textContent = mode === "solo" ? "Play solo" : "Create a lobby";
   el("menu-sub").textContent =
     mode === "solo"
-      ? "You against rival kingdoms and clans run by the game."
+      ? "You against rival kingdoms and tribes run by the game."
       : "Choose the realm, then share the code or link with your friends.";
   el("opt-sandbox-row").hidden = mode === "host";
   el("opt-players-row").hidden = mode === "solo";

@@ -219,7 +219,7 @@ async function tick() {
     const members = l.members.map(m => esc(m.name) + (m.connected ? ' <button class=kick data-kick="' + m.clientID + '" title="Disconnect this player">kick</button>' : " <i>(away)</i>")).join(", ") || "<span class=dim>nobody</span>";
     return '<tr><td class=code>' + l.code + '</td>'
       + '<td><span class="tag ' + l.kind + '">' + l.kind + '</span> <span class="tag ' + l.status + '">' + l.status + '</span></td>'
-      + '<td>' + esc(l.map) + '<div class=dim>seed ' + l.seed + ' · ' + l.kingdoms + ' kingdoms · ' + l.clans + ' clans · ' + esc(l.difficulty) + '</div></td>'
+      + '<td>' + esc(l.map) + '<div class=dim>seed ' + l.seed + ' · ' + l.kingdoms + ' kingdoms · ' + l.clans + ' tribes · ' + esc(l.difficulty) + '</div></td>'
       + '<td>' + l.members.length + '/' + l.maxPlayers + '<div class=members>' + members + '</div></td>'
       + '<td>' + progress + '</td>'
       + '<td>' + (l.status === "running" ? '<button data-end="' + l.code + '">End</button>' : (l.members.length ? '<button data-start="' + l.code + '">Start now</button>' : '')) + '</td></tr>';
