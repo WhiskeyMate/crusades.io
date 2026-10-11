@@ -908,3 +908,8 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 .side-banner.mock { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
 /* A slot Google has been asked to fill, kept out of sight until an advertisement arrives. */
 .awaiting { visibility: hidden; }
+/* The tabs sit in the true middle of the bar, whatever is either side of them. */
+.topbar .bar { display: grid; grid-template-columns: 1fr auto 1fr; }
+.topbar .mark { justify-self: start; }
+.topbar #tabs { flex: none; justify-content: center; }
+.topbar #account-open { justify-self: end; grid-column: 3; }
