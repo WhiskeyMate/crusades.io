@@ -1,5 +1,6 @@
 // One running game: the session, the 3D stage and the HUD, wired together.
 
+import { ConquestMarks } from "./ui/ConquestMarks";
 import { CursorKind, setCursor } from "./ui/Cursor";
 import { seatForbidden } from "./worldgen/RealmGen";
 import * as THREE from "three";
@@ -10,7 +11,7 @@ import {
 } from "@crusades/engine-api/game/GameTypes";
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
 import { TickDelta, UnitState } from "./client/GameState";
-import { UNIT_LORE } from "./client/Lexicon";
+import { fmt, UNIT_LORE } from "./client/Lexicon";
 import { Session } from "./client/Session";
 import { Armies } from "./render/Armies";
 import { plantWoods, Woods } from "./render/Decor";
@@ -34,6 +35,9 @@ export class Game {
   readonly hud: Hud;
   private labels: Labels;
   private attackLabels: AttackLabels;
+  private conquestMarks: ConquestMarks;
+  /** The last tile we took from each realm (by its small id): where its final battle is. */
+  private lastTaken = new Map<number, number>();
   private groundNames: GroundNames;
   private raf = 0;
   private woods!: Woods;
@@ -71,6 +75,7 @@ export class Game {
     this.hud = new Hud(this.session);
     this.labels = new Labels(document.getElementById("labels")!, this.stage, this.terrain, state);
     this.attackLabels = new AttackLabels(document.getElementById("labels")!, this.session, this.stage, this.terrain, state);
+    this.conquestMarks = new ConquestMarks(document.getElementById("labels")!, this.stage, this.terrain);
 
     this.hud.onQuit = onQuit;
     this.hud.onCancel = () => this.choose([]);
@@ -119,8 +124,45 @@ export class Game {
     this.session.stop();
     this.hud.dispose();
     this.attackLabels.dispose();
+    this.conquestMarks.dispose();
     document.getElementById("labels")!.innerHTML = "";
     this.stage.dispose();
+  }
+
+  /**
+   * Realms we finished off this turn: gold rings and a fountain where the
+   * last of their ground fell, and a banner there naming them and the gold
+   * taken. "Where" is the last tile we took from them before this turn: once
+   * a realm falls, whatever it had left is handed over all at once, and that
+   * says nothing about where the fighting was.
+   */
+  private conquered(d: TickDelta, mine: number) {
+    const state = this.session.state;
+    const map = state.map;
+    for (const c of d.updates[GameUpdateType.ConquestEvent]) {
+      const victor = state.playersByID.get(c.conquerorId);
+      const fallen = state.playersByID.get(c.conqueredId);
+      if (!victor || !fallen || victor.smallID !== mine) continue;
+      let tile = this.lastTaken.get(fallen.smallID);
+      if (tile === undefined) {
+        // Fell in a single turn: the first of its ground to change hands.
+        for (let i = 0; i < d.conquests.length; i += 3) {
+          if (d.conquests[i + 1] === fallen.smallID && d.conquests[i + 2] === mine) {
+            tile = d.conquests[i];
+            break;
+          }
+        }
+      }
+      const x = tile !== undefined ? map.x(tile) : fallen.nameX;
+      const y = tile !== undefined ? map.y(tile) : fallen.nameY;
+      this.lastTaken.delete(fallen.smallID);
+      const pos = new THREE.Vector3(this.terrain.worldX(x), this.terrain.surfaceAt(x, y) + 0.3, this.terrain.worldZ(y));
+      this.effects.triumph(pos, 9);
+      this.conquestMarks.add(x, y, fallen.name, fmt(Number(c.gold)), performance.now());
+    }
+    for (let i = 0; i < d.conquests.length; i += 3) {
+      if (d.conquests[i + 2] === mine && d.conquests[i + 1] !== 0) this.lastTaken.set(d.conquests[i + 1], d.conquests[i]);
+    }
   }
 
   private tick(d: TickDelta) {
@@ -135,6 +177,7 @@ export class Game {
     }
     this.hud.onTick(d);
     const me = state.me;
+    if (me) this.conquered(d, me.smallID);
     if (!this.centred && me?.spawnTile !== undefined && !state.inSpawnPhase) {
       this.centred = true;
       this.stage.focus(state.map.x(me.spawnTile), state.map.y(me.spawnTile), 230);
@@ -610,5 +653,6 @@ export class Game {
     this.stage.render();
     this.labels.update();
     this.attackLabels.update(now);
+    this.conquestMarks.update(now);
   }
 }

@@ -313,6 +313,28 @@ export class Effects {
     }
   }
 
+  /**
+   * A realm conquered: rings of gold spreading over the ground where it fell
+   * and a fountain of gold thrown up from the middle. Radius is in tiles.
+   * Rare and worth seeing, so it is drawn at every graphics level.
+   */
+  triumph(pos: THREE.Vector3, radius: number) {
+    const t = this.time;
+    this.pulse(pos, 0xffd76a, radius * 0.1, radius * 1.0, 1.6, true);
+    this.pulse(pos, 0xfff1c9, radius * 0.05, radius * 1.5, 2.3, true);
+    this.pulse(pos, 0xe0a92a, radius * 0.05, radius * 2.1, 3.0, true);
+    this.pulse(pos, 0xffe9a8, radius * 0.1, radius * 0.5, 1.2, false);
+    for (let i = 0; i < 140; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const out = radius * rnd(0.1, 0.55);
+      this.fire.emit(
+        t, pos.x + Math.cos(a) * radius * 0.08, pos.y + 0.3, pos.z + Math.sin(a) * radius * 0.08,
+        Math.cos(a) * out, radius * rnd(0.6, 1.5), Math.sin(a) * out,
+        1.0, rnd(0.78, 0.9), rnd(0.25, 0.45), rnd(1.2, 2.6), radius * 0.16, radius * 0.03,
+      );
+    }
+  }
+
   /** A sorcerous detonation on the ground; radius is in tiles. */
   explode(pos: THREE.Vector3, radius: number, kind: "fireball" | "dragon" | "star") {
     const t = this.time;

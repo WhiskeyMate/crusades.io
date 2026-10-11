@@ -1,8 +1,13 @@
 {
-  "version": "0.1.102",
+  "version": "0.1.103",
   "builtAt": "2026-10-11",
-  "commits": 102,
+  "commits": 103,
   "entries": [
+    {
+      "hash": "6463272",
+      "date": "2026-10-11",
+      "subject": "Graphics levels: high, medium and low, chosen for the device, lowered when the game runs slowly, or set by hand"
+    },
     {
       "hash": "e7931b6",
       "date": "2026-10-11",
