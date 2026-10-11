@@ -721,3 +721,5 @@ body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top))
 .wheel .slice.t-build:hover { fill: #9a7128; }
 .wheel .slice.off[class*="t-"], .wheel .slice.off[class*="t-"]:hover { fill: rgba(40, 36, 32, 0.9); }
 .slice-face { color: #fff3d6; }
+/* While the wheel is open the pointer is a plain arrow everywhere, the wheel included. */
+.wheel .slice, .wheel .hub { cursor: default; }

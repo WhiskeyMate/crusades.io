@@ -1,5 +1,6 @@
 // One running game: the session, the 3D stage and the HUD, wired together.
 
+import { radialOpen } from "./ui/Radial";
 import { ConquestMarks } from "./ui/ConquestMarks";
 import { CursorKind, setCursor } from "./ui/Cursor";
 import { seatForbidden } from "./worldgen/RealmGen";
@@ -275,6 +276,8 @@ export class Game {
 
   /** What a click under the cursor would do, as a cursor. */
   private cursorKind(): CursorKind {
+    // With the wheel open the pointer is a plain one, wherever it is.
+    if (radialOpen()) return "own";
     const state = this.session.state;
     const map = state.map;
     const me = state.me;
