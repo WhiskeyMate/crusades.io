@@ -320,6 +320,24 @@ for (const b of Array.from(document.querySelectorAll<HTMLElement>(".play"))) {
     el("opt-name").focus();
   };
 }
+// The bar's tabs follow the page: Play at the top, then the sections further down.
+{
+  const page = el("landing");
+  const marks: [string, string][] = [["new", "l-changelog"], ["game", "l-features"]];
+  const follow = () => {
+    let at = "play";
+    for (const [tab, id] of marks) {
+      const top = document.getElementById(id)?.getBoundingClientRect().top;
+      if (top !== undefined && top < window.innerHeight * 0.5) {
+        at = tab;
+        break;
+      }
+    }
+    for (const t of Array.from(document.querySelectorAll<HTMLElement>("#tabs [data-tab]"))) t.classList.toggle("on", t.dataset.tab === at);
+  };
+  page.addEventListener("scroll", follow, { passive: true });
+  follow();
+}
 el("menu-close").onclick = () => (el("menu").hidden = true);
 el("lore").innerHTML = BUILD_ORDER.map((t) => {
   const l = UNIT_LORE[t];
@@ -373,6 +391,7 @@ const { hostLobby } = initOnline({
   const pretty = (d: string) =>
     new Date(d + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
   el("cl-version").textContent = `v${cl.version} · ${pretty(cl.builtAt)}`;
+  el("bar-version").textContent = `v${cl.version}`;
   el("footer-version").textContent = `Build v${cl.version}, ${pretty(cl.builtAt)}`;
   const days = new Map<string, typeof cl.entries>();
   for (const e of cl.entries) (days.get(e.date) ?? days.set(e.date, []).get(e.date)!).push(e);

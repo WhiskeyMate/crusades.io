@@ -100,26 +100,25 @@
 
     <div id="ad-corner" data-ad="corner" hidden></div>
     <div id="landing" class="no-gl">
-      <header class="hero">
-        <nav>
-          <span class="mark">crusades<span>.io</span></span>
-          <a href="#l-features">The game</a>
-          <a href="#l-build">What you build</a>
-          <a href="#l-multiplayer">Multiplayer</a>
-          <a href="#l-changelog">What's new</a>
-          <button id="clans-open" class="ghost-btn" hidden>Clans</button>
+      <header class="topbar">
+        <div class="bar">
+          <a class="mark" href="#top">crusades<span>.io</span><small id="bar-version"></small></a>
+          <nav id="tabs">
+            <button class="tab on play" data-tab="play">Play</button>
+            <button id="clans-open" class="tab" hidden>Clans</button>
+            <button id="custom-open" class="tab" hidden>Customise</button>
+            <button id="store-open" class="tab" hidden>Store</button>
+            <a class="tab" data-tab="game" href="#l-features">The game</a>
+            <a class="tab" data-tab="new" href="#l-changelog">What's new</a>
+          </nav>
           <button id="account-open" class="ghost-btn" hidden>Sign in</button>
-          <button class="primary play">Play</button>
-        </nav>
+        </div>
+      </header>
+      <div class="hero" id="top">
         <div class="front">
           <div class="pitch">
             <h1>crusades<span>.io</span></h1>
             <p class="tag">Raise your banner. Break your neighbours. Take the realm.</p>
-            <p class="lede">
-              A free 3D strategy game of land, levies and betrayal. It runs in
-              your browser: nothing to download, no account needed to play.
-            </p>
-            <a class="ghost" href="#l-features">See what's in it</a>
           </div>
 
           <div id="hall" class="panel">
@@ -133,18 +132,19 @@
               </div>
               <div id="public-list"><p class="dim small">Reaching the server…</p></div>
             </div>
+            <button id="hall-solo" class="primary solo">Play solo<span>Against the AI, your rules</span></button>
             <div class="hall-row">
               <button id="hall-host" class="hall-btn"><b>Create a lobby</b><span>Invite friends with a link</span></button>
-              <button id="hall-solo" class="hall-btn"><b>Play solo</b><span>Against the AI, your rules</span></button>
+              <div class="hall-join">
+                <input id="online-code" maxlength="6" placeholder="Game code" autocapitalize="characters" />
+                <button id="online-join">Join</button>
+              </div>
             </div>
-            <div class="hall-join">
-              <input id="online-code" maxlength="6" placeholder="Game code" autocapitalize="characters" />
-              <button id="online-join">Join</button>
-            </div>
+            <p class="free">Free to play in your browser. Nothing to download, no account needed.</p>
             <p id="online-status" class="small" hidden></p>
           </div>
         </div>
-      </header>
+      </div>
 
       <main>
         <section id="l-features">

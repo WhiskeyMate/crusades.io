@@ -209,12 +209,12 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     }
     const mine = online?.lobby?.code;
     list.innerHTML = games
-      .map((g) => {
+      .map((g, n) => {
         const s = seconds(g.startsAt);
         const c = g.config;
         const inIt = g.code === mine;
         return (
-          `<div class="pub${inIt ? " in" : ""}" data-code="${g.code}">` +
+          `<div class="pub${inIt ? " in" : ""}${n === 0 ? " lead" : ""}" data-code="${g.code}">` +
           mapStillHTML(c.map, "pub-thumb") +
           `<div class="pub-map">${esc(c.map)}</div>` +
           `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} tribes</div>` +

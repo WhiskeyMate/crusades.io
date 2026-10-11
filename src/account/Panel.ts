@@ -486,11 +486,9 @@ function drawName(): string {
 /** What the button on the landing page says. */
 function openLabel(): string {
   const s = account.state;
-  if (!s) return STORE_OPEN ? "Sign in · Store" : "Sign in";
+  if (!s) return "Sign in";
   const shield = shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT);
-  return STORE_OPEN
-    ? `${shield} ${s.crowns.toLocaleString("en-US")} ♛ · Store`
-    : `${shield} ${esc(s.handle ?? s.username ?? s.name)} · ${standing(s.record).title}`;
+  return `${shield} ${esc(s.handle ?? s.username ?? s.name)} · ${STORE_OPEN ? `${s.crowns.toLocaleString("en-US")} ♛` : standing(s.record).title}`;
 }
 
 const PROVIDER_BUTTONS: Record<Exclude<Provider, "email">, string> = {
@@ -699,7 +697,17 @@ export function drawEndOffer() {
 export async function initAccountPanel() {
   if (!accountsEnabled) return;
   const dialog = el("account");
-  el("account-open").onclick = () => show();
+  // The bar's own tabs open the same window at the place they name.
+  const at = (to: Tab) => () => {
+    tab = to;
+    filter = "all";
+    show();
+  };
+  el("account-open").onclick = at("account");
+  el("custom-open").hidden = false;
+  el("custom-open").onclick = at("custom");
+  el("store-open").hidden = !STORE_OPEN;
+  el("store-open").onclick = at("featured");
   el("acct-close").onclick = () => (dialog.hidden = true);
   el<HTMLFormElement>("acct-form").onsubmit = async (e) => {
     e.preventDefault();

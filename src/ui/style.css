@@ -847,3 +847,56 @@ button.link:hover { color: #ffb4a3; filter: none; }
 .record .handle .inline input { flex: 1; }
 .record .handle p { margin: 4px 0 0; }
 .clan-mine .fields.narrow { max-width: 420px; }
+/* ------------------------------------------------------------------ landing page, second cut
+   A bar across the top with the places of the site as tabs, and under it one
+   centred column: the name, the public games, and the ways to play. */
+.topbar { position: sticky; top: 0; z-index: 5; background: rgba(20, 13, 8, 0.9); backdrop-filter: blur(6px); border-bottom: 1px solid #4a3a22; }
+.topbar .bar { max-width: 1120px; margin: 0 auto; padding: 0 clamp(12px, 3vw, 28px); height: 58px; display: flex; align-items: center; gap: clamp(10px, 2vw, 26px); }
+.topbar .mark { display: flex; flex-direction: column; line-height: 1; font-size: 23px; font-weight: bold; color: var(--gold); white-space: nowrap; }
+#landing .topbar .mark { color: var(--gold); }
+.topbar .mark > span { display: contents; color: #d0443a; }
+.topbar .mark { display: block; }
+.topbar .mark small { display: block; margin-top: 2px; font-size: 10px; font-weight: normal; letter-spacing: 1px; color: var(--dim); }
+#tabs { display: flex; align-items: stretch; align-self: stretch; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+#tabs::-webkit-scrollbar { display: none; }
+#tabs .tab { display: flex; align-items: center; padding: 0 clamp(8px, 1.2vw, 15px); font: inherit; font-size: 13px; letter-spacing: 1.3px; text-transform: uppercase; white-space: nowrap; color: #d9ccae; background: none; border: 0; border-bottom: 2px solid transparent; border-top: 2px solid transparent; border-radius: 0; cursor: pointer; }
+#tabs .tab[hidden] { display: none; }
+#tabs .tab:hover { color: var(--ink); background: rgba(255, 255, 255, 0.04); filter: none; }
+#landing #tabs a.tab { color: #d9ccae; }
+#landing #tabs .tab.on { color: var(--gold); border-bottom-color: var(--gold); }
+.topbar #account-open { white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+
+.hero { min-height: calc(100vh - 59px); padding-top: 22px; }
+.front { margin: auto; width: min(780px, 100%); display: flex; flex-direction: column; gap: 16px; grid-template-columns: none; align-items: stretch; }
+.pitch { max-width: none; text-align: center; }
+.hero h1 { font-size: clamp(44px, 6.5vw, 76px); }
+.hero .tag { font-size: clamp(16px, 1.9vw, 21px); margin: 8px 0 0; }
+body.with-banners .hero .pitch { margin-bottom: 0; }
+/* The corner banner needs the left edge on a window too narrow to clear it. */
+@media (min-width: 1100px) and (max-width: 1320px) { body.with-banners .hero { padding-left: 286px; } }
+
+#hall { padding: 18px 20px 16px; gap: 14px; }
+#hall .house input { font-size: 19px; padding: 10px 12px; }
+#public-list { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 8px; }
+#public-list > p { grid-column: 1 / -1; }
+#public-list .pub { min-height: 118px; }
+#public-list .pub.lead { grid-row: span 2; min-height: 244px; }
+#public-list .pub.lead .pub-map { font-size: 25px; }
+#public-list .pub:only-child { grid-column: 1 / -1; grid-row: auto; min-height: 190px; }
+#public-list .pub:not(.lead) .pub-meta { font-size: 11.5px; }
+#hall button.solo { display: flex; flex-direction: column; align-items: center; gap: 1px; width: 100%; padding: 11px; font-size: 20px; letter-spacing: 0.5px; }
+#hall button.solo span { font-size: 12px; font-weight: normal; opacity: 0.85; letter-spacing: 0; }
+#hall .hall-row { grid-template-columns: 1fr 1fr; align-items: stretch; }
+#hall .hall-join { align-items: stretch; }
+#hall .hall-join button { padding: 0 18px; }
+#hall .free { margin: 0; text-align: center; font-size: 12.5px; color: var(--dim); }
+
+@media (max-width: 640px) { .hero nav a { display: revert; } }
+body.phone .topbar .bar { height: 50px; gap: 8px; padding: 0 8px; }
+body.phone .topbar .mark { font-size: 18px; }
+body.phone .topbar .mark small { display: none; }
+body.phone #tabs .tab { font-size: 11.5px; letter-spacing: 0.8px; padding: 0 8px; }
+body.phone .hero { min-height: calc(100vh - 51px); padding-top: 12px; }
+body.phone #public-list { grid-template-columns: 1fr; }
+body.phone #public-list .pub.lead { grid-row: auto; min-height: 150px; }
+body.phone #hall .hall-row { grid-template-columns: 1fr; }
