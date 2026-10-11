@@ -323,7 +323,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     el("lobby-members").innerHTML = lobby.members
       .map(
         (m) =>
-          `<li class="${m.connected ? "" : "away"}">${esc(m.name)}${m.clientID === lobby.owner ? " <i>host</i>" : ""}${m.clientID === me ? " <i>you</i>" : ""}</li>`,
+          `<li class="${m.connected ? "" : "away"}">${m.tag ? `<span class="tag">${esc(m.tag)}</span> ` : ""}${esc(m.name)}${m.clientID === lobby.owner ? " <i>host</i>" : ""}${m.clientID === me ? " <i>you</i>" : ""}</li>`,
       )
       .join("");
     const c = lobby.config;

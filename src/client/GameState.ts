@@ -23,7 +23,7 @@ import { unpackMotionPlans } from "@crusades/engine-lib/game/MotionPlans";
 import { Realm } from "../worldgen/RealmGen";
 import { MotionPlanResolver } from "./MotionPlanResolver";
 import { Equipped, Slot, variantsOf } from "../store/Catalog";
-import { hexToRGB, liegeArms, playerColor, RGB, setArms, Skin, validSkin } from "./Heraldry";
+import { hexToRGB, liegeArms, playerColor, RGB, setArms, Skin, tagged, validSkin } from "./Heraldry";
 
 /** What one human player wears, as the server (or the local account) says. */
 export interface Cosmetic {
@@ -275,7 +275,7 @@ export class GameState {
       p = {
         id: pu.id,
         smallID: pu.smallID,
-        name: pu.displayName ?? pu.name ?? "?",
+        name: tagged(pu.displayName ?? pu.name ?? "?", pu.clanTag),
         type: pu.playerType ?? PlayerType.Bot,
         clientID: pu.clientID ?? null,
         isAlive: true,

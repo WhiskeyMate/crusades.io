@@ -26,6 +26,8 @@ export interface Cosmetic {
 export interface Identity {
   uid: string;
   username: string | null;
+  /** The tag of the clan they belong to, if any. */
+  clanTag: string | null;
   cosmetic: Cosmetic;
 }
 
@@ -60,8 +62,17 @@ export async function identify(token: string | undefined): Promise<Identity | nu
     const inv = (await call(
       `/rest/v1/inventory?select=item_id&user_id=eq.${user.id}&item_id=eq.banner-custom`,
     )) as unknown[];
+    // The clan tables may not exist yet on an older database: then nobody has a tag.
+    let clanTag: string | null = null;
+    try {
+      const tag = await call("/rest/v1/rpc/clan_tag_for", { method: "POST", body: JSON.stringify({ uid: user.id }) });
+      if (typeof tag === "string" && /^[A-Z0-9]{2,4}$/.test(tag)) clanTag = tag;
+    } catch {
+      clanTag = null;
+    }
     return {
       uid: user.id,
+      clanTag,
       username: row?.username ?? null,
       cosmetic: { equipped: row?.equipped ?? {}, skin: inv.length > 0 || freeSkin(row?.skin) ? (row?.skin ?? null) : null },
     };

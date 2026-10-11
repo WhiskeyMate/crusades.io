@@ -107,6 +107,7 @@
           <a href="#l-build">What you build</a>
           <a href="#l-multiplayer">Multiplayer</a>
           <a href="#l-changelog">What's new</a>
+          <button id="clans-open" class="ghost-btn" hidden>Clans</button>
           <button id="account-open" class="ghost-btn" hidden>Sign in</button>
           <button class="primary play">Play</button>
         </nav>
@@ -319,6 +320,18 @@
         <div class="ad-slot" data-ad="lobby" hidden></div>
       </div>
     </div>
+    <div id="clans" hidden>
+      <div class="panel sheet store clans">
+        <header class="store-head">
+          <h2>Clans</h2>
+          <button id="clans-close" class="close" title="Close">✕</button>
+        </header>
+        <p id="clans-note" class="note" hidden></p>
+        <nav id="clans-nav"></nav>
+        <div id="clans-body"></div>
+      </div>
+    </div>
+
     <div id="account" hidden>
       <div class="panel sheet store">
         <header class="store-head">

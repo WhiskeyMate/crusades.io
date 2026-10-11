@@ -127,6 +127,8 @@ interface Client {
   /** The signed-in account, if the player sent a valid token. */
   uid: string | null;
   cosmetic: Cosmetic | null;
+  /** The tag of the clan the account belongs to, if any. */
+  clanTag: string | null;
   /** Why the last name was refused, to repeat when they try to play. */
   nameError: string | null;
   /** Messages are handled one at a time per client, in order. */
@@ -137,6 +139,7 @@ interface Member {
   clientID: string;
   secret: string;
   name: string;
+  clanTag: string | null;
   client: Client | null;
   cosmetic: Cosmetic | null;
 }
@@ -189,6 +192,7 @@ class Lobby {
       members: [...this.members.values()].map((m) => ({
         clientID: m.clientID,
         name: m.name,
+        tag: m.clanTag,
         connected: m.client !== null,
       })),
     };
@@ -231,6 +235,7 @@ class Lobby {
       clientID: client.clientID,
       secret: client.secret,
       name: client.name,
+      clanTag: client.clanTag,
       client,
       cosmetic: client.cosmetic,
     });
@@ -365,7 +370,7 @@ class Lobby {
       players: [...this.members.values()].map((m) => ({
         clientID: m.clientID,
         username: m.name,
-        clanTag: null,
+        clanTag: m.clanTag,
       })),
     };
     log(
@@ -665,6 +670,7 @@ async function handle(client: Client, msg: ClientMessage) {
       if (who) {
         client.uid = who.uid;
         client.cosmetic = who.cosmetic;
+          client.clanTag = who.clanTag;
       }
       client.name = "";
       const wanted = who?.username ?? msg.name ?? "";
@@ -696,6 +702,7 @@ async function handle(client: Client, msg: ClientMessage) {
           if (client.uid !== who.uid) log(`${client.clientID} signed in as account ${who.uid.slice(0, 8)}`);
           client.uid = who.uid;
           client.cosmetic = who.cosmetic;
+          client.clanTag = who.clanTag;
         } else if (!client.uid) {
           log(`${client.clientID}: token sent with name not accepted`);
         }
@@ -813,6 +820,7 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
     connectedAt: Date.now(),
     uid: null,
     cosmetic: null,
+    clanTag: null,
     nameError: null,
     queue: Promise.resolve(),
   };

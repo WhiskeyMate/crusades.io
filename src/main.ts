@@ -1,5 +1,7 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
+import { clans } from "./clans/Clans";
+import { initClans } from "./clans/Panel";
 import { quality } from "./render/Quality";
 import { drawBans, readRules } from "./client/Rules";
 import { mapStillHTML, startLiveMaps } from "./ui/MapPreview";
@@ -254,6 +256,8 @@ async function begin() {
     sandbox: el<HTMLInputElement>("opt-sandbox").checked,
     rules: readRules(),
     cosmetic: account.state ? { equipped: account.state.equipped, skin: account.skin } : undefined,
+    // A clan member carries the tag in solo games too. Asked for once, then remembered.
+    clanTag: account.state ? (clans.myTag ?? (await clans.mine().catch(() => null))?.clan.tag ?? null) : null,
   };
   el("loading").hidden = false;
   el("menu").hidden = true;
@@ -345,6 +349,7 @@ window.addEventListener("resize", markPhone);
 }
 
 drawBans();
+initClans();
 void initAccountPanel();
 initAds();
 initAnalytics();

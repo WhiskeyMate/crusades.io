@@ -316,6 +316,216 @@ end $$;
 revoke all on function public.record_game(text, boolean, real, integer, text, jsonb) from public, anon;
 grant execute on function public.record_game(text, boolean, real, integer, text, jsonb) to authenticated;
 
+-- -------------------------------------------------------------------- clans
+-- Clans of players (the small AI realms in a game are "tribes"). A clan has a
+-- name, a tag of two to four letters and digits that its members carry in
+-- front of their house names, a few words about itself, and a pin on the
+-- world map saying where it calls home. A player is in at most one clan.
+--
+-- clans:         anyone may read. Written only by the functions below.
+-- clan_members:  anyone may read (the roll of a clan is public).
+-- clan_requests: asks to join a clan that takes members by approval. Read by
+--                the asker and by the clan's founder.
+create table if not exists public.clans (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(name) between 3 and 24),
+  tag text not null check (tag ~ '^[A-Z0-9]{2,4}$'),
+  blurb text not null default '' check (char_length(blurb) <= 200),
+  open boolean not null default true,
+  pin_x real not null check (pin_x between 0 and 1),
+  pin_y real not null check (pin_y between 0 and 1),
+  founder uuid not null references auth.users on delete cascade,
+  members integer not null default 1,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists clans_name_once on public.clans (lower(name));
+create unique index if not exists clans_tag_once on public.clans (tag);
+
+create table if not exists public.clan_members (
+  user_id uuid primary key references auth.users on delete cascade,
+  clan_id uuid not null references public.clans on delete cascade,
+  role text not null default 'member' check (role in ('founder', 'member')),
+  name text not null default 'A lord',
+  joined_at timestamptz not null default now()
+);
+create index if not exists clan_members_by_clan on public.clan_members (clan_id);
+
+create table if not exists public.clan_requests (
+  clan_id uuid not null references public.clans on delete cascade,
+  user_id uuid not null references auth.users on delete cascade,
+  name text not null default 'A lord',
+  created_at timestamptz not null default now(),
+  primary key (clan_id, user_id)
+);
+
+alter table public.clans enable row level security;
+alter table public.clan_members enable row level security;
+alter table public.clan_requests enable row level security;
+drop policy if exists "anyone reads clans" on public.clans;
+create policy "anyone reads clans" on public.clans for select using (true);
+drop policy if exists "anyone reads clan rolls" on public.clan_members;
+create policy "anyone reads clan rolls" on public.clan_members for select using (true);
+drop policy if exists "asker and founder read requests" on public.clan_requests;
+create policy "asker and founder read requests" on public.clan_requests for select using (
+  auth.uid() = user_id or exists (select 1 from public.clans c where c.id = clan_id and c.founder = auth.uid())
+);
+drop policy if exists "asker withdraws request" on public.clan_requests;
+create policy "asker withdraws request" on public.clan_requests for delete using (auth.uid() = user_id);
+
+-- A name fit to show: the letters a house name may have, at most 24 of them.
+create or replace function public.clan_display(display text) returns text
+language sql immutable as $$
+  select coalesce(nullif(btrim(left(regexp_replace(coalesce(display, ''), '[^A-Za-z0-9À-ÖØ-öø-ÿ _.\-]', '', 'g'), 24)), ''), 'A lord');
+$$;
+
+create or replace function public.create_clan(name text, tag text, blurb text, open boolean, x real, y real, display text)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  n text := btrim(regexp_replace(coalesce(name, ''), '\s+', ' ', 'g'));
+  t text := upper(btrim(coalesce(tag, '')));
+  made uuid;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  if exists (select 1 from clan_members m where m.user_id = uid) then raise exception 'You are already in a clan. Leave it first.'; end if;
+  if char_length(n) < 3 or char_length(n) > 24 or n !~ '^[A-Za-z0-9À-ÖØ-öø-ÿ _.\-]+$' then
+    raise exception 'A clan name is 3 to 24 letters, digits and spaces.';
+  end if;
+  if t !~ '^[A-Z0-9]{2,4}$' then raise exception 'A tag is 2 to 4 letters or digits.'; end if;
+  begin
+    insert into clans (name, tag, blurb, open, pin_x, pin_y, founder)
+    values (n, t, left(btrim(coalesce(blurb, '')), 200), coalesce(open, true), greatest(0, least(1, x)), greatest(0, least(1, y)), uid)
+    returning id into made;
+  exception when unique_violation then
+    raise exception 'That name or tag is already taken.';
+  end;
+  insert into clan_members (user_id, clan_id, role, name) values (uid, made, 'founder', clan_display(display));
+  delete from clan_requests r where r.user_id = uid;
+  return made;
+end $$;
+
+-- Joins an open clan at once ('joined'), or asks to join one that takes
+-- members by approval ('asked').
+create or replace function public.join_clan(clan uuid, display text)
+returns text language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  c clans%rowtype;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  if exists (select 1 from clan_members m where m.user_id = uid) then raise exception 'You are already in a clan. Leave it first.'; end if;
+  select * into c from clans where id = clan for update;
+  if not found then raise exception 'No such clan.'; end if;
+  if c.members >= 200 then raise exception 'That clan is full.'; end if;
+  if c.open then
+    insert into clan_members (user_id, clan_id, role, name) values (uid, c.id, 'member', clan_display(display));
+    update clans set members = members + 1 where id = c.id;
+    delete from clan_requests r where r.user_id = uid;
+    return 'joined';
+  end if;
+  if (select count(*) from clan_requests r where r.user_id = uid) >= 5 then raise exception 'You have asked five clans already. Withdraw one first.'; end if;
+  insert into clan_requests (clan_id, user_id, name) values (c.id, uid, clan_display(display)) on conflict do nothing;
+  return 'asked';
+end $$;
+
+-- Leaves your clan. A founder who leaves hands the clan to its longest-standing
+-- member; if there is nobody else, the clan is dissolved.
+create or replace function public.leave_clan()
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  mine clan_members%rowtype;
+  heir uuid;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  select * into mine from clan_members where user_id = uid;
+  if not found then return; end if;
+  if mine.role = 'founder' then
+    select m.user_id into heir from clan_members m where m.clan_id = mine.clan_id and m.user_id <> uid order by m.joined_at limit 1;
+    if heir is null then
+      delete from clans where id = mine.clan_id;
+      return;
+    end if;
+    update clan_members set role = 'founder' where user_id = heir;
+    update clans set founder = heir where id = mine.clan_id;
+  end if;
+  delete from clan_members where user_id = uid;
+  update clans set members = greatest(1, members - 1) where id = mine.clan_id;
+end $$;
+
+-- The founder answers an ask to join.
+create or replace function public.answer_request(who uuid, accept boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  c clans%rowtype;
+  asked clan_requests%rowtype;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  select * into c from clans where founder = uid for update;
+  if not found then raise exception 'Only a clan''s founder answers its requests.'; end if;
+  select * into asked from clan_requests where clan_id = c.id and user_id = who;
+  if not found then raise exception 'That request is gone.'; end if;
+  delete from clan_requests where clan_id = c.id and user_id = who;
+  if not accept then return; end if;
+  if exists (select 1 from clan_members m where m.user_id = who) then raise exception 'They have joined another clan.'; end if;
+  if c.members >= 200 then raise exception 'Your clan is full.'; end if;
+  insert into clan_members (user_id, clan_id, role, name) values (who, c.id, 'member', asked.name);
+  update clans set members = members + 1 where id = c.id;
+  delete from clan_requests r where r.user_id = who;
+end $$;
+
+-- The founder removes a member.
+create or replace function public.kick_member(who uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  c uuid;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  select id into c from clans where founder = uid;
+  if c is null then raise exception 'Only a clan''s founder removes members.'; end if;
+  if who = uid then raise exception 'Leave the clan instead.'; end if;
+  delete from clan_members where user_id = who and clan_id = c;
+  if found then update clans set members = greatest(1, members - 1) where id = c; end if;
+end $$;
+
+-- The founder changes what the clan says of itself, how it takes members and where its pin is.
+create or replace function public.update_clan(blurb text, open boolean, x real, y real)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  update clans set
+    blurb = left(btrim(coalesce(update_clan.blurb, '')), 200),
+    open = coalesce(update_clan.open, clans.open),
+    pin_x = greatest(0, least(1, coalesce(x, pin_x))),
+    pin_y = greatest(0, least(1, coalesce(y, pin_y)))
+  where founder = uid;
+  if not found then raise exception 'Only a clan''s founder changes it.'; end if;
+end $$;
+
+-- The tag a player carries, for the game server (service role only).
+create or replace function public.clan_tag_for(uid uuid) returns text
+language sql stable security definer set search_path = public as $$
+  select c.tag from public.clan_members m join public.clans c on c.id = m.clan_id where m.user_id = uid;
+$$;
+
+revoke all on function public.create_clan(text, text, text, boolean, real, real, text) from public, anon;
+revoke all on function public.join_clan(uuid, text) from public, anon;
+revoke all on function public.leave_clan() from public, anon;
+revoke all on function public.answer_request(uuid, boolean) from public, anon;
+revoke all on function public.kick_member(uuid) from public, anon;
+revoke all on function public.update_clan(text, boolean, real, real) from public, anon;
+grant execute on function public.create_clan(text, text, text, boolean, real, real, text) to authenticated;
+grant execute on function public.join_clan(uuid, text) to authenticated;
+grant execute on function public.leave_clan() to authenticated;
+grant execute on function public.answer_request(uuid, boolean) to authenticated;
+grant execute on function public.kick_member(uuid) to authenticated;
+grant execute on function public.update_clan(text, boolean, real, real) to authenticated;
+revoke all on function public.clan_tag_for(uuid) from public, anon, authenticated;
+
 -- ------------------------------------------------------- catalogue mirror
 -- Generated by `npm run catalog-sql` from src/store/Catalog.ts. Do not edit by hand.
 -- Whatever is no longer sold stops being sold: the table is rebuilt whole.

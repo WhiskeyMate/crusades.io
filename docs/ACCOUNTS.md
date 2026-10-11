@@ -90,6 +90,25 @@ The figures are self-reported by the browser. The database bounds what it
 takes and accepts one game a minute per account, which is enough for a
 personal record but not for anything with a prize attached.
 
+## Clans
+
+Signed-in players can found or join a clan from the Clans button on the
+landing page. A clan has a name, a tag of two to four letters or digits, a few
+words about itself, and a pin its founder places on a map of the world. The
+World map tab glows where clans gather; clicking a region lists the clans
+pinned there. A founder chooses whether anyone may join or each ask needs
+approval. A player is in one clan at a time.
+
+- The tables and every rule (one clan each, unique names and tags, who may
+  approve or remove) are in `supabase/schema.sql`. Run it before the button is
+  any use.
+- The game server reads a signed-in player's tag when they connect and shows
+  it before their name in lobbies and games. It needs its Supabase settings
+  and the updated server for that.
+- Clan names, tags and descriptions are not screened for abuse. To remove a
+  clan, delete its row from `public.clans` in the Supabase table editor; its
+  roll and requests go with it.
+
 ## Trying it without Supabase
 
 On a dev server, `?premium` signs you in as a pretend player with the store

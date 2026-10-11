@@ -41,12 +41,20 @@ export const DIVISION_NAMES = [
 ];
 export const DIVISION_COUNT = DIVISION_NAMES.length;
 
+/**
+ * A clan tag stands in front of a member's house name ("[WOLF] House Vane").
+ * It is no part of the house: arms and colours come from the name without it.
+ */
+const TAGGED = /^\[[A-Za-z0-9]{2,5}\] /;
+export const untagged = (name: string) => name.replace(TAGGED, "");
+export const tagged = (name: string, tag: string | null | undefined) => (tag ? `[${tag}] ${untagged(name)}` : name);
+
 let liegeName: string | null = null;
 let liegeSkin: Skin | null = null;
 
 /** Who the local player is, and the arms they have chosen (null for the default crimson). */
 export function setLiege(name: string | null, skin: Skin | null) {
-  liegeName = name;
+  liegeName = name === null ? null : untagged(name);
   liegeSkin = skin;
 }
 
@@ -56,8 +64,8 @@ export const liegeArms = (): Skin | null => liegeSkin;
 /** Arms chosen by other players in this game, by house name. */
 const armsByName = new Map<string, Skin>();
 export function setArms(name: string, skin: Skin | null) {
-  if (skin) armsByName.set(name, skin);
-  else armsByName.delete(name);
+  if (skin) armsByName.set(untagged(name), skin);
+  else armsByName.delete(untagged(name));
 }
 export function clearArms() {
   armsByName.clear();
@@ -90,7 +98,7 @@ export function playerColor(
   if (mine) return liegeSkin ? hexToRGB(liegeSkin.color) : [0.78, 0.1, 0.13];
   const t = (smallID * 0.61803398875) % 1;
   const hue = (28 + t * 300) / 360;
-  const v = (hash(name) % 1000) / 1000;
+  const v = (hash(untagged(name)) % 1000) / 1000;
   if (type === PlayerType.Bot) return hsl(hue, 0.24 + v * 0.16, 0.5 + v * 0.1);
   return hsl(hue, 0.6 + v * 0.22, 0.4 + v * 0.12);
 }
@@ -136,7 +144,8 @@ export function freeSkin(v: unknown): v is Skin {
 }
 
 /** A small shield as inline SVG: field in the realm's colour, a division and a charge. */
-export function shieldSVG(name: string, color: RGB, size = 18, skin?: Skin | null): string {
+export function shieldSVG(tagName: string, color: RGB, size = 18, skin?: Skin | null): string {
+  const name = untagged(tagName);
   const h = hash(name);
   // The local player's chosen arms replace the ones their name would give.
   const worn = skin ?? (liegeSkin && name === liegeName ? liegeSkin : (armsByName.get(name) ?? null));

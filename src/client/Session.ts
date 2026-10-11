@@ -45,6 +45,8 @@ export interface SessionOptions {
   spectate?: boolean;
   /** What the player wears (from their account). */
   cosmetic?: Cosmetic;
+  /** The tag of the player's clan, if they are in one. */
+  clanTag?: string | null;
 }
 
 /** Everything a Session needs, however the game was arranged. */
@@ -107,7 +109,7 @@ export async function soloSession(options: SessionOptions): Promise<Session> {
     },
     players: options.spectate
       ? []
-      : [{ clientID: SOLO_ID, username: options.name, clanTag: null }],
+      : [{ clientID: SOLO_ID, username: options.name, clanTag: options.clanTag ?? null }],
   };
   let session: Session;
   // Don't run ahead of a worker that is still chewing on earlier turns, and

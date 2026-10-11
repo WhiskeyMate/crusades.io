@@ -1,8 +1,13 @@
 {
-  "version": "0.1.116",
+  "version": "0.1.117",
   "builtAt": "2026-10-11",
-  "commits": 116,
+  "commits": 117,
   "entries": [
+    {
+      "hash": "3a24bd2",
+      "date": "2026-10-11",
+      "subject": "The Stats tab is a chronicle in chapters with a seal and a treasury in bars; any signed-in house may fly a plain banner in muted colours"
+    },
     {
       "hash": "6dfe5c1",
       "date": "2026-10-11",

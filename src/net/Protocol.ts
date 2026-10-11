@@ -126,6 +126,8 @@ export interface WireCosmetic {
 export interface LobbyMember {
   clientID: string;
   name: string;
+  /** The tag of the clan they belong to, if any. */
+  tag?: string | null;
   connected: boolean;
 }
 

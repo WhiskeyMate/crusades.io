@@ -59,6 +59,8 @@ export const SIGN_IN: Provider[] = (() => {
 })();
 
 export interface AccountState {
+  /** The account's id. */
+  uid: string;
   /** What to call them: the name they go by where they signed in, or their email's first part. */
   name: string;
   /** How they signed in. */
@@ -90,6 +92,14 @@ class AccountService {
   onChange: () => void = () => {};
   private db: SupabaseClient | null = null;
 
+  /** True on a dev server pretending to be signed in: there is no database behind it. */
+  readonly preview = DEV_PREVIEW;
+
+  /** The database, for the parts of the site that keep their own tables (clans). Null until set up. */
+  database(): SupabaseClient | null {
+    return this.db;
+  }
+
   /** The arms to wear in game: for players allowed custom arms who chose some. */
   get skin(): Skin | null {
     const s = this.state;
@@ -111,6 +121,7 @@ class AccountService {
     if (DEV_PREVIEW) {
       const w = this.devWallet();
       this.state = {
+        uid: "preview",
         name: "Preview Player",
         provider: "preview",
         record: { ...noRecord(), ...(w.record ?? {}) },
@@ -177,6 +188,7 @@ class AccountService {
         };
       }
       this.state = {
+        uid: user.id,
         name: (called ?? (user.email ?? "").split("@")[0] ?? "").slice(0, 40) || "Player",
         provider: steam ? "steam" : String(user.app_metadata?.provider ?? "email"),
         record,

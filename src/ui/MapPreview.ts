@@ -86,6 +86,11 @@ function model(map: GameMapType): Promise<Model | null> {
   return m;
 }
 
+/** A map seen from straight above, one pixel a tile; null if it could not be read. */
+export async function flatMap(map: GameMapType): Promise<HTMLCanvasElement | null> {
+  return (await model(map))?.flat ?? null;
+}
+
 /** Paints the slab onto a canvas, turned by `turn` radians about its middle. */
 function draw(ctx: CanvasRenderingContext2D, m: Model, turn: number, w: number, h: number) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
