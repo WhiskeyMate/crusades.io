@@ -26,6 +26,9 @@ const SLOTS: Record<string, string | undefined> = {
   rail: unit(import.meta.env.VITE_AD_SLOT_RAIL, "6933794104"),
 };
 
+/** Why the side banners were, or were not, asked for: for the ?slots readout. */
+let railNote = "not looked at yet";
+
 /** Every slot Google has been asked to fill, to tell afterwards whether it really answered. */
 const asked: HTMLElement[] = [];
 
@@ -132,14 +135,20 @@ function corner(local: boolean, tries = 0) {
 function rails(local: boolean, tries = 0) {
   const boxes = Array.from(document.querySelectorAll<HTMLElement>('[data-ad="rail"]'));
   const slot = SLOTS.rail;
-  if (boxes.length === 0 || !slot || adFree() || boxes[0].dataset.filled) return;
-  if (document.body.classList.contains("phone") || window.innerWidth < 1200 || window.innerHeight < 700) return;
+  if (boxes.length === 0 || !slot || boxes[0].dataset.filled) return;
+  if (adFree()) return void (railNote = "skipped: this account plays without advertisements");
+  if (document.body.classList.contains("phone") || window.innerWidth < 1200 || window.innerHeight < 700) {
+    return void (railNote = `skipped: the window is ${window.innerWidth} by ${window.innerHeight}, and they need 1200 by 700`);
+  }
   const google = (window as unknown as { adsbygoogle?: unknown[] & { loaded?: boolean } }).adsbygoogle;
   if (!local && !google?.loaded) {
     // Blocked, or slow to arrive: try a few times, then leave the page as it is.
+    railNote = `waiting for Google's script (try ${tries + 1} of 13)`;
     if (tries < 12) window.setTimeout(() => rails(local, tries + 1), 1000);
+    else railNote = "skipped: Google's script never loaded";
     return;
   }
+  railNote = "asked for";
   for (const box of boxes) {
     box.dataset.filled = "1";
     box.hidden = false;
@@ -203,8 +212,42 @@ function askForSupport(force = false) {
   };
 }
 
+/**
+ * ?slots on the address shows a readout of what each advertisement slot is
+ * doing, for finding out why one is not showing in a particular browser.
+ */
+function report() {
+  const box = document.createElement("div");
+  box.id = "slot-report";
+  box.style.cssText =
+    "position:fixed;left:50%;bottom:8px;transform:translateX(-50%);z-index:99;max-width:94vw;padding:8px 12px;" +
+    "background:#120c07;border:1px solid #dcb65a;border-radius:6px;color:#f2e6c9;font:12px/1.5 Consolas,monospace;white-space:pre";
+  document.body.appendChild(box);
+  const draw = () => {
+    const google = (window as unknown as { adsbygoogle?: { loaded?: boolean; push?: unknown } }).adsbygoogle;
+    const lines = [
+      `window ${window.innerWidth} by ${window.innerHeight}${document.body.classList.contains("phone") ? " (phone layout)" : ""}`,
+      `plays without advertisements: ${adFree() ? "yes" : "no"}${account.state ? " (signed in)" : " (signed out)"}`,
+      `Google's script: ${google === undefined ? "absent" : google.loaded ? "says it has loaded" : Array.isArray(google) ? "not loaded yet (requests are queued)" : "present, not loaded"}`,
+      `side banners: ${railNote}`,
+      `slots asked for: ${asked.length}`,
+      ...asked.map((ins, n) => {
+        const holder = ins.closest<HTMLElement>("[data-ad]");
+        const r = ins.getBoundingClientRect();
+        return `  ${n + 1}. ${holder?.dataset.ad ?? "?"} ${ins.style.width || "auto"} x ${ins.style.height || "auto"}: ` +
+          `answer "${ins.dataset.adStatus ?? "none yet"}", status "${ins.dataset.adsbygoogleStatus ?? "none"}", ` +
+          `${ins.querySelector("iframe") ? "has a frame" : "no frame"}, drawn ${Math.round(r.width)} by ${Math.round(r.height)}`;
+      }),
+    ];
+    box.textContent = lines.join("\n");
+  };
+  draw();
+  window.setInterval(draw, 1000);
+}
+
 export function initAds() {
   const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+  if (new URLSearchParams(location.search).has("slots")) report();
   // A moment's grace, so that someone signed in who has paid never sees it.
   window.setTimeout(() => {
     corner(local);
