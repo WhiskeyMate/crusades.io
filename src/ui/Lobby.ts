@@ -107,7 +107,11 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
         `${count} online${running > 0 ? ` · ${running} game${running === 1 ? "" : "s"} running` : ""}`;
       drawPublic();
     };
-    o.onLobby = (lobby) => showLobby(lobby);
+    o.onLobby = (lobby) => {
+      // In: whatever was being said about getting in no longer applies.
+      if (lobby) status("");
+      showLobby(lobby);
+    };
     o.onClose = () => {
       online = null;
       games = [];
@@ -364,8 +368,17 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
   const code = new URLSearchParams(location.search).get("join");
   if (code && /^[A-Z2-9]{6}$/i.test(code)) {
     history.replaceState(null, "", location.pathname);
-    el<HTMLInputElement>("online-code").value = code.toUpperCase();
-    status(`Invited to game ${code.toUpperCase()}. Check your house name, then Join.`);
+    const invited = code.toUpperCase();
+    // Straight into their lobby, under the house name already in the box
+    // (the one used last time, or the default). The code is left in the join
+    // box too, so that if the game cannot be joined (full, begun, gone) the
+    // reason shows beside it and another try is one press away.
+    el<HTMLInputElement>("online-code").value = invited;
+    status(`Joining game ${invited}…`);
+    void joinCode(invited).then(() => {
+      if (!online) status(`Game ${invited} could not be reached. Press Join to try again.`, true);
+    });
+    return { hostLobby };
   }
 
   void connect();
