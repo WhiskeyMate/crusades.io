@@ -1,8 +1,13 @@
 {
-  "version": "0.1.108",
+  "version": "0.1.109",
   "builtAt": "2026-10-11",
-  "commits": 108,
+  "commits": 109,
   "entries": [
+    {
+      "hash": "2f51c0b",
+      "date": "2026-10-11",
+      "subject": "Realm labels carry a dagger for an oathbreaker and a barred coin where trade is stopped; the realm card is laid out in blocks with betrayals, trading and pacts"
+    },
     {
       "hash": "ef27e3f",
       "date": "2026-10-11",

@@ -641,11 +641,14 @@ export class Hud {
           about: owner ? `What is known of ${owner.name}, and your dealings with them.` : "Nobody holds this.",
           act: () => void this.inform(tile, clientX, clientY),
         },
-        {
-          icon: ICON.hammer, label: "Build",
-          about: "Raise a building or cast sorcery on this spot.",
-          children: () => this.buildSlices(tile),
-        },
+        // Building is for your own ground only.
+        ...(owner === me
+          ? [{
+              icon: ICON.hammer, label: "Build",
+              about: "Raise a building on this spot.",
+              children: () => this.buildSlices(tile),
+            } satisfies Slice]
+          : []),
         {
           icon: ICON.ship, label: "Sail", sub: owner !== me && canSail(actions.buildableUnits) ? send : undefined,
           disabled: owner === me || !canSail(actions.buildableUnits),
