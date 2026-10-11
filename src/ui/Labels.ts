@@ -16,8 +16,27 @@ const PACT_SVG =
   `<circle cx="12" cy="10" r="7" stroke="#8fe08a"/><circle cx="22" cy="10" r="7" stroke="#f2d27a"/>` +
   `<path d="M15.6 4a7 7 0 0 1 0 12" stroke="#8fe08a"/></g></svg>`;
 
+/** A dagger: this realm lately broke a pact. */
+const OATH_SVG =
+  `<svg viewBox="0 0 20 20" aria-hidden="true"><g stroke-linejoin="round" stroke-linecap="round">` +
+  `<path d="M10 1.500l3 9.500h-6z" fill="#e9e3d6" stroke="#1b1410" stroke-width="1.600"/>` +
+  `<path d="M5 11h10v2.200H5z" fill="#c71a21" stroke="#1b1410" stroke-width="1.400"/>` +
+  `<path d="M8.700 13.200h2.600v4.300a1.300 1.300 0 0 1-2.600 0z" fill="#8a5a2b" stroke="#1b1410" stroke-width="1.400"/></g></svg>`;
+
+/** A barred coin: no trade passes between this realm and ours. */
+const TRADE_SVG =
+  `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.500" fill="#f2d27a" stroke="#1b1410" stroke-width="1.600"/>` +
+  `<path d="M4.700 15.300L15.300 4.700" stroke="#1b1410" stroke-width="4.400" stroke-linecap="round"/>` +
+  `<path d="M4.700 15.300L15.300 4.700" stroke="#e0762a" stroke-width="2.400" stroke-linecap="round"/></svg>`;
+
 interface Label {
   root: HTMLElement;
+  /** Shown above the name while this house is an oathbreaker. */
+  oath: HTMLElement;
+  oathShown: boolean;
+  /** Shown above the name while trade between this house and ours is stopped. */
+  trade: HTMLElement;
+  tradeLook: string;
   /** Shown above the name while we have a pact with this house. */
   pact: HTMLElement;
   pactShown: boolean;
@@ -54,9 +73,26 @@ export class Labels {
     pact.className = "label-pact";
     pact.innerHTML = PACT_SVG;
     pact.style.display = "none";
-    root.append(pact, name, troops);
+    const mark = (cls: string, svg: string) => {
+      const m = document.createElement("div");
+      m.className = `label-mark ${cls}`;
+      m.innerHTML = svg;
+      m.style.display = "none";
+      return m;
+    };
+    const oath = mark("oath", OATH_SVG);
+    oath.title = "Oathbreaker: lately broke a pact";
+    const trade = mark("trade", TRADE_SVG);
+    // The marks stand in a row above the name.
+    const marks = document.createElement("div");
+    marks.className = "label-marks";
+    marks.append(pact, oath, trade);
+    root.append(marks, name, troops);
     this.layer.appendChild(root);
-    return { root, pact, pactShown: false, pactLook: "", troops, shown: true, lastTroops: "", size: 0 };
+    return {
+      root, oath, oathShown: false, trade, tradeLook: "",
+      pact, pactShown: false, pactLook: "", troops, shown: true, lastTroops: "", size: 0,
+    };
   }
 
   update() {
@@ -142,6 +178,23 @@ export class Labels {
           l.pact.classList.toggle("renew", renew);
           l.pact.title = renew ? "Pact about to lapse: renew it" : "Pact in force";
         }
+      }
+      // An oathbreaker wears the dagger for as long as the realm remembers it.
+      if (p.isTraitor !== l.oathShown) {
+        l.oathShown = p.isTraitor;
+        l.oath.style.display = p.isTraitor ? "" : "none";
+      }
+      // No trade between us, whichever side stopped it.
+      const mine = me !== undefined && me !== null && p !== me && me.embargoes.has(p.id);
+      const theirs = me !== undefined && me !== null && p !== me && p.embargoes.has(me.id);
+      const tradeLook = mine && theirs ? "both" : mine ? "mine" : theirs ? "theirs" : "";
+      if (tradeLook !== l.tradeLook) {
+        l.tradeLook = tradeLook;
+        l.trade.style.display = tradeLook ? "" : "none";
+        l.trade.title =
+          tradeLook === "both" ? "No trade: stopped on both sides"
+          : tradeLook === "mine" ? "No trade: you have forbidden it"
+          : "No trade: they have stopped trading with you";
       }
       const t = fmtTroops(p.troops);
       if (t !== l.lastTroops) {

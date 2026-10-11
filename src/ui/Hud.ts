@@ -698,47 +698,59 @@ export class Hud {
     const actions = owner === me ? undefined : await this.session.actions(tile, [UnitType.TransportShip]);
     const it = actions?.interaction;
     const menu = el("menu-ctx");
-    const kind = owner === me ? "Your realm" : owner.type === PlayerType.Bot ? "Clan" : owner.type === PlayerType.Human ? "A rival lord" : "Kingdom";
+    const kind = owner === me ? "Your realm" : owner.type === PlayerType.Bot ? "Clan" : owner.type === PlayerType.Human ? "Rival lord" : "Kingdom";
     const share = ((owner.tilesOwned / state.map.numLandTiles()) * 100).toFixed(1);
-    const rows: [string, string][] = [
-      ["Levies", fmtTroops(owner.troops)],
-      ["Gold", fmt(owner.gold)],
-      ["Land", `${share}% of the realm`],
+    const sworn = owner !== me && me.allies.includes(owner.smallID);
+    const left = it?.allianceInfo ? Math.max(0, Math.round((it.allianceInfo.expiresAt - state.tick) / 10)) : 0;
+    const standing =
+      owner === me ? ""
+      : sworn ? `<div class="standing sworn">Sworn pact${left ? ` · ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")} left` : ""}</div>`
+      : me.outgoingAllianceRequests.includes(owner.id) ? `<div class="standing">Pact offered</div>`
+      : `<div class="standing">Neutral</div>`;
+    const byMe = owner !== me && me.embargoes.has(owner.id);
+    const byThem = owner !== me && owner.embargoes.has(me.id);
+    const rows: [string, string, string][] = [
+      ["Land", `${share}% of the realm`, ""],
+      ["Betrayals", String(owner.betrayals), owner.betrayals > 0 ? "bad" : ""],
     ];
     if (owner !== me) {
-      const sworn = me.allies.includes(owner.smallID);
-      const left = it?.allianceInfo ? Math.max(0, Math.round((it.allianceInfo.expiresAt - state.tick) / 10)) : 0;
       rows.push([
-        "Pact",
-        sworn ? `Sworn${left ? `, ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")} left` : ""}` : me.outgoingAllianceRequests.includes(owner.id) ? "Offered, not yet answered" : "None",
+        "Trading",
+        byMe && byThem ? "Stopped on both sides" : byMe ? "Stopped by you" : byThem ? "Stopped by them" : "Open",
+        byMe || byThem ? "warn" : "good",
       ]);
-      rows.push(["Trade", me.embargoes.has(owner.id) ? "Forbidden by you" : "Open"]);
-      if (me.targets.includes(owner.smallID)) rows.push(["Marked", "You have named them a common foe"]);
+      if (me.targets.includes(owner.smallID)) rows.push(["Marked", "Named a common foe", "bad"]);
     }
-    const items: { label: string; intent: Intent; tone?: string }[] = [];
+    const friends = owner.allies.map((id) => state.players.get(id)).filter((p): p is PlayerState => !!p && p.isAlive);
+    const items: { label: string; intent: Intent; tone?: string; wide?: boolean }[] = [];
     if (it) {
-      if (it.canSendAllianceRequest) items.push({ label: "Offer a pact", intent: { type: "allianceRequest", recipient: owner.id } });
-      if (it.allianceInfo?.canExtend) items.push({ label: "Renew our pact", intent: { type: "allianceExtension", recipient: owner.id } });
       if (it.canDonateTroops) items.push({ label: "Lend levies", intent: { type: "donate_troops", recipient: owner.id, troops: null } });
       if (it.canDonateGold) items.push({ label: "Send gold", intent: { type: "donate_gold", recipient: owner.id, gold: null } });
-      if (it.canTarget) items.push({ label: "Name them a common foe", intent: { type: "targetPlayer", target: owner.id } });
+      if (it.canTarget) items.push({ label: "Name a common foe", intent: { type: "targetPlayer", target: owner.id } });
       items.push(
         it.canEmbargo
-          ? { label: "Forbid trade with them", intent: { type: "embargo", targetID: owner.id, action: "start" } }
-          : { label: "Reopen trade with them", intent: { type: "embargo", targetID: owner.id, action: "stop" } },
+          ? { label: "Stop trading", tone: "warn", intent: { type: "embargo", targetID: owner.id, action: "start" } }
+          : { label: "Reopen trade", intent: { type: "embargo", targetID: owner.id, action: "stop" } },
       );
+      if (it.canSendAllianceRequest) items.push({ label: "Offer a pact", intent: { type: "allianceRequest", recipient: owner.id } });
+      if (it.allianceInfo?.canExtend) items.push({ label: "Renew our pact", intent: { type: "allianceExtension", recipient: owner.id } });
       if (it.canBreakAlliance) items.push({ label: "Break our pact", tone: "bad", intent: { type: "breakAlliance", recipient: owner.id } });
     }
+    menu.className = "panel card-realm";
     menu.innerHTML =
-      `<div class="head">${shieldSVG(owner.name, owner.color, 38, owner.arms)}<div><b>${esc(owner.name)}</b>` +
-      `<span>${kind}</span>${owner.isTraitor ? "<span class='bad'>Oathbreaker</span>" : ""}</div></div>` +
-      `<dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` +
-      items.map((x, i) => `<button class="${x.tone ?? ""}" data-i="${i}">${x.label}</button>`).join("") +
-      `<button data-show>Show on the map</button>`;
+      `<div class="head">${shieldSVG(owner.name, owner.color, 38, owner.arms)}<div><b>${esc(owner.name)}</b></div>` +
+      `<span class="chip">${kind}</span><button class="close" data-close aria-label="Close">✕</button></div>` +
+      (owner.isTraitor ? `<div class="standing bad">Oathbreaker</div>` : "") + standing +
+      `<div class="stats"><div><b>${fmt(owner.gold)}</b>Gold</div><div><b>${fmtTroops(owner.troops)}</b>Levies</div></div>` +
+      `<dl class="facts">${rows.map(([k, v, tone]) => `<dt>${k}</dt><dd class="${tone}">${esc(v)}</dd>`).join("")}</dl>` +
+      `<div class="pacts"><span>Pacts<i>${friends.length}</i></span><p>${friends.length ? friends.map((p) => esc(p.name)).join(", ") : "None"}</p></div>` +
+      `<div class="deeds">` +
+      items.map((x, n) => `<button class="${x.tone ?? ""}" data-i="${n}">${x.label}</button>`).join("") +
+      `<button class="${items.length % 2 === 0 ? "wide2" : ""}" data-show>Show on the map</button></div>`;
     for (const b of Array.from(menu.querySelectorAll<HTMLButtonElement>("button"))) {
       b.onclick = () => {
         if (b.dataset.show !== undefined) this.onFocus(state.map.ref(Math.round(owner.nameX), Math.round(owner.nameY)));
-        else this.session.send(items[Number(b.dataset.i)].intent);
+        else if (b.dataset.close === undefined) this.session.send(items[Number(b.dataset.i)].intent);
         menu.hidden = true;
       };
     }

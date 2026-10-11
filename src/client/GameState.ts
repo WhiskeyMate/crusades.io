@@ -48,6 +48,8 @@ export interface PlayerState {
   allies: number[];
   embargoes: Set<string>;
   isTraitor: boolean;
+  /** How many pacts this realm has broken in the game. */
+  betrayals: number;
   targets: number[];
   outgoingAttacks: AttackUpdate[];
   incomingAttacks: AttackUpdate[];
@@ -283,6 +285,7 @@ export class GameState {
         allies: [],
         embargoes: new Set(),
         isTraitor: false,
+        betrayals: 0,
         targets: [],
         outgoingAttacks: [],
         incomingAttacks: [],
@@ -321,6 +324,7 @@ export class GameState {
     if (pu.allies !== undefined) p.allies = pu.allies.slice();
     if (pu.embargoes !== undefined) p.embargoes = new Set(pu.embargoes);
     if (pu.isTraitor !== undefined) p.isTraitor = pu.isTraitor;
+    if (pu.betrayals !== undefined) p.betrayals = pu.betrayals;
     if (pu.targets !== undefined) p.targets = pu.targets.slice();
     if (pu.outgoingAttacks !== undefined) {
       p.outgoingAttacks = pu.outgoingAttacks.map((a) => ({ ...a }));

@@ -422,7 +422,10 @@ button.short { filter: saturate(0.45) brightness(0.85); }
 #store-confirm .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
 #store-confirm .row button { padding: 8px 16px; font-size: 15px; }
 #link-lost { position: fixed; left: 50%; top: 64px; transform: translateX(-50%); z-index: 6; padding: 9px 20px; font-size: 15px; color: #ffd0c4; border-color: #c0392b; background: rgba(60, 14, 10, 0.94); }
-.label-pact { line-height: 0; margin-bottom: 0.05em; transition: opacity 0.4s; }
+.label-marks { display: flex; justify-content: center; align-items: center; gap: 0.25em; margin-bottom: 0.05em; }
+.label-mark { line-height: 0; }
+.label-mark svg { width: 1.05em; height: 1.05em; filter: drop-shadow(0 1px 1px #000); }
+.label-pact { line-height: 0; transition: opacity 0.4s; }
 .label-pact svg { width: 1.75em; height: 1.05em; filter: drop-shadow(0 1px 1px #000); }
 .label-pact.renew { animation: pact-renew 0.9s ease-in-out infinite; }
 @keyframes pact-renew { 50% { transform: scale(1.25); filter: brightness(1.6); } }
@@ -682,3 +685,26 @@ body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top))
 #menu-ctx .facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 2px 4px 6px; font-size: 13px; }
 #menu-ctx .facts dt { color: var(--dim); }
 #menu-ctx .facts dd { margin: 0; text-align: right; }
+/* The card on a realm, laid out in blocks. */
+#menu-ctx.card-realm { width: 300px; padding: 12px; gap: 8px; }
+#menu-ctx.card-realm .head { border-bottom: 0; padding: 0; margin: 0; align-items: center; }
+#menu-ctx.card-realm .head b { font-size: 17px; }
+#menu-ctx .chip { margin-left: auto; align-self: flex-start; font-size: 11px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--edge); color: #d9ccae; background: #2a1f12; white-space: nowrap; }
+#menu-ctx .close { align-self: flex-start; padding: 0 6px; line-height: 20px; font-size: 12px; text-align: center; }
+#menu-ctx .standing { align-self: flex-start; font-size: 12px; padding: 2px 10px; border-radius: 10px; border: 1px solid var(--edge); color: #d9ccae; }
+#menu-ctx .standing.sworn { color: #b5ecae; border-color: #4f8a4a; }
+#menu-ctx .standing.bad { color: #ffb4a3; border-color: #a3423a; }
+#menu-ctx .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--edge); border-bottom: 1px solid var(--edge); }
+#menu-ctx .stats div { background: #241a0f; border-radius: 5px; padding: 6px 9px; font-size: 12px; color: var(--dim); }
+#menu-ctx .stats b { display: block; font-size: 16px; color: var(--ink); }
+#menu-ctx.card-realm .facts { margin: 0; }
+#menu-ctx .facts dd.good { color: #b5ecae; }
+#menu-ctx .facts dd.warn { color: #f0b46a; }
+#menu-ctx .facts dd.bad { color: #ffb4a3; }
+#menu-ctx .pacts { border-top: 1px solid var(--edge); padding-top: 7px; font-size: 13px; }
+#menu-ctx .pacts > span { display: flex; justify-content: space-between; color: var(--dim); margin-bottom: 4px; }
+#menu-ctx .pacts p { margin: 0; padding: 5px 9px; border-radius: 5px; background: #241a0f; color: #d9ccae; line-height: 1.45; }
+#menu-ctx .deeds { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid var(--edge); padding-top: 8px; }
+#menu-ctx .deeds button { text-align: center; padding: 7px 6px; font-size: 13px; }
+#menu-ctx .deeds button.wide2 { grid-column: 1 / -1; }
+#menu-ctx .deeds button.warn { color: #f0b46a; }
