@@ -788,51 +788,98 @@ body.phone .chapters { grid-template-columns: 1fr; }
 body.phone .chronicle .summary { flex-direction: column; align-items: flex-start; gap: 12px; }
 body.phone .bars li { grid-template-columns: 104px 1fr 56px; }
 /* The Clans window. */
-#clans { position: fixed; inset: 0; z-index: 12; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, rgba(20, 13, 8, 0.45), rgba(10, 6, 3, 0.82)); }
+#clans { position: fixed; inset: 0; z-index: 12; display: flex; align-items: center; justify-content: center; background: rgba(8, 5, 3, 0.8); }
 #clans[hidden] { display: none; }
+/* As tall as what it holds, and solid: the page behind must not show through the lists. */
+.sheet.store.clans { height: auto; min-height: min(520px, 92vh); max-height: min(860px, 92vh); background: linear-gradient(#22180e, #1a120a); }
+body.phone .sheet.store.clans { max-height: none; }
 #clans .store-head h2 { font-size: 24px; text-align: left; margin: 0; flex: 1; }
-#clans-note { margin: 0; padding: 8px 18px; border-bottom: 1px solid var(--edge); background: #2a1f12; color: #ffe3ae; font-size: 14px; }
+#clans-note { margin: 0; padding: 8px 20px; border-bottom: 1px solid var(--edge); border-left: 0; border-radius: 0; background: #2a1f12; color: #ffe3ae; font-size: 14px; }
 #clans-note.bad { color: #ffb4a3; }
-#clans-nav { display: flex; gap: 2px; padding: 0 14px; border-bottom: 1px solid var(--edge); background: #1d140b; }
-#clans-nav button { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 9px 16px; font-size: 15px; color: var(--dim); }
+#clans-nav { display: flex; gap: 4px; padding: 0 16px; border-bottom: 1px solid var(--edge); background: #1d140b; }
+#clans-nav button { background: none; border: 0; border-bottom: 2px solid transparent; border-radius: 0; padding: 11px 16px 9px; font-size: 15px; color: var(--dim); box-shadow: none; }
 #clans-nav button:hover { color: var(--ink); filter: none; }
 #clans-nav button.on { color: var(--gold); border-bottom-color: var(--gold); }
-#clans-body { flex: 1; min-height: 0; overflow: auto; padding: 16px 18px 20px; }
-#clans-body h3 { margin: 4px 0 8px; font-size: 16px; color: var(--gold); font-weight: normal; }
-#clans-body h3 span { font-size: 12px; color: var(--dim); margin-left: 6px; }
-.clan-map { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(250px, 1fr); gap: 16px; align-items: start; }
-canvas.world { display: block; width: 100%; height: auto; border: 1px solid var(--edge); border-radius: 6px; background: #0f1a26; cursor: crosshair; }
+#clans-body { flex: 1; min-height: 0; overflow: auto; padding: 20px; }
+#clans-body h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 10px; font-size: 13px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); font-weight: normal; }
+#clans-body h3 span { font-size: 12px; letter-spacing: 0; color: var(--dim); }
+#clans-body h3 button { margin-left: auto; text-transform: none; letter-spacing: 0; }
+#clans-body .empty { margin: 0; padding: 22px 16px; border: 1px dashed #4a3a22; border-radius: 6px; text-align: center; color: var(--dim); font-size: 14px; }
+
+/* The world on the left with its tally beneath, the clans of it on the right, as tall as the map. */
+.clan-map { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr); gap: 20px; align-items: stretch; }
+.clan-map .chart { position: relative; }
+.clan-map .chart .hint { position: absolute; left: 10px; top: 10px; margin: 0; padding: 4px 10px; border-radius: 3px; background: rgba(18, 12, 7, 0.78); color: #e6d8b6; font-size: 12.5px; pointer-events: none; }
+.clan-map aside { position: relative; min-height: 320px; }
+.clan-map aside .in { position: absolute; inset: 0; overflow: auto; padding-right: 4px; }
+canvas.world { display: block; width: 100%; height: auto; border: 1px solid var(--edge); border-radius: 6px; background: #17202a; cursor: crosshair; box-shadow: inset 0 0 0 1px #0d0906; }
 canvas.world.fixed { cursor: default; }
-.clan-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid #4a3a22; border-radius: 6px; background: #20170e; }
-.clan-row.slim { padding: 5px 10px; margin-bottom: 4px; }
+.clan-tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+.clan-tally div { padding: 9px 12px; border: 1px solid #3d2f1b; border-radius: 6px; background: #1d150c; font-size: 12px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--dim); }
+.clan-tally b { display: block; font-size: 24px; font-weight: normal; letter-spacing: 0; line-height: 1.1; color: var(--ink); }
+
+/* One clan: its tag, what it is, how many, and what you may do about it. */
+.clan-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 8px; border: 1px solid #3d2f1b; border-radius: 6px; background: #20170e; transition: border-color 0.12s, background 0.12s; }
+.clan-row:hover { border-color: #6b5230; background: #261b10; }
+.clan-row.own { border-color: #5d7a48; }
+.clan-row.slim { padding: 7px 12px; margin-bottom: 5px; }
 .clan-row .about { flex: 1; min-width: 0; }
-.clan-row .about b { font-size: 15px; font-weight: normal; color: var(--ink); }
-.clan-row .about p { margin: 1px 0 2px; font-size: 13px; color: #d9ccae; line-height: 1.3; }
-.clan-row .about small { display: block; font-size: 12px; color: var(--dim); }
-.clan-row button { white-space: nowrap; font-size: 13px; }
-.clan-row .yours { font-size: 12px; color: #b5ecae; white-space: nowrap; }
+.clan-row .about b { display: block; font-size: 16px; font-weight: normal; color: var(--ink); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clan-row .about p { margin: 1px 0 0; font-size: 13px; color: #c9bb9c; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.clan-row .about small { display: block; margin-top: 1px; font-size: 12px; color: var(--dim); }
+.clan-row .about .shut { display: inline-block; margin-left: 7px; padding: 0 6px; border: 1px solid #6b5230; border-radius: 9px; font-size: 11px; color: var(--dim); vertical-align: 2px; }
+.clan-row .count { flex: none; min-width: 46px; text-align: center; font-size: 10.5px; letter-spacing: 0.5px; text-transform: uppercase; color: var(--dim); line-height: 1.2; }
+.clan-row .count b { display: block; font-size: 18px; font-weight: normal; letter-spacing: 0; color: var(--ink); }
+.clan-row button { flex: none; white-space: nowrap; font-size: 13px; }
+.clan-row .act { flex: none; min-width: 88px; display: flex; justify-content: flex-end; }
+.clan-row .act button { min-width: 88px; }
+.clan-item { min-width: 0; }
+.clan-row .yours { font-size: 12.5px; color: #b5ecae; white-space: nowrap; }
+.clan-row .flag { min-width: 0; padding: 2px 6px; background: none; border-color: transparent; box-shadow: none; color: #7d6d52; font-size: 14px; opacity: 0.55; }
+.clan-row:hover .flag, .clan-row .flag:focus-visible { opacity: 1; }
+.clan-row .flag:hover { color: #ffb4a3; border-color: #a3423a; filter: none; }
 .clan-tag { display: inline-block; min-width: 46px; text-align: center; padding: 2px 6px; border: 1px solid var(--gold); border-radius: 3px; background: #3a2a12; color: var(--gold); font-size: 12.5px; letter-spacing: 1px; }
+.clan-row > .clan-tag { flex: none; width: 62px; padding: 5px 0; font-size: 13px; }
 .clan-tag.big { font-size: 22px; padding: 6px 12px; min-width: 0; }
 #lobby-members .clan-tag { min-width: 0; padding: 0 5px; font-size: 11px; }
-.clan-browse { max-width: 760px; }
-.clan-browse input { width: 100%; }
-.clan-mine { max-width: 980px; }
-.clan-mine .banner { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
-.clan-mine .banner div { flex: 1; }
+
+/* Every clan, two abreast, under a search. */
+.clan-browse .bar { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.clan-browse .bar input { flex: 1; max-width: 420px; margin: 0; }
+.clan-browse .bar span { color: var(--dim); font-size: 13px; }
+.clan-browse .list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; align-items: start; }
+.clan-browse .list > .empty { grid-column: 1 / -1; }
+
+/* Your own clan, or the making of one. */
+.clan-mine { max-width: 980px; margin: 0 auto; }
+.clan-mine.step { max-width: 460px; padding: 22px 24px; border: 1px solid #3d2f1b; border-radius: 6px; background: #20170e; }
+.clan-mine.step p { margin: 0 0 12px; }
+.clan-mine .banner { display: flex; align-items: center; gap: 16px; padding: 14px 16px; margin-bottom: 14px; border: 1px solid #3d2f1b; border-radius: 6px; background: linear-gradient(90deg, #2a1e10, #20170e); }
+.clan-mine .banner div { flex: 1; min-width: 0; }
 .clan-mine .banner b { display: block; font-size: 26px; font-weight: normal; color: var(--gold); line-height: 1.15; }
 .clan-mine .banner small { color: var(--dim); font-size: 13px; }
+.clan-mine .banner p { margin: 4px 0 0; color: #c9bb9c; }
 .clan-mine button.bad { color: #ffb4a3; border-color: #a3423a; }
-.clan-mine .found { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px; align-items: start; margin-top: 10px; }
+.clan-mine .found { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 24px; align-items: start; margin-top: 16px; }
 .clan-mine .fields { display: flex; flex-direction: column; gap: 10px; }
-.clan-mine .fields label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-.clan-mine .fields label.check { flex-direction: row; align-items: center; gap: 8px; }
+.clan-mine .fields h3 { margin-top: 10px; }
+.clan-mine .fields h3:first-child { margin-top: 0; }
+.clan-mine .fields label { display: flex; flex-direction: column; gap: 4px; margin-top: 0; }
+.clan-mine .fields label .dim { text-transform: none; letter-spacing: 0; }
+.clan-mine .fields label.check { flex-direction: row; align-items: center; gap: 8px; margin-top: 2px; }
+.clan-mine .home .field-label { margin: 0 0 6px; }
 .clan-mine textarea { font: inherit; color: var(--ink); background: #120c07; border: 1px solid var(--edge); border-radius: 4px; padding: 6px 8px; resize: vertical; }
-body.phone .clan-map, body.phone .clan-mine .found { grid-template-columns: 1fr; }
+.clan-mine .plays { margin: 0 0 14px; }
+body.phone .clan-map, body.phone .clan-mine .found, body.phone .clan-browse .list { grid-template-columns: 1fr; }
+body.phone .clan-map aside { min-height: 0; }
+body.phone .clan-map aside .in { position: static; }
 body.phone #clans-nav button { padding: 9px 10px; font-size: 14px; }
+body.phone #clans-body { padding: 14px; }
+body.phone .clan-row .count { display: none; }
 /* Reporting a clan. */
 button.link { background: none; border: 0; padding: 0; font-size: inherit; color: var(--dim); text-decoration: underline dotted; }
 button.link:hover { color: #ffb4a3; filter: none; }
-.clan-report { display: flex; flex-direction: column; gap: 6px; margin: -2px 0 8px; padding: 9px 11px; border: 1px solid #a3423a; border-radius: 6px; background: #261510; }
+.clan-report { display: flex; flex-direction: column; gap: 8px; margin: -3px 0 10px; padding: 9px 11px; border: 1px solid #a3423a; border-radius: 6px; background: #261510; }
 .clan-report b { font-size: 14px; font-weight: normal; color: #ffb4a3; }
 .clan-report select, .clan-report input { width: 100%; }
 /* The account name. */
