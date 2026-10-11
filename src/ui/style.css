@@ -647,6 +647,6 @@ body:has(#landing:not([hidden])) #ad-corner > div:nth-child(n + 2) { display: no
 #support-close { position: absolute; right: 6px; top: 6px; padding: 0 6px; line-height: 20px; font-size: 12px; }
 body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top)); left: 8px; }
 /* A realm conquered: its name and the gold taken, over the place it fell. */
-.conquest-mark { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 5px 14px 6px; border-radius: 6px; border: 1px solid #f2d27a; background: rgba(28, 20, 10, 0.88); box-shadow: 0 0 18px rgba(242, 210, 122, 0.55); white-space: nowrap; will-change: transform, opacity; }
-.conquest-mark b { font-size: 14px; color: #ffe9b0; font-weight: normal; letter-spacing: 0.3px; }
-.conquest-mark span { font-size: 21px; color: var(--gold); font-weight: bold; text-shadow: 0 1px 3px #000; }
+.conquest-mark { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px 10px 4px; border-radius: 5px; border: 1px solid #f2d27a; background: rgba(28, 20, 10, 0.88); box-shadow: 0 0 12px rgba(242, 210, 122, 0.55); white-space: nowrap; will-change: transform, opacity; }
+.conquest-mark b { font-size: 11.5px; color: #ffe9b0; font-weight: normal; letter-spacing: 0.3px; }
+.conquest-mark span { font-size: 16px; color: var(--gold); font-weight: bold; text-shadow: 0 1px 3px #000; }

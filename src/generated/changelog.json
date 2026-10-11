@@ -1,8 +1,13 @@
 {
-  "version": "0.1.105",
+  "version": "0.1.106",
   "builtAt": "2026-10-11",
-  "commits": 105,
+  "commits": 106,
   "entries": [
+    {
+      "hash": "0ba4416",
+      "date": "2026-10-11",
+      "subject": "The conquest banner fades sooner"
+    },
     {
       "hash": "7d35d85",
       "date": "2026-10-11",
