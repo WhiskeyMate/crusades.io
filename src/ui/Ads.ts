@@ -38,11 +38,19 @@ const asked: HTMLElement[] = [];
  * nothing for, or one a blocker has quietly swallowed, never shows as an
  * empty box.
  *
- * (A blocker may put a stand-in for Google's script on the page, one that
- * says it has loaded and accepts every request but does nothing. The only
- * sure sign of the real script is the answer it writes on the slot:
- * data-ad-status, "filled" or "unfilled".)
+ * (A blocker may put a stand-in for Google's script on the page. Brave's
+ * says it has loaded, accepts every request and even marks each slot
+ * "filled" with a frame inside it, but the slot is drawn with no size and
+ * the frame is empty. So "filled" is believed only when there is something
+ * of a size to see.)
  */
+function arrived(ins: HTMLElement): boolean {
+  if (ins.dataset.adStatus !== "filled") return false;
+  const frame = ins.querySelector("iframe");
+  return ins.getBoundingClientRect().height >= 30 && frame !== null && frame.getBoundingClientRect().height >= 30;
+}
+
+/** Asks for the slot in `holder`; see the note above on when it is shown. */
 function request(holder: HTMLElement) {
   const ins = holder.querySelector<HTMLElement>("ins.adsbygoogle");
   if (!ins) return;
@@ -55,9 +63,15 @@ function request(holder: HTMLElement) {
     console.warn("ad not shown", e);
   }
   let checks = 0;
+  let hollow = 0;
   const watch = window.setInterval(() => {
     const status = ins.dataset.adStatus;
-    if (status === "filled") holder.classList.remove("awaiting");
+    if (arrived(ins)) holder.classList.remove("awaiting");
+    // Marked filled, yet nothing there, three looks running: a blocker's stand-in.
+    else if (status === "filled" && ++hollow >= 3) {
+      ins.dataset.standIn = "1";
+      holder.hidden = true;
+    }
     // Nothing to show, or no answer in twenty seconds: the holder goes.
     else if (status === "unfilled" || ++checks > 40) holder.hidden = true;
     else return;
@@ -192,7 +206,8 @@ const NOTE_PUT_OFF = "crusades.support.later";
 function askForSupport(force = false) {
   const google = (window as unknown as { adsbygoogle?: { loaded?: boolean } }).adsbygoogle;
   const silent = asked.length > 0 && !asked.some((ins) => ins.dataset.adStatus);
-  const blocked = !google?.loaded || silent;
+  const standIn = asked.some((ins) => ins.dataset.standIn);
+  const blocked = !google?.loaded || silent || standIn;
   if (!force && (!blocked || adFree())) return;
   try {
     if (!force && Date.now() < Number(localStorage.getItem(NOTE_PUT_OFF) ?? 0)) return;
@@ -236,7 +251,8 @@ function report() {
         const r = ins.getBoundingClientRect();
         return `  ${n + 1}. ${holder?.dataset.ad ?? "?"} ${ins.style.width || "auto"} x ${ins.style.height || "auto"}: ` +
           `answer "${ins.dataset.adStatus ?? "none yet"}", status "${ins.dataset.adsbygoogleStatus ?? "none"}", ` +
-          `${ins.querySelector("iframe") ? "has a frame" : "no frame"}, drawn ${Math.round(r.width)} by ${Math.round(r.height)}`;
+          `${ins.querySelector("iframe") ? "has a frame" : "no frame"}, drawn ${Math.round(r.width)} by ${Math.round(r.height)}` +
+          `${ins.dataset.standIn ? " -> a blocker's stand-in, hidden" : arrived(ins) ? " -> shown" : ""}`;
       }),
     ];
     box.textContent = lines.join("\n");
