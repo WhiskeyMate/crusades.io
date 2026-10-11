@@ -1,8 +1,13 @@
 {
-  "version": "0.1.104",
+  "version": "0.1.105",
   "builtAt": "2026-10-11",
-  "commits": 104,
+  "commits": 105,
   "entries": [
+    {
+      "hash": "7d35d85",
+      "date": "2026-10-11",
+      "subject": "The house name is remembered between visits"
+    },
     {
       "hash": "167873b",
       "date": "2026-10-11",

@@ -7,7 +7,7 @@ import { Stage } from "../render/Stage";
 import { Terrain } from "../render/Terrain";
 
 /** How long each stays, in seconds. */
-const LASTS = 6;
+const LASTS = 4;
 
 interface Mark {
   root: HTMLElement;
@@ -61,7 +61,7 @@ export class ConquestMarks {
       // Up from the ground as it ages; in with a swell, out with a fade.
       const sy = Math.round((-this.v.y * 0.5 + 0.5) * h - 30 - age * 14);
       const swell = age < 0.35 ? 0.6 + (age / 0.35) * 0.5 : age < 0.6 ? 1.1 - ((age - 0.35) / 0.25) * 0.1 : 1;
-      m.root.style.opacity = String(age > LASTS - 1.5 ? Math.max(0, (LASTS - age) / 1.5) : 1);
+      m.root.style.opacity = String(age > LASTS - 1 ? Math.max(0, LASTS - age) : 1);
       m.root.style.transform = `translate(${sx}px, ${sy}px) translate(-50%, -100%) scale(${swell.toFixed(3)})`;
     }
   }
