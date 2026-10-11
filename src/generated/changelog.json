@@ -1,23 +1,8 @@
 {
-  "version": "0.1.128",
+  "version": "0.1.129",
   "builtAt": "2026-10-11",
-  "commits": 128,
+  "commits": 129,
   "entries": [
-    {
-      "hash": "6a273e6",
-      "date": "2026-10-11",
-      "subject": "?slots shows a readout of what each advertisement slot is doing"
-    },
-    {
-      "hash": "fe37cb8",
-      "date": "2026-10-11",
-      "subject": "Advertisement holders show only once an advertisement has arrived; the side banners sit against the edges of the window"
-    },
-    {
-      "hash": "e7d3910",
-      "date": "2026-10-11",
-      "subject": "The landing page has a tall banner either side of its column; the corner stack is for games only"
-    },
     {
       "hash": "24e1f2c",
       "date": "2026-10-11",
@@ -139,16 +124,6 @@
       "subject": "House rules can be set for a solo game too"
     },
     {
-      "hash": "6f0ceae",
-      "date": "2026-10-10",
-      "subject": "A small note asks players whose browser blocks the advertising to turn the blocker off"
-    },
-    {
-      "hash": "c7fcfbf",
-      "date": "2026-10-10",
-      "subject": "Ad blockers no longer blank the page: the class that moves the page over for the banners had a name their lists hide, and sat on the whole page"
-    },
-    {
       "hash": "1274e00",
       "date": "2026-10-10",
       "subject": "Map pictures are painted without WebGL, so the landing page holds one graphics context, not two; a visit that died while drawing the backdrop leaves it off next time and is reported"
@@ -182,31 +157,6 @@
       "hash": "916017a",
       "date": "2026-10-10",
       "subject": "The landing page no longer carries the line about the realm behind it"
-    },
-    {
-      "hash": "efc0502",
-      "date": "2026-10-10",
-      "subject": "The landing page shows one advertisement box in the corner and keeps clear of it; the stack is for games"
-    },
-    {
-      "hash": "7ecab89",
-      "date": "2026-10-10",
-      "subject": "On the landing page the banners stand in a rail down the left edge and the page moves over for them"
-    },
-    {
-      "hash": "5a43b97",
-      "date": "2026-10-10",
-      "subject": "Visitor statistics behind a measurement id, a warning when the browser draws without the graphics card, and the corner banners keep off the landing page"
-    },
-    {
-      "hash": "deac209",
-      "date": "2026-10-10",
-      "subject": "Three banners stacked in the bottom left corner; the end of a game offers three things from the store; buying anything removes all advertising"
-    },
-    {
-      "hash": "c42b619",
-      "date": "2026-10-10",
-      "subject": "A banner advertisement stays in the bottom left corner, in a game or out of one; buying a bundle removes all advertising"
     },
     {
       "hash": "fa4e772",

@@ -336,6 +336,7 @@ export class Hud {
       const unit = state.units.get(d.unitID);
       this.toast(d.message, "warn", unit?.targetTile ?? unit?.pos);
     }
+    this.watchPacts();
     for (const r of u[GameUpdateType.AllianceRequest]) {
       if (r.recipientID === my) this.offer(r.requestorID);
     }
@@ -412,6 +413,55 @@ export class Hud {
     track("game_end", { outcome: title });
     el("end-watch").onclick = () => (el("endgame").hidden = true);
     el("end-quit").onclick = () => this.onQuit();
+  }
+
+  /** The pacts already asked about, by pact and the turn it would lapse: asked once each time round. */
+  private renewAsked = new Set<string>();
+
+  /**
+   * A pact of ours is in its last half minute: ask whether to renew it. Both
+   * sides must say yes for it to run on, and it can only be said in that
+   * last stretch, so the question is put in front of the player then.
+   */
+  private watchPacts() {
+    const state = this.session.state;
+    const me = state.me;
+    if (!me || !me.isAlive) return;
+    const window_ = state.config.allianceExtensionPromptOffset();
+    for (const a of me.alliances) {
+      const left = a.expiresAt - state.tick;
+      if (left > window_ || left <= 0) continue;
+      const key = `${a.id}:${a.expiresAt}`;
+      if (this.renewAsked.has(key)) continue;
+      this.renewAsked.add(key);
+      const other = state.playersByID.get(a.other);
+      if (!other || !other.isAlive) continue;
+      const box = document.createElement("div");
+      box.className = "offer renew";
+      box.innerHTML =
+        `<div>${shieldSVG(other.name, other.color, 22, other.arms)} Your pact with <b>${esc(other.name)}</b> lapses in <b class="left"></b>.` +
+        `${a.hasExtensionRequest ? " They wish to renew it." : ""}</div>` +
+        `<div class="row"><button class="yes">Renew the pact</button><button class="no">Let it lapse</button></div>`;
+      const close = () => {
+        window.clearInterval(count);
+        box.remove();
+      };
+      const show = () => {
+        const s = Math.max(0, Math.ceil((a.expiresAt - this.session.state.tick) / 10));
+        (box.querySelector(".left") as HTMLElement).textContent = `${s}s`;
+        // Lapsed, renewed by both, or broken: nothing left to ask.
+        const now = this.session.state.me?.alliances.find((x) => x.id === a.id);
+        if (s <= 0 || !now || now.expiresAt !== a.expiresAt) close();
+      };
+      const count = window.setInterval(show, 500);
+      show();
+      (box.querySelector(".yes") as HTMLElement).onclick = () => {
+        this.session.send({ type: "allianceExtension", recipient: other.id });
+        box.innerHTML = `<div>${shieldSVG(other.name, other.color, 22, other.arms)} You have offered to renew your pact with <b>${esc(other.name)}</b>. It runs on if they agree before it lapses. <b class="left" hidden></b></div>`;
+      };
+      (box.querySelector(".no") as HTMLElement).onclick = close;
+      el("offers").appendChild(box);
+    }
   }
 
   private offer(requestorID: number) {
