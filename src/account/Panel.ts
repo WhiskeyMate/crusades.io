@@ -171,7 +171,10 @@ function drawAccount(): string {
     stat(`${all.bestLand.toFixed(1)}%`, "Most land held") +
     stat(hours >= 10 ? Math.round(hours).toString() : hours.toFixed(1), "Hours on campaign") +
     `</div>` +
-    `<p class="dim small">Signed in as ${esc(s.name)} through ${PROVIDER_NAMES[s.provider] ?? esc(s.provider)}${s.email ? ` (${esc(s.email)})` : ""}. ` +
+    `<div class="handle"><label>Account name <span class="dim">(who you are on the site and on a clan's roll; apart from your house name)</span>` +
+    `<span class="inline"><input id="acct-handle" maxlength="20" placeholder="Choose a name" value="${esc(s.handle ?? "")}" /><button id="acct-handle-save" class="primary">${s.handle ? "Change" : "Save"}</button></span></label>` +
+    `<p class="dim small">${s.handle ? "It can be changed once in thirty days." : "Needed to found or join a clan. Your house name in games stays whatever you type on the front page."}</p></div>` +
+    `<p class="dim small">Signed in as ${esc(s.handle ?? s.name)} through ${PROVIDER_NAMES[s.provider] ?? esc(s.provider)}${s.email ? ` (${esc(s.email)})` : ""}. ` +
     `Your record is kept with your account and follows you to any device. Renown comes from playing: most from games against other lords, more for winning them. Sandbox games do not count.</p>` +
     `<div><button data-go="stats">See all your stats</button> <button data-go="custom">Customisation</button></div>` +
     `</div>`
@@ -487,7 +490,7 @@ function openLabel(): string {
   const shield = shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT);
   return STORE_OPEN
     ? `${shield} ${s.crowns.toLocaleString("en-US")} ♛ · Store`
-    : `${shield} ${esc(s.username ?? s.name)} · ${standing(s.record).title}`;
+    : `${shield} ${esc(s.handle ?? s.username ?? s.name)} · ${standing(s.record).title}`;
 }
 
 const PROVIDER_BUTTONS: Record<Exclude<Provider, "email">, string> = {
@@ -529,7 +532,7 @@ function draw() {
   el("acct-in").hidden = s === null;
   el("account").querySelector(".store")!.classList.toggle("signed-out", s === null);
   if (!s) return;
-  el("acct-email").textContent = s.username ?? s.name;
+  el("acct-email").textContent = s.handle ?? s.username ?? s.name;
   el("acct-crowns").innerHTML = `${s.crowns.toLocaleString("en-US")} ♛`;
   el("store-nav").innerHTML = TABS.map(
     (t) => `<button class="${t.id === tab ? "on" : ""}${t.id === "crowns" ? " get" : ""}" data-tab="${t.id}"><i>${t.icon}</i>${t.label}</button>`,
@@ -560,6 +563,11 @@ function draw() {
   };
   on("button[data-go]", (b) => { tab = b.dataset.go as Tab; filter = "all"; draw(); });
   on("button[data-filter]", (b) => { filter = b.dataset.filter as typeof filter; draw(); });
+  on("#acct-handle-save", async () => {
+    const err = await account.setHandle(el<HTMLInputElement>("acct-handle").value);
+    say(err ?? "Your account name is set.", Boolean(err));
+    if (!err) draw();
+  });
   on("button[data-stats]", (b) => { statsMode = b.dataset.stats as typeof statsMode; draw(); });
   on("button[data-pack]", async (b) => {
     say("Taking you to the payment page…");

@@ -138,6 +138,12 @@ function spot(canvas: HTMLCanvasElement, e: MouseEvent): { x: number; y: number 
   return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) };
 }
 
+/** A first guess at an account name: what they are called where they signed in, unless that is an email's first part or a real name. */
+function suggestion(): string {
+  const s = account.state;
+  return s && (s.provider === "discord" || s.provider === "steam") ? s.name.replace(/[^A-Za-z0-9À-ÖØ-öø-ÿ _.-]/g, "").slice(0, 20) : "";
+}
+
 /** How long ago, in words. */
 function since(iso: string): string {
   const days = Math.floor((Date.now() - Date.parse(iso)) / 86_400_000);
@@ -155,7 +161,7 @@ function joinButton(c: Clan): string {
 function row(c: Clan): string {
   const own = mine?.clan.id === c.id;
   return (
-    `<div class="clan-row"><span class="tag">${esc(c.tag)}</span>` +
+    `<div class="clan-row"><span class="clan-tag">${esc(c.tag)}</span>` +
     `<div class="about"><b>${esc(c.name)}</b>${c.blurb ? `<p>${esc(c.blurb)}</p>` : ""}` +
     `<small>${c.members} member${c.members === 1 ? "" : "s"} · ${c.open ? "open to all" : "joins by approval"}` +
     `${own || reporting === c.id ? "" : ` · <button class="link" data-report="${c.id}">Report</button>`}</small></div>` +
@@ -202,6 +208,14 @@ function drawMine(): string {
   if (!account.state) {
     return `<div class="clan-mine"><p class="sub">Sign in to found a clan or join one. Looking is free.</p><button class="primary" data-signin>Sign in</button></div>`;
   }
+  if (!account.state.handle) {
+    return (
+      `<div class="clan-mine"><h3>First, your account name</h3>` +
+      `<p class="dim small">A clan knows its members by account name, not by the house name they happen to be playing under. Choose yours once; it can be changed once in thirty days. Your house name in games stays whatever you like.</p>` +
+      `<div class="fields narrow"><label>Account name<input id="clan-handle" maxlength="20" placeholder="3 to 20 letters, digits and spaces" value="${esc(suggestion())}" /></label>` +
+      `<button id="clan-handle-save" class="primary wide">Save my account name</button></div></div>`
+    );
+  }
   if (!mine) {
     return (
       `<div class="clan-mine"><h3>Found a clan</h3>` +
@@ -219,21 +233,21 @@ function drawMine(): string {
   const c = mine.clan;
   const me = account.state.uid;
   return (
-    `<div class="clan-mine"><div class="banner"><span class="tag big">${esc(c.tag)}</span><div><b>${esc(c.name)}</b>` +
+    `<div class="clan-mine"><div class="banner"><span class="clan-tag big">${esc(c.tag)}</span><div><b>${esc(c.name)}</b>` +
     `<small>${c.members} member${c.members === 1 ? "" : "s"} · ${c.open ? "open to all" : "joins by approval"}${mine.founder ? " · you are its founder" : ""}</small></div>` +
     `<button id="clan-leave" class="${leaving ? "bad" : ""}">${leaving ? (mine.founder && mine.roll.length === 1 ? "Really leave? The clan will be dissolved" : "Really leave?") : "Leave the clan"}</button></div>` +
     (c.blurb ? `<p class="sub">${esc(c.blurb)}</p>` : "") +
     `<p class="dim small">In games you play as <b>[${esc(c.tag)}] ${esc(displayName())}</b>.</p>` +
     (mine.founder && mine.asks.length
       ? `<h3>Asking to join <span>${mine.asks.length}</span></h3>` +
-        mine.asks.map((a) => `<div class="clan-row"><div class="about"><b>${esc(a.name)}</b></div><button class="primary" data-accept="${a.id}">Accept</button><button data-decline="${a.id}">Decline</button></div>`).join("")
+        mine.asks.map((a) => `<div class="clan-row"><div class="about"><b>${esc(a.handle)}</b><small>plays as ${esc(a.name)}</small></div><button class="primary" data-accept="${a.id}">Accept</button><button data-decline="${a.id}">Decline</button></div>`).join("")
       : "") +
     `<div class="found"><div class="fields"><h3>The roll <span>${mine.roll.length}</span></h3>` +
-    `<p class="dim small">Each line is one account, shown under the house name it last played as. Changing house name does not make a new member.</p>` +
+    `<p class="dim small">Each line is one account, under its account name, with the house name it last played as beneath. House names change; the account does not.</p>` +
     mine.roll
       .map((m) => {
-        const notes = [m.founder ? "founder" : "", m.joinedAs ? `joined as ${esc(m.joinedAs)}` : "", m.seen ? `last played ${since(m.seen)}` : ""].filter(Boolean).join(" · ");
-        return `<div class="clan-row slim"><div class="about"><b>${esc(m.name)}</b>${notes ? `<small>${notes}</small>` : ""}</div>${mine!.founder && m.id !== me ? `<button data-remove="${m.id}">Remove</button>` : ""}</div>`;
+        const notes = [m.founder ? "founder" : "", `plays as ${esc(m.name)}`, m.seen ? `last played ${since(m.seen)}` : ""].filter(Boolean).join(" · ");
+        return `<div class="clan-row slim"><div class="about"><b>${esc(m.handle)}</b><small>${notes}</small></div>${mine!.founder && m.id !== me ? `<button data-remove="${m.id}">Remove</button>` : ""}</div>`;
       })
       .join("") +
     (mine.founder
@@ -280,6 +294,11 @@ function draw() {
   on("button[data-join]", async (b) => {
     const c = list.find((x) => x.id === b.dataset.join);
     if (!c) return;
+    if (!account.state?.handle) {
+      tab = "mine";
+      say("Choose an account name first, then join.");
+      return draw();
+    }
     const res = await clans.join(c, displayName());
     say(res.error ?? (res.did === "joined" ? `You have joined ${c.name}. Your tag is ${c.tag}.` : `You have asked to join ${c.name}. Its founder will answer.`), Boolean(res.error));
     if (res.did === "joined") tab = "mine";
@@ -308,6 +327,11 @@ function draw() {
   on("button[data-accept]", (b) => act(clans.answer(b.dataset.accept!, true), "Welcomed to the clan."));
   on("button[data-decline]", (b) => act(clans.answer(b.dataset.decline!, false), "Declined."));
   on("button[data-remove]", (b) => act(clans.remove(b.dataset.remove!), "Removed from the roll."));
+  on("#clan-handle-save", async () => {
+    const err = await account.setHandle(el<HTMLInputElement>("clan-handle").value);
+    say(err ?? "Your account name is set.", Boolean(err));
+    draw();
+  });
   on("#clan-leave", () => {
     if (!leaving) {
       leaving = true;

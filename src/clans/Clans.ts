@@ -34,6 +34,8 @@ export const REPORT_REASONS: [ReportReason, string][] = [
 export interface ClanMember {
   /** The account. A member is the account, whatever it is called. */
   id: string;
+  /** The account name its owner chose. */
+  handle: string;
   /** The house name they last played under. */
   name: string;
   /** The house name they had when they joined, if it was another. */
@@ -48,7 +50,7 @@ export interface Mine {
   founder: boolean;
   roll: ClanMember[];
   /** Asks to join, for the founder to answer. */
-  asks: { id: string; name: string }[];
+  asks: { id: string; handle: string; name: string }[];
 }
 
 type Row = { id: string; name: string; tag: string; blurb: string; open: boolean; pin_x: number; pin_y: number; members: number; founder: string };
@@ -63,8 +65,8 @@ const DEV_KEY = "crusades.dev.clans";
 interface DevStore {
   clans: Clan[];
   /** Who is in which clan: user id to clan id. */
-  rolls: Record<string, { clan: string; name: string }>;
-  asks: { clan: string; user: string; name: string }[];
+  rolls: Record<string, { clan: string; name: string; handle?: string }>;
+  asks: { clan: string; user: string; name: string; handle?: string }[];
 }
 
 function devLoad(): DevStore {
@@ -133,8 +135,8 @@ class ClanService {
       const clan = at && s.clans.find((c) => c.id === at.clan);
       this.myTag = clan ? clan.tag : null;
       if (!clan) return null;
-      const roll = Object.entries(s.rolls).filter(([, r]) => r.clan === clan.id).map(([id, r]) => ({ id, name: r.name, joinedAs: null, seen: null, founder: id === clan.founder }));
-      return { clan, founder: clan.founder === me, roll, asks: clan.founder === me ? s.asks.filter((a) => a.clan === clan.id).map((a) => ({ id: a.user, name: a.name })) : [] };
+      const roll = Object.entries(s.rolls).filter(([, r]) => r.clan === clan.id).map(([id, r]) => ({ id, handle: r.handle ?? r.name, name: r.name, joinedAs: null, seen: null, founder: id === clan.founder }));
+      return { clan, founder: clan.founder === me, roll, asks: clan.founder === me ? s.asks.filter((a) => a.clan === clan.id).map((a) => ({ id: a.user, handle: a.handle ?? a.name, name: a.name })) : [] };
     }
     if (!this.db) return null;
     const at = await this.db.from("clan_members").select("clan_id").eq("user_id", me).maybeSingle();
@@ -146,8 +148,8 @@ class ClanService {
     const id = at.data.clan_id as string;
     const [clan, roll, asks] = await Promise.all([
       this.db.from("clans").select(COLUMNS).eq("id", id).single(),
-      this.db.from("clan_members").select("user_id, name, role, joined_as, last_seen").eq("clan_id", id).order("joined_at"),
-      this.db.from("clan_requests").select("user_id, name").eq("clan_id", id).order("created_at"),
+      this.db.from("clan_members").select("user_id, handle, name, role, joined_as, last_seen").eq("clan_id", id).order("joined_at"),
+      this.db.from("clan_requests").select("user_id, handle, name").eq("clan_id", id).order("created_at"),
     ]);
     if (clan.error) throw new Error(why(clan.error));
     const c = fromRow(clan.data as Row);
@@ -157,13 +159,14 @@ class ClanService {
       founder: c.founder === me,
       roll: (roll.data ?? []).map((r) => ({
         id: r.user_id as string,
+        handle: ((r.handle as string | null) ?? (r.name as string)),
         name: r.name as string,
         joinedAs: r.joined_as && r.joined_as !== r.name ? (r.joined_as as string) : null,
         seen: (r.last_seen as string | null) ?? null,
         founder: r.role === "founder",
       })),
       // The database only shows asks to the founder.
-      asks: (asks.data ?? []).filter((r) => r.user_id !== me).map((r) => ({ id: r.user_id as string, name: r.name as string })),
+      asks: (asks.data ?? []).filter((r) => r.user_id !== me).map((r) => ({ id: r.user_id as string, handle: (r.handle as string | null) ?? (r.name as string), name: r.name as string })),
     };
   }
 
@@ -182,6 +185,7 @@ class ClanService {
     const me = account.state?.uid;
     if (!me) return "Sign in first.";
     if (account.preview) {
+      if (!account.state?.handle) return "Choose an account name first.";
       const s = devLoad();
       const name = c.name.trim().replace(/\s+/g, " ");
       const tag = c.tag.trim().toUpperCase();
@@ -191,7 +195,7 @@ class ClanService {
       if (s.clans.some((k) => k.tag === tag || k.name.toLowerCase() === name.toLowerCase())) return "That name or tag is already taken.";
       const id = `dev-${Date.now()}`;
       s.clans.push({ id, name, tag, blurb: c.blurb.slice(0, 200), open: c.open, x: c.x, y: c.y, members: 1, founder: me });
-      s.rolls[me] = { clan: id, name: display };
+      s.rolls[me] = { clan: id, name: display, handle: account.state.handle };
       devSave(s);
       return null;
     }
@@ -205,18 +209,20 @@ class ClanService {
     const me = account.state?.uid;
     if (!me) return { error: "Sign in first." };
     if (account.preview) {
+      const handle = account.state?.handle;
+      if (!handle) return { error: "Choose an account name first." };
       const s = devLoad();
       if (s.rolls[me]) return { error: "You are already in a clan. Leave it first." };
       const k = s.clans.find((x) => x.id === clan.id);
       if (!k) return { error: "No such clan." };
       if (k.open) {
-        s.rolls[me] = { clan: k.id, name: display };
+        s.rolls[me] = { clan: k.id, name: display, handle };
         k.members++;
         s.asks = s.asks.filter((a) => a.user !== me);
         devSave(s);
         return { did: "joined" };
       }
-      if (!s.asks.some((a) => a.clan === k.id && a.user === me)) s.asks.push({ clan: k.id, user: me, name: display });
+      if (!s.asks.some((a) => a.clan === k.id && a.user === me)) s.asks.push({ clan: k.id, user: me, name: display, handle });
       devSave(s);
       return { did: "asked" };
     }
@@ -272,7 +278,7 @@ class ClanService {
       s.asks = s.asks.filter((a) => a !== ask);
       const k = ask && s.clans.find((x) => x.id === ask.clan);
       if (ask && k && accept) {
-        s.rolls[who] = { clan: k.id, name: ask.name };
+        s.rolls[who] = { clan: k.id, name: ask.name, handle: ask.handle };
         k.members++;
       }
       devSave(s);

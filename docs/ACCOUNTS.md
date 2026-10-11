@@ -90,6 +90,17 @@ The figures are self-reported by the browser. The database bounds what it
 takes and accepts one game a minute per account, which is enough for a
 personal record but not for anything with a prize attached.
 
+## Account names
+
+Each account may choose an account name (Account tab, or the Clans window the
+first time it is needed). It is who the account is on the site: a clan's roll
+and its founder know members by it. It is apart from the house name typed on
+the front page, which may change from game to game. Account names are unique,
+3 to 20 characters, pass the same word filter as clan names, and can be changed
+once in thirty days (a first choice may be corrected once straight away). The
+name a sign-in service supplies is never shown to other players: for Google
+that is a real name, and for an emailed link it is part of the address.
+
 ## Clans
 
 Signed-in players can found or join a clan from the Clans button on the

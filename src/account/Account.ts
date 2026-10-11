@@ -63,6 +63,11 @@ export interface AccountState {
   uid: string;
   /** What to call them: the name they go by where they signed in, or their email's first part. */
   name: string;
+  /**
+   * The account name they chose, if they have: who they are on the site,
+   * apart from whatever house name they play under.
+   */
+  handle: string | null;
   /** How they signed in. */
   provider: string;
   /** Their record (see Record.ts). */
@@ -78,6 +83,7 @@ export interface AccountState {
 }
 
 interface DevWallet {
+  handle?: string | null;
   record?: PlayerRecord;
   crowns: number;
   username: string | null;
@@ -123,6 +129,7 @@ class AccountService {
       this.state = {
         uid: "preview",
         name: "Preview Player",
+        handle: w.handle ?? null,
         provider: "preview",
         record: { ...noRecord(), ...(w.record ?? {}) },
         email: "preview@localhost",
@@ -155,7 +162,7 @@ class AccountService {
 
   private saveDev() {
     const s = this.state!;
-    const w: DevWallet = { record: s.record, crowns: s.crowns, username: s.username, owned: [...s.owned], equipped: s.equipped, skin: s.skin };
+    const w: DevWallet = { handle: s.handle, record: s.record, crowns: s.crowns, username: s.username, owned: [...s.owned], equipped: s.equipped, skin: s.skin };
     localStorage.setItem(DEV_KEY, JSON.stringify(w));
   }
 
@@ -168,7 +175,7 @@ class AccountService {
       this.state = null;
     } else {
       const [profile, inv, skin, rec] = await Promise.all([
-        this.db.from("profiles").select("premium, crowns, username, equipped").eq("id", user.id).maybeSingle(),
+        this.db.from("profiles").select("premium, crowns, username, equipped, handle").eq("id", user.id).maybeSingle(),
         this.db.from("inventory").select("item_id").eq("user_id", user.id),
         this.db.from("skins").select("skin").eq("user_id", user.id).maybeSingle(),
         this.db.from("records").select("mode, played, wins, seconds, best_land, totals").eq("user_id", user.id),
@@ -190,6 +197,7 @@ class AccountService {
       this.state = {
         uid: user.id,
         name: (called ?? (user.email ?? "").split("@")[0] ?? "").slice(0, 40) || "Player",
+        handle: (profile.data?.handle as string | null | undefined) ?? null,
         provider: steam ? "steam" : String(user.app_metadata?.provider ?? "email"),
         record,
         // The address made up for a Steam account means nothing to the player.
@@ -233,6 +241,23 @@ class AccountService {
     }
     const { error } = await this.db.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin } });
     return error ? error.message : null;
+  }
+
+  /**
+   * Chooses, or changes, the account name. Resolves to an error message, or
+   * null if it was done. The database decides what is allowed and how often.
+   */
+  async setHandle(name: string): Promise<string | null> {
+    if (!this.state) return "Sign in first.";
+    const n = name.trim().replace(/\s+/g, " ");
+    if (DEV_PREVIEW) {
+      if (n.length < 3 || n.length > 20) return "An account name is 3 to 20 letters, digits and spaces.";
+      this.state.handle = n;
+      this.saveDev();
+      this.onChange();
+      return null;
+    }
+    return this.rpc("set_account_name", { name: n });
   }
 
   /**

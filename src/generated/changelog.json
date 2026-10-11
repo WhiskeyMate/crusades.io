@@ -1,8 +1,13 @@
 {
-  "version": "0.1.120",
+  "version": "0.1.121",
   "builtAt": "2026-10-11",
-  "commits": 120,
+  "commits": 121,
   "entries": [
+    {
+      "hash": "b95866b",
+      "date": "2026-10-11",
+      "subject": "Clan tags may be five characters; a clan's roll follows the house name each member plays under"
+    },
     {
       "hash": "35439a7",
       "date": "2026-10-11",

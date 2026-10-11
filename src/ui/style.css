@@ -817,9 +817,9 @@ canvas.world.fixed { cursor: default; }
 .clan-row .about small { display: block; font-size: 12px; color: var(--dim); }
 .clan-row button { white-space: nowrap; font-size: 13px; }
 .clan-row .yours { font-size: 12px; color: #b5ecae; white-space: nowrap; }
-.tag { display: inline-block; min-width: 46px; text-align: center; padding: 2px 6px; border: 1px solid var(--gold); border-radius: 3px; background: #3a2a12; color: var(--gold); font-size: 12.5px; letter-spacing: 1px; }
-.tag.big { font-size: 22px; padding: 6px 12px; min-width: 0; }
-#lobby-members .tag { min-width: 0; padding: 0 5px; font-size: 11px; }
+.clan-tag { display: inline-block; min-width: 46px; text-align: center; padding: 2px 6px; border: 1px solid var(--gold); border-radius: 3px; background: #3a2a12; color: var(--gold); font-size: 12.5px; letter-spacing: 1px; }
+.clan-tag.big { font-size: 22px; padding: 6px 12px; min-width: 0; }
+#lobby-members .clan-tag { min-width: 0; padding: 0 5px; font-size: 11px; }
 .clan-browse { max-width: 760px; }
 .clan-browse input { width: 100%; }
 .clan-mine { max-width: 980px; }
@@ -841,3 +841,9 @@ button.link:hover { color: #ffb4a3; filter: none; }
 .clan-report { display: flex; flex-direction: column; gap: 6px; margin: -2px 0 8px; padding: 9px 11px; border: 1px solid #a3423a; border-radius: 6px; background: #261510; }
 .clan-report b { font-size: 14px; font-weight: normal; color: #ffb4a3; }
 .clan-report select, .clan-report input { width: 100%; }
+/* The account name. */
+.record .handle label { display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+.record .handle .inline { display: flex; gap: 8px; max-width: 420px; }
+.record .handle .inline input { flex: 1; }
+.record .handle p { margin: 4px 0 0; }
+.clan-mine .fields.narrow { max-width: 420px; }

@@ -351,7 +351,8 @@ create table if not exists public.clan_members (
   name text not null default 'A lord',
   joined_at timestamptz not null default now()
 );
--- A member is an account, not a name: `name` is the house name they last
+-- A member is an account, not a name: `handle` is the account name its owner
+-- chose (see set_account_name), `name` is the house name they last
 -- played under (the game server keeps it current, see clan_seen), `joined_as`
 -- the one they had when they joined, and `last_seen` when they last connected
 -- to the game server. Changing house name changes nothing about who they are
@@ -473,6 +474,49 @@ end $$;
 revoke all on function public.report_clan(uuid, text, text) from public, anon;
 grant execute on function public.report_clan(uuid, text, text) to authenticated;
 
+-- The account name: what an account is called on the site, chosen by its
+-- owner. It is apart from the house name, which a player may change from one
+-- game to the next: the account name is who they are on a clan's roll and to
+-- its founder. Unique, filtered like clan names, and changed at most once in
+-- thirty days (the first choice may be corrected once straight away).
+alter table public.profiles add column if not exists handle text;
+alter table public.profiles add column if not exists handle_changed_at timestamptz;
+create unique index if not exists profiles_handle_once on public.profiles (lower(handle));
+alter table public.clan_members add column if not exists handle text;
+alter table public.clan_requests add column if not exists handle text;
+
+create or replace function public.set_account_name(name text)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  n text := btrim(regexp_replace(coalesce(name, ''), '\s+', ' ', 'g'));
+  old text;
+  changed timestamptz;
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  if char_length(n) < 3 or char_length(n) > 20 or n !~ '^[A-Za-z0-9À-ÖØ-öø-ÿ _.\-]+$' then
+    raise exception 'An account name is 3 to 20 letters, digits and spaces.';
+  end if;
+  if foul(n) then raise exception 'That account name is not allowed.'; end if;
+  select p.handle, p.handle_changed_at into old, changed from profiles p where p.id = uid;
+  if old is not null and old = n then return; end if;
+  if old is not null and changed is not null and now() - changed < interval '30 days' then
+    raise exception 'An account name can be changed once in thirty days. You can change yours again on %.', to_char(changed + interval '30 days', 'FMDD Mon YYYY');
+  end if;
+  begin
+    insert into profiles (id, handle) values (uid, n)
+    on conflict (id) do update set
+      handle = excluded.handle,
+      handle_changed_at = case when profiles.handle is null then null else now() end;
+  exception when unique_violation then
+    raise exception 'That account name is taken.';
+  end;
+  update clan_members set handle = n where user_id = uid;
+  update clan_requests set handle = n where user_id = uid;
+end $$;
+revoke all on function public.set_account_name(text) from public, anon;
+grant execute on function public.set_account_name(text) to authenticated;
+
 -- A name fit to show: the letters a house name may have, at most 24 of them,
 -- and no banned word.
 create or replace function public.clan_display(display text) returns text
@@ -488,8 +532,11 @@ declare
   n text := btrim(regexp_replace(coalesce(name, ''), '\s+', ' ', 'g'));
   t text := upper(btrim(coalesce(tag, '')));
   made uuid;
+  h text;
 begin
   if uid is null then raise exception 'Sign in first.'; end if;
+  select p.handle into h from profiles p where p.id = uid;
+  if h is null then raise exception 'Choose an account name first.'; end if;
   if exists (select 1 from clan_members m where m.user_id = uid) then raise exception 'You are already in a clan. Leave it first.'; end if;
   if char_length(n) < 3 or char_length(n) > 24 or n !~ '^[A-Za-z0-9À-ÖØ-öø-ÿ _.\-]+$' then
     raise exception 'A clan name is 3 to 24 letters, digits and spaces.';
@@ -505,7 +552,7 @@ begin
   exception when unique_violation then
     raise exception 'That name or tag is already taken.';
   end;
-  insert into clan_members (user_id, clan_id, role, name, joined_as) values (uid, made, 'founder', clan_display(display), clan_display(display));
+  insert into clan_members (user_id, clan_id, role, name, joined_as, handle) values (uid, made, 'founder', clan_display(display), clan_display(display), h);
   delete from clan_requests r where r.user_id = uid;
   return made;
 end $$;
@@ -517,20 +564,23 @@ returns text language plpgsql security definer set search_path = public as $$
 declare
   uid uuid := auth.uid();
   c clans%rowtype;
+  h text;
 begin
   if uid is null then raise exception 'Sign in first.'; end if;
+  select p.handle into h from profiles p where p.id = uid;
+  if h is null then raise exception 'Choose an account name first.'; end if;
   if exists (select 1 from clan_members m where m.user_id = uid) then raise exception 'You are already in a clan. Leave it first.'; end if;
   select * into c from clans where id = clan for update;
   if not found then raise exception 'No such clan.'; end if;
   if c.members >= 200 then raise exception 'That clan is full.'; end if;
   if c.open then
-    insert into clan_members (user_id, clan_id, role, name, joined_as) values (uid, c.id, 'member', clan_display(display), clan_display(display));
+    insert into clan_members (user_id, clan_id, role, name, joined_as, handle) values (uid, c.id, 'member', clan_display(display), clan_display(display), h);
     update clans set members = members + 1 where id = c.id;
     delete from clan_requests r where r.user_id = uid;
     return 'joined';
   end if;
   if (select count(*) from clan_requests r where r.user_id = uid) >= 5 then raise exception 'You have asked five clans already. Withdraw one first.'; end if;
-  insert into clan_requests (clan_id, user_id, name) values (c.id, uid, clan_display(display)) on conflict do nothing;
+  insert into clan_requests (clan_id, user_id, name, handle) values (c.id, uid, clan_display(display), h) on conflict do nothing;
   return 'asked';
 end $$;
 
@@ -576,7 +626,7 @@ begin
   if not accept then return; end if;
   if exists (select 1 from clan_members m where m.user_id = who) then raise exception 'They have joined another clan.'; end if;
   if c.members >= 200 then raise exception 'Your clan is full.'; end if;
-  insert into clan_members (user_id, clan_id, role, name, joined_as) values (who, c.id, 'member', asked.name, asked.name);
+  insert into clan_members (user_id, clan_id, role, name, joined_as, handle) values (who, c.id, 'member', asked.name, asked.name, asked.handle);
   update clans set members = members + 1 where id = c.id;
   delete from clan_requests r where r.user_id = who;
 end $$;
