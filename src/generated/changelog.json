@@ -1,8 +1,13 @@
 {
-  "version": "0.1.124",
+  "version": "0.1.125",
   "builtAt": "2026-10-11",
-  "commits": 124,
+  "commits": 125,
   "entries": [
+    {
+      "hash": "24e1f2c",
+      "date": "2026-10-11",
+      "subject": "A house can be renamed from inside the lobby while the lords are still gathering"
+    },
     {
       "hash": "bf2244c",
       "date": "2026-10-11",

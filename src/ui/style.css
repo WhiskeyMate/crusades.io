@@ -611,14 +611,8 @@ body.phone #notices { grid-template-columns: 1fr; width: auto; }
 #raids .raid svg.boat { width: 18px; height: 15px; flex: none; }
 /* The banner that stays in the bottom left corner. */
 #ad-corner { position: fixed; left: 12px; bottom: 12px; z-index: 40; display: flex; flex-direction: column; gap: 6px; }
-/* On the landing page only the first of the stack shows, and the page keeps
-   clear of it: the pitch sits higher, the rest moves over. */
-body:not(.with-banners):has(#landing:not([hidden])) #ad-corner { visibility: hidden; pointer-events: none; }
-body.with-banners .hero .pitch { margin-bottom: 230px; }
-@media (max-width: 1640px) {
-  body.with-banners #landing main, body.with-banners #landing > footer { padding-left: 274px; }
-}
-body:has(#landing:not([hidden])) #ad-corner > div:nth-child(n + 2) { display: none; }
+/* The corner is for games. The landing page has tall banners either side instead. */
+body:has(#landing:not([hidden])) #ad-corner { visibility: hidden; pointer-events: none; }
 #ad-corner > div { overflow: hidden; border-radius: 4px; background: rgba(24, 17, 11, 0.6); box-shadow: 0 0 0 1px var(--edge); }
 #ad-corner .mock { display: flex; align-items: center; justify-content: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
 /* The offer on the screen that ends a game. */
@@ -871,9 +865,6 @@ button.link:hover { color: #ffb4a3; filter: none; }
 .pitch { max-width: none; text-align: center; }
 .hero h1 { font-size: clamp(44px, 6.5vw, 76px); }
 .hero .tag { font-size: clamp(16px, 1.9vw, 21px); margin: 8px 0 0; }
-body.with-banners .hero .pitch { margin-bottom: 0; }
-/* The corner banner needs the left edge on a window too narrow to clear it. */
-@media (min-width: 1100px) and (max-width: 1320px) { body.with-banners .hero { padding-left: 286px; } }
 
 #hall { padding: 18px 20px 16px; gap: 14px; }
 #hall .house input { font-size: 19px; padding: 10px 12px; }
@@ -905,3 +896,11 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 .lobby-name[hidden] { display: none; }
 .lobby-name label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--dim); white-space: nowrap; }
 .lobby-name input { flex: 1; min-width: 0; margin: 0; }
+/* The landing page's tall banners: one in the middle of the empty ground
+   either side of the column. They sit in the first screen and scroll away with it. */
+.hero { position: relative; }
+.side-banner { position: absolute; top: 50%; width: 160px; height: 600px; margin-top: -300px; overflow: hidden; border-radius: 4px; background: rgba(24, 17, 11, 0.55); box-shadow: 0 0 0 1px var(--edge); }
+.side-banner[hidden] { display: none; }
+.side-banner.left { left: max(12px, calc((100% - 780px) / 4 - 80px)); }
+.side-banner.right { right: max(12px, calc((100% - 780px) / 4 - 80px)); }
+.side-banner.mock { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }

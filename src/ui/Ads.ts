@@ -1,7 +1,7 @@
-// Advertising: a banner on the landing page, one in the lobby while the lords
-// gather, one on the screen that ends a game, and a small one in the bottom
-// left corner that stays on screen throughout: one box on the landing page,
-// a stack of them in a game.
+// Advertising: on the landing page a tall banner either side of the middle
+// column and one further down the page; one in the lobby while the lords
+// gather; one on the screen that ends a game; and in a game a stack of them
+// in the bottom left corner.
 // Buying anything from the store takes them all away.
 //
 // Each place is a <div data-ad="name"> in index.html. It is filled the first
@@ -21,8 +21,9 @@ const SLOTS: Record<string, string | undefined> = {
   landing: unit(import.meta.env.VITE_AD_SLOT_LANDING, "6933794104"),
   lobby: unit(import.meta.env.VITE_AD_SLOT_LOBBY, "8692674897"),
   end: unit(import.meta.env.VITE_AD_SLOT_END, "9368385756"),
-  // Until the corner has an ad unit of its own it borrows the landing page's.
+  // Until the corner and the rails have ad units of their own they borrow the landing page's.
   corner: unit(import.meta.env.VITE_AD_SLOT_CORNER, "6933794104"),
+  rail: unit(import.meta.env.VITE_AD_SLOT_RAIL, "6933794104"),
 };
 
 /** Anyone who has bought anything at all plays without ads. */
@@ -54,12 +55,9 @@ function corner(local: boolean, tries = 0) {
   const tall = window.innerHeight, wide = window.innerWidth >= 1100;
   const stack = !wide ? [STRIP] : tall >= 880 ? [SQUARE, STRIP, SQUARE] : tall >= 700 ? [SQUARE, STRIP, STRIP] : [STRIP, STRIP, STRIP];
   const landing = document.getElementById("landing");
-  // A narrow window has no room beside the landing page's words, so there the
-  // strip waits for a game. A wide one makes room (see body.with-banners in
-  // style.css; the name avoids "ad", since ad blockers hide anything so named,
-  // and this class sits on the whole page).
-  if (!wide && landing && !landing.hidden) return void window.setTimeout(() => corner(local, tries), 1000);
-  document.body.classList.toggle("with-banners", wide);
+  // The landing page has banners of its own (see rails), so the corner waits
+  // for a game: nothing is fetched only to sit hidden.
+  if (landing && !landing.hidden) return void window.setTimeout(() => corner(local, tries), 1000);
   box.dataset.filled = "1";
   box.hidden = false;
   const win = window as unknown as { adsbygoogle?: unknown[] };
@@ -89,11 +87,52 @@ function corner(local: boolean, tries = 0) {
     // Bought something while they were showing: they go.
     if (adFree()) {
       box.remove();
-      document.body.classList.remove("with-banners");
       return window.clearInterval(watch);
     }
     if (box.children.length < stack.length && landing?.hidden) for (const size of stack.slice(1)) add(size);
   }, 1000);
+}
+
+/**
+ * The landing page's rails: a tall banner (160 by 600) in the empty ground
+ * either side of the middle column. Only where there is room for them: a
+ * window at least 1200 wide and 700 tall. They belong to the first screen and
+ * scroll away with it.
+ */
+function rails(local: boolean, tries = 0) {
+  const boxes = Array.from(document.querySelectorAll<HTMLElement>('[data-ad="rail"]'));
+  const slot = SLOTS.rail;
+  if (boxes.length === 0 || !slot || adFree() || boxes[0].dataset.filled) return;
+  if (document.body.classList.contains("phone") || window.innerWidth < 1200 || window.innerHeight < 700) return;
+  const google = (window as unknown as { adsbygoogle?: unknown[] & { loaded?: boolean } }).adsbygoogle;
+  if (!local && !google?.loaded) {
+    // Blocked, or slow to arrive: try a few times, then leave the page as it is.
+    if (tries < 12) window.setTimeout(() => rails(local, tries + 1), 1000);
+    return;
+  }
+  for (const box of boxes) {
+    box.dataset.filled = "1";
+    box.hidden = false;
+    if (local) {
+      // On a developer's machine, an outline where each banner will be.
+      box.classList.add("mock");
+      box.textContent = "Advertisement 160×600";
+      continue;
+    }
+    box.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins>`;
+    try {
+      const win = window as unknown as { adsbygoogle?: unknown[] };
+      (win.adsbygoogle = win.adsbygoogle || []).push({});
+    } catch (e) {
+      console.warn("ad not shown", e);
+    }
+  }
+  // Bought something while they were showing: they go.
+  const watch = window.setInterval(() => {
+    if (!adFree()) return;
+    for (const box of boxes) box.remove();
+    window.clearInterval(watch);
+  }, 5000);
 }
 
 function fill(box: HTMLElement) {
@@ -144,14 +183,17 @@ function askForSupport(force = false) {
 export function initAds() {
   const local = location.hostname === "localhost" || location.hostname === "127.0.0.1";
   // A moment's grace, so that someone signed in who has paid never sees it.
-  window.setTimeout(() => corner(local), 2500);
+  window.setTimeout(() => {
+    corner(local);
+    rails(local);
+  }, 2500);
   // Nothing else to show on a developer's own machine (?blocked shows the note, to look at it).
   if (local) {
     if (new URLSearchParams(location.search).has("blocked")) askForSupport(true);
     return;
   }
   window.setTimeout(() => askForSupport(), 8000);
-  const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-ad]")).filter((b) => b.dataset.ad !== "corner");
+  const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-ad]")).filter((b) => b.dataset.ad !== "corner" && b.dataset.ad !== "rail");
   if (boxes.length === 0 || !("IntersectionObserver" in window)) return;
   // A place is filled when it is first really on screen, which for the lobby
   // and the end screen is the moment their dialog opens.
