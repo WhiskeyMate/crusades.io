@@ -1,5 +1,7 @@
 // One running game: the session, the 3D stage and the HUD, wired together.
 
+import { onlineKind } from "./ui/Lobby";
+import { GameRecord } from "./account/Record";
 import { radialOpen } from "./ui/Radial";
 import { ConquestMarks } from "./ui/ConquestMarks";
 import { CursorKind, setCursor } from "./ui/Cursor";
@@ -42,6 +44,8 @@ export class Game {
   private groundNames: GroundNames;
   private raf = 0;
   private woods!: Woods;
+  /** What this game adds to a signed-in player's record. */
+  private record: GameRecord;
   /** The graphics level last taken up, as Quality numbers its changes. */
   private qualitySeen = 0;
   private slow = new SlowWatch();
@@ -77,6 +81,8 @@ export class Game {
     this.labels = new Labels(document.getElementById("labels")!, this.stage, this.terrain, state);
     this.attackLabels = new AttackLabels(document.getElementById("labels")!, this.session, this.stage, this.terrain, state);
     this.conquestMarks = new ConquestMarks(document.getElementById("labels")!, this.stage, this.terrain);
+    this.record = new GameRecord(this.session, onlineKind());
+    this.hud.onEnd = (won) => void this.record.finish(won, true);
 
     this.hud.onQuit = onQuit;
     this.hud.onCancel = () => this.choose([]);
@@ -126,6 +132,9 @@ export class Game {
     this.hud.dispose();
     this.attackLabels.dispose();
     this.conquestMarks.dispose();
+    // Leaving before the end is a game played and not won. The engine has
+    // stopped by now, so what is filed is its count as last heard.
+    void this.record.finish(false, false);
     document.getElementById("labels")!.innerHTML = "";
     this.stage.dispose();
   }
@@ -177,6 +186,7 @@ export class Game {
       if (Structures.has(u.type)) this.at(u, (p) => this.effects.puff(p, 3 * this.stage.unitScale, "dust"));
     }
     this.hud.onTick(d);
+    this.record.tick(d, state);
     const me = state.me;
     if (me) this.conquered(d, me.smallID);
     if (!this.centred && me?.spawnTile !== undefined && !state.inSpawnPhase) {

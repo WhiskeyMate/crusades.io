@@ -398,9 +398,13 @@ export class Hud {
     }
   }
 
+  /** Told when the game is over for this player: whether they won it. */
+  onEnd: (won: boolean) => void = () => {};
+
   private end(title: string, text: string) {
     if (this.ended) return;
     this.ended = true;
+    this.onEnd(title === "Victory");
     el("end-title").textContent = title;
     el("end-text").textContent = text;
     el("endgame").hidden = false;

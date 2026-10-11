@@ -23,6 +23,11 @@ export interface OnlineHooks {
 
 let online: Online | null = null;
 
+/** The kind of lobby the game being played came from, if it is one played with others. */
+export function onlineKind(): "public" | "private" | null {
+  return online?.lobby?.kind ?? null;
+}
+
 /** Notes a fault in the server's log, if this page is talking to the server. */
 export function reportFault(event: string, detail?: string) {
   // Crawlers and page testers run browsers with no graphics; their faults are not players' faults.

@@ -9,10 +9,12 @@ can go on running without it.
 
 ## Open or closed
 
-The store is **closed by default**. With it closed there is no sign-in or
-store button on the site and the checkout function refuses every request, so
-nothing can be bought. Nothing is deleted: accounts, Crowns and purchases
-stay in the database.
+The store is **closed by default**. With it closed nothing is for sale: the
+store's tabs are not shown and the checkout function refuses every request.
+Signing in is a separate matter and stays open (see [ACCOUNTS.md](ACCOUNTS.md)):
+a signed-in player still has their record and a Customisation tab for what
+they already own. Nothing is deleted: accounts, Crowns and purchases stay in
+the database.
 
 To open it, set both of these in Netlify (Site configuration > Environment
 variables) and trigger a redeploy:
@@ -20,14 +22,8 @@ variables) and trigger a redeploy:
     VITE_STORE_OPEN=on
     STORE_OPEN=on
 
-and add this line to `C:\crusades\server.env` on the game server, then
-re-run `server\install-windows.ps1`:
-
-    STORE_OPEN=on
-
-Without that line the game server ignores accounts altogether: no reserved
-names, no cosmetics. (While nobody can sign in, enforcing reserved names
-would only lock their owners out.)
+The game server does not need to know: it recognises signed-in players (their
+reserved names and cosmetics) whenever it has its Supabase settings.
 
 To close it again, remove them (or set anything other than `on`) and redeploy.
 

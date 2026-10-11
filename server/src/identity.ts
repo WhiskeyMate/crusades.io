@@ -10,12 +10,11 @@ const URL_ = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 /**
- * Off while the store is closed (STORE_OPEN is not "on"): nobody can sign in
- * then, so holding reserved names against them would only lock their owners
- * out of their own names.
+ * Whether the store is open. Signing in does not depend on it: accounts are
+ * checked whenever Supabase is set up.
  */
 export const storeOpen = process.env.STORE_OPEN?.toLowerCase() === "on";
-export const identityEnabled = Boolean(URL_ && KEY) && storeOpen;
+export const identityEnabled = Boolean(URL_ && KEY);
 
 export interface Cosmetic {
   equipped?: Record<string, string>;

@@ -322,7 +322,7 @@
     <div id="account" hidden>
       <div class="panel sheet store">
         <header class="store-head">
-          <h2>Store</h2>
+          <h2 id="acct-title">Store</h2>
           <div class="who">
             <span id="acct-email"></span>
             <span id="acct-crowns" class="purse"></span>
@@ -333,14 +333,16 @@
         <p id="acct-note" class="note" hidden></p>
 
         <div id="acct-out">
-          <p class="sub">The game is free. An account keeps your Crowns, your house name and what you wear.</p>
+          <p id="acct-pitch" class="sub">The game is free. An account keeps your record across devices.</p>
+          <div id="acct-providers" hidden></div>
+          <p id="acct-or" class="or" hidden>or</p>
           <form id="acct-form">
             <label>Email
               <input id="acct-mail" type="email" autocomplete="email" required placeholder="you@example.com" />
             </label>
             <button class="primary wide" type="submit">Email me a sign-in link</button>
           </form>
-          <p class="dim small">No password. We email you a link that signs you in. By signing in you agree to the <a href="/terms.html" target="_blank" rel="noopener">terms of service</a> and the <a href="/privacy.html" target="_blank" rel="noopener">privacy policy</a>.</p>
+          <p class="dim small"><span id="acct-email-note">No password. We email you a link that signs you in. </span>By signing in you agree to the <a href="/terms.html" target="_blank" rel="noopener">terms of service</a> and the <a href="/privacy.html" target="_blank" rel="noopener">privacy policy</a>.</p>
         </div>
 
         <div id="acct-in" hidden>

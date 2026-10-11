@@ -723,3 +723,58 @@ body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top))
 .slice-face { color: #fff3d6; }
 /* While the wheel is open the pointer is a plain arrow everywhere, the wheel included. */
 .wheel .slice, .wheel .hub { cursor: default; }
+/* Signing in. */
+#acct-providers { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+#acct-providers[hidden] { display: none; }
+#acct-providers button.provider { margin-top: 0; font-size: 15.5px; background: #241a0f; border-color: var(--edge); }
+#acct-providers button.discord { background: #4651c9; border-color: #7f89ee; color: #fff; }
+#acct-providers button.google { background: #f1efe6; border-color: #c9c2ad; color: #1b1410; }
+#acct-providers button.steam { background: #1b2838; border-color: #4f6a85; color: #e6eef5; }
+#acct-out .or { display: flex; align-items: center; gap: 12px; margin: 14px 0 4px; color: var(--dim); font-size: 13px; }
+#acct-out .or[hidden] { display: none; }
+#acct-out .or::before, #acct-out .or::after { content: ""; flex: 1; border-top: 1px solid var(--edge); }
+#acct-form[hidden] { display: none; }
+/* The record kept for a signed-in player. */
+.record { display: flex; flex-direction: column; gap: 16px; max-width: 760px; }
+.record .rank { display: flex; align-items: center; gap: 22px; padding: 16px 18px; border: 1px solid var(--gold); border-radius: 8px; background: radial-gradient(ellipse at 0% 0%, #3a2a12, #1d150c 70%); }
+.record .rank span { display: block; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+.record .rank b { font-size: 34px; color: var(--gold); font-weight: normal; line-height: 1.1; }
+.record .climb { flex: 1; min-width: 0; }
+.record .climb span { margin-top: 6px; text-transform: none; letter-spacing: 0; font-size: 13px; color: #d9ccae; }
+.record .bar { height: 10px; border-radius: 5px; background: #120c07; border: 1px solid var(--edge); overflow: hidden; }
+.record .bar i { display: block; height: 100%; background: linear-gradient(90deg, #a3762a, #f2d27a); }
+.record .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.record .stat { background: #20170e; border: 1px solid #4a3a22; border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; }
+.record .stat b { font-size: 26px; font-weight: normal; color: var(--ink); }
+.record .stat span { font-size: 13px; color: var(--dim); }
+.record .stat i { font-style: normal; font-size: 12px; color: var(--gold); margin-top: 2px; }
+body.phone .record .rank { flex-direction: column; align-items: stretch; gap: 10px; }
+/* The Stats tab. */
+.record.wide { max-width: 900px; gap: 10px; }
+.record .winrate { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 18px; border: 1px solid var(--edge); border-radius: 8px; background: #20170e; }
+.record .winrate span { display: block; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+.record .winrate b { font-size: 30px; font-weight: normal; color: #b5ecae; }
+.record .tally { display: flex; border: 1px solid var(--edge); border-radius: 6px; overflow: hidden; }
+.record .tally div { padding: 8px 18px; text-align: center; border-left: 1px solid var(--edge); }
+.record .tally div:first-child { border-left: 0; }
+.record .tally b { font-size: 20px; color: var(--ink); }
+.record .tally b.good { color: #b5ecae; }
+.record .tally b.bad { color: #ffb4a3; }
+.record h4 { margin: 8px 0 0; font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--dim); font-weight: normal; }
+.record .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.record .tile { --t: #6d5a3c; border: 1px solid var(--t); border-radius: 6px; padding: 8px 12px; background: color-mix(in srgb, var(--t) 12%, #1d150c); display: flex; flex-direction: column; }
+.record .tile.green { --t: #4f8a4a; }
+.record .tile.blue { --t: #3f7fb0; }
+.record .tile.red { --t: #a3423a; }
+.record .tile.gold { --t: #b08a2a; }
+.record .tile span { font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase; color: var(--dim); }
+.record .tile b { font-size: 22px; font-weight: normal; color: color-mix(in srgb, var(--t) 45%, #fff3d6); }
+.record .tile i { font-style: normal; font-size: 11px; color: var(--dim); }
+.record h3 { margin: 14px 0 0; font-size: 12px; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold); font-weight: normal; }
+.stat-table { width: 100%; border-collapse: collapse; font-size: 13.5px; border: 1px solid var(--edge); }
+.stat-table th { font-weight: normal; color: var(--dim); font-size: 12px; padding: 6px 10px; background: #241a0f; text-align: center; }
+.stat-table td { padding: 7px 10px; text-align: center; border-top: 1px solid #33271a; }
+.stat-table th:first-child, .stat-table td:first-child { text-align: left; }
+.stat-table tr:nth-child(even) td { background: rgba(255, 255, 255, 0.02); }
+body.phone .record .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.phone .record .winrate { flex-direction: column; align-items: stretch; }

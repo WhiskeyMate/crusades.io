@@ -2,6 +2,7 @@
 // turns feeding it (from a local clock or from the server) and the GameState
 // mirror the renderer reads.
 
+import type { PlayerStats } from "@crusades/engine-api/StatsSchemas";
 import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   BuildableUnit,
@@ -318,6 +319,13 @@ export class Session {
     if (!me) return [];
     const reply = await this.ask({ type: "attack_clustered_positions", playerID: me.smallID });
     return reply.type === "attack_clustered_positions_result" ? reply.attacks : [];
+  }
+
+  /** The statistics the engine has kept for this player so far, or null if it has none. */
+  async myStats(): Promise<PlayerStats | null> {
+    if (!this.clientID) return null;
+    const reply = await this.ask({ type: "client_stats", clientID: this.clientID });
+    return reply.type === "client_stats_result" ? reply.stats : null;
   }
 
   async buildables(

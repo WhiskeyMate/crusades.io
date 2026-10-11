@@ -2,7 +2,10 @@
 // VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY at build time the game ships
 // without any of it and nothing here loads.
 //
-// Sign-in is Supabase Auth (an emailed link, no passwords). Real money goes
+// Sign-in is Supabase Auth: Discord, Google or an emailed link (no
+// passwords), and Steam by way of two Netlify functions. Which of them are
+// offered is set by VITE_SIGNIN. Signing in is open whenever Supabase is set
+// up; the store is a separate switch. Real money goes
 // through Stripe Checkout, started by a Netlify function; the webhook adds
 // Crowns. Spending Crowns, reserving a name and equipping items are
 // Postgres functions that check prices and ownership themselves, so the
@@ -11,6 +14,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Skin, validSkin } from "../client/Heraldry";
 import { BUNDLES, Equipped, ITEMS, itemById, PACKS, Slot } from "../store/Catalog";
+import { addModes, type Mode, MODES, noMode, noRecord, plain, type PlayerRecord, type Totals } from "./Record";
 
 const URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -25,14 +29,42 @@ const DEV_KEY = "crusades.dev.account";
 
 /**
  * The store is closed until VITE_STORE_OPEN=on is set for the build (and
- * STORE_OPEN=on for the checkout function): no sign-in, no store button, no
- * purchases. Everything behind it is kept, so opening it again is two
- * environment variables and a redeploy.
+ * STORE_OPEN=on for the checkout function): no store, no purchases.
+ * Everything behind it is kept, so opening it again is two environment
+ * variables and a redeploy. On a dev server, ?premium opens it and ?account
+ * keeps it closed, to look at either.
  */
-export const STORE_OPEN = import.meta.env.VITE_STORE_OPEN === "on";
-export const accountsEnabled = (STORE_OPEN && Boolean(URL && KEY)) || DEV_PREVIEW;
+export const STORE_OPEN =
+  import.meta.env.VITE_STORE_OPEN === "on" || (DEV_PREVIEW && !new URLSearchParams(location.search).has("account"));
+/**
+ * Accounts (signing in, and the record kept for those who do) are open
+ * whenever the site has Supabase set up, store or no store. VITE_ACCOUNTS=off
+ * shuts them.
+ */
+export const accountsEnabled = (Boolean(URL && KEY) && import.meta.env.VITE_ACCOUNTS !== "off") || DEV_PREVIEW;
+
+export type Provider = "discord" | "google" | "steam" | "email";
+const KNOWN: Provider[] = ["discord", "google", "steam", "email"];
+/**
+ * The ways of signing in that are offered, in order. Each but the emailed
+ * link needs setting up first (see docs/ACCOUNTS.md), so only the link is
+ * offered until VITE_SIGNIN names the others, e.g. "discord,google,steam,email".
+ */
+export const SIGN_IN: Provider[] = (() => {
+  const asked = String(import.meta.env.VITE_SIGNIN ?? "")
+    .split(",")
+    .map((p) => p.trim().toLowerCase())
+    .filter((p): p is Provider => (KNOWN as string[]).includes(p));
+  return asked.length > 0 ? asked : DEV_PREVIEW ? KNOWN : ["email"];
+})();
 
 export interface AccountState {
+  /** What to call them: the name they go by where they signed in, or their email's first part. */
+  name: string;
+  /** How they signed in. */
+  provider: string;
+  /** Their record (see Record.ts). */
+  record: PlayerRecord;
   email: string;
   premium: boolean;
   crowns: number;
@@ -44,6 +76,7 @@ export interface AccountState {
 }
 
 interface DevWallet {
+  record?: PlayerRecord;
   crowns: number;
   username: string | null;
   owned: string[];
@@ -75,6 +108,9 @@ class AccountService {
     if (DEV_PREVIEW) {
       const w = this.devWallet();
       this.state = {
+        name: "Preview Player",
+        provider: "preview",
+        record: { ...noRecord(), ...(w.record ?? {}) },
         email: "preview@localhost",
         premium: false,
         crowns: w.crowns,
@@ -105,7 +141,7 @@ class AccountService {
 
   private saveDev() {
     const s = this.state!;
-    const w: DevWallet = { crowns: s.crowns, username: s.username, owned: [...s.owned], equipped: s.equipped, skin: s.skin };
+    const w: DevWallet = { record: s.record, crowns: s.crowns, username: s.username, owned: [...s.owned], equipped: s.equipped, skin: s.skin };
     localStorage.setItem(DEV_KEY, JSON.stringify(w));
   }
 
@@ -117,13 +153,32 @@ class AccountService {
     if (!user) {
       this.state = null;
     } else {
-      const [profile, inv, skin] = await Promise.all([
+      const [profile, inv, skin, rec] = await Promise.all([
         this.db.from("profiles").select("premium, crowns, username, equipped").eq("id", user.id).maybeSingle(),
         this.db.from("inventory").select("item_id").eq("user_id", user.id),
         this.db.from("skins").select("skin").eq("user_id", user.id).maybeSingle(),
+        this.db.from("records").select("mode, played, wins, seconds, best_land, totals").eq("user_id", user.id),
       ]);
+      const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+      const custom = (meta.custom_claims ?? {}) as Record<string, unknown>;
+      const called = [custom.global_name, meta.full_name, meta.name, meta.user_name, meta.preferred_username].find(
+        (n): n is string => typeof n === "string" && n.trim() !== "",
+      );
+      const steam = meta.provider === "steam";
+      const record = noRecord();
+      for (const r of rec.data ?? []) {
+        if (!(MODES as string[]).includes(r.mode)) continue;
+        record[r.mode as Mode] = {
+          played: r.played ?? 0, wins: r.wins ?? 0, seconds: Number(r.seconds ?? 0), bestLand: r.best_land ?? 0,
+          totals: plain(r.totals as Totals),
+        };
+      }
       this.state = {
-        email: user.email ?? "",
+        name: (called ?? (user.email ?? "").split("@")[0] ?? "").slice(0, 40) || "Player",
+        provider: steam ? "steam" : String(user.app_metadata?.provider ?? "email"),
+        record,
+        // The address made up for a Steam account means nothing to the player.
+        email: steam ? "" : (user.email ?? ""),
         premium: profile.data?.premium === true,
         crowns: profile.data?.crowns ?? 0,
         username: profile.data?.username ?? null,
@@ -148,6 +203,43 @@ class AccountService {
     if (!this.db) return "Accounts are not set up on this site.";
     const { error } = await this.db.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
     return error ? error.message : null;
+  }
+
+  /**
+   * Leaves for Discord or Google (or Steam, through our own functions) to
+   * sign in there; the player comes back signed in. Resolves to an error
+   * message only if it could not even set off.
+   */
+  async signInWith(provider: Exclude<Provider, "email">): Promise<string | null> {
+    if (!this.db) return DEV_PREVIEW ? "Preview mode: you are already signed in." : "Accounts are not set up on this site.";
+    if (provider === "steam") {
+      location.href = "/.netlify/functions/steam-login";
+      return null;
+    }
+    const { error } = await this.db.auth.signInWithOAuth({ provider, options: { redirectTo: location.origin } });
+    return error ? error.message : null;
+  }
+
+  /**
+   * Files a finished game with the account. The database does the adding up
+   * and refuses nonsense; nothing is said to the player if it fails.
+   */
+  async recordGame(g: { mode: Mode; won: boolean; land: number; seconds: number; map: string; totals: Totals }) {
+    const s = this.state;
+    if (!s || g.seconds < 60) return;
+    if (DEV_PREVIEW) {
+      s.record[g.mode] = addModes(s.record[g.mode], {
+        ...noMode(), played: 1, wins: g.won ? 1 : 0, seconds: g.seconds, bestLand: g.land, totals: g.totals,
+      });
+      this.saveDev();
+      return this.onChange();
+    }
+    if (!this.db) return;
+    const { error } = await this.db.rpc("record_game", {
+      mode: g.mode, won: g.won, land: g.land, secs: g.seconds, map: g.map, totals: g.totals,
+    });
+    if (error) return console.warn("game not recorded:", error.message);
+    await this.refresh();
   }
 
   async signOut() {

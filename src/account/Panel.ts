@@ -7,7 +7,10 @@ import {
   BUNDLES, Bundle, defaultItem, Item, ITEMS, itemById, NAME_COST, PACKS, rarityOf, Slot, SLOT_NAMES,
 } from "../store/Catalog";
 import { liveTrailHTML, previewURL, startLiveTrails } from "../store/Preview";
-import { account, accountsEnabled } from "./Account";
+import { account, accountsEnabled, Provider, SIGN_IN, STORE_OPEN } from "./Account";
+import { BOMB_KEYS, Mode, MODES, overall, standing } from "./Record";
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
+import { fmt, fmtTroops, UNIT_LORE } from "../client/Lexicon";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) =>
@@ -21,8 +24,13 @@ const METALS = ["#e8d9a0", "#f1efe6", "#d9a521", "#c0c4ca", "#1b1410", "#c71a21"
 const INKS = ["#1b1410", "#f1efe6", "#e8d9a0", "#d9a521", "#c0c4ca", "#c71a21", "#2c6fb3", "#2f8a4a", "#6a3fa6", "#d9632b"];
 const DEFAULT: Skin = { color: SWATCHES[0], division: 4, charge: 3 };
 
-type Tab = "featured" | "crowns" | Slot | "name";
-const TABS: { id: Tab; label: string; icon: string }[] = [
+type Tab = "account" | "stats" | "custom" | "featured" | "crowns" | Slot | "name";
+/** The tabs that belong to the account itself; the rest are the store's. */
+const OWN_TABS: Tab[] = ["account", "stats", "custom"];
+const ALL_TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: "account", label: "Account", icon: "♞" },
+  { id: "stats", label: "Stats", icon: "≡" },
+  { id: "custom", label: "Customisation", icon: "⛨" },
   { id: "featured", label: "Featured", icon: "✦" },
   { id: "troops", label: "Troops", icon: "⚔" },
   { id: "ships", label: "Ships", icon: "⚓" },
@@ -34,7 +42,12 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "crowns", label: "Get Crowns", icon: "♛" },
 ];
 
-let tab: Tab = "featured";
+// With the store closed only the account's own tabs are shown.
+const TABS = STORE_OPEN ? ALL_TABS : ALL_TABS.filter((t) => OWN_TABS.includes(t.id));
+
+let tab: Tab = STORE_OPEN ? "featured" : "account";
+/** Which kind of game the Stats tab is showing. */
+let statsMode: "all" | Mode = "all";
 let filter: "all" | "owned" | "New models" | "Jest" = "all";
 let draft: Skin = { ...DEFAULT };
 let note = "";
@@ -134,6 +147,107 @@ function bundleCard(b: Bundle): string {
       ? `<span class="pill owned">Owned</span>`
       : `<button class="primary${s.crowns < b.crowns ? " short" : ""}" data-bundle="${b.id}">${crowns(b.crowns)} <s>${single.toLocaleString("en-US")}</s></button>`) +
     `</div></div></div>`
+  );
+}
+
+const PROVIDER_NAMES: Record<string, string> = { discord: "Discord", google: "Google", steam: "Steam", email: "an emailed link", preview: "preview mode" };
+
+/** The Account tab: who is signed in, their standing and the way up to the next. */
+function drawAccount(): string {
+  const s = account.state!;
+  const st = standing(s.record);
+  const all = overall(s.record);
+  const hours = all.seconds / 3600;
+  const share = st.next ? Math.min(100, ((st.renown - st.from) / (st.to - st.from)) * 100) : 100;
+  const stat = (big: string, label: string) => `<div class="stat"><b>${big}</b><span>${label}</span></div>`;
+  return (
+    `<div class="record">` +
+    `<div class="rank"><div><span>Standing</span><b>${st.title}</b></div>` +
+    `<div class="climb"><div class="bar"><i style="width:${share.toFixed(1)}%"></i></div>` +
+    `<span>${st.renown.toLocaleString("en-US")} renown${st.next ? ` · ${(st.to - st.renown).toLocaleString("en-US")} more to ${st.next}` : " · the highest there is"}</span></div></div>` +
+    `<div class="stats">` +
+    stat(String(all.played), "Games played") +
+    stat(String(all.wins), "Victories") +
+    stat(`${all.bestLand.toFixed(1)}%`, "Most land held") +
+    stat(hours >= 10 ? Math.round(hours).toString() : hours.toFixed(1), "Hours on campaign") +
+    `</div>` +
+    `<p class="dim small">Signed in as ${esc(s.name)} through ${PROVIDER_NAMES[s.provider] ?? esc(s.provider)}${s.email ? ` (${esc(s.email)})` : ""}. ` +
+    `Your record is kept with your account and follows you to any device. Renown comes from playing: most from games against other lords, more for winning them. Sandbox games do not count.</p>` +
+    `<div><button data-go="stats">See all your stats</button> <button data-go="custom">Customisation</button></div>` +
+    `</div>`
+  );
+}
+
+/** The Stats tab: everything counted, for all games or one kind of them. */
+function drawStats(): string {
+  const rec = account.state!.record;
+  const r = statsMode === "all" ? overall(rec) : rec[statsMode];
+  const t = r.totals;
+  const per = (n: number) => (r.played > 0 ? n / r.played : 0);
+  const small = (n: number) => (n >= 100 ? fmt(n) : n >= 10 ? n.toFixed(0) : n.toFixed(1));
+  const u = (k: string, i: number) => t.units[k]?.[i] ?? 0;
+  const b = (k: string, i: number) => t.boats[k]?.[i] ?? 0;
+  const m = (k: string, i: number) => t.bombs[k]?.[i] ?? 0;
+  const g = (i: number) => t.gold[i] ?? 0;
+  const a = (i: number) => t.attacks[i] ?? 0;
+  const cast = BOMB_KEYS.filter((k) => k !== "mirvw").reduce((n, k) => n + m(k, 0), 0);
+  const tile = (label: string, value: string, tone: string) => `<div class="tile ${tone}"><span>${label}</span><b>${value}</b><i>per game</i></div>`;
+  const group = (title: string, tiles: string) => `<h4>${title}</h4><div class="tiles">${tiles}</div>`;
+  const tableOf = (title: string, head: string[], rows: (string | number)[][]) =>
+    `<h3>${title}</h3><table class="stat-table"><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map((row) => `<tr>${row.map((c, n) => `<td>${typeof c === "number" ? (n === 0 ? c : fmt(c)) : c}</td>`).join("")}</tr>`).join("") +
+    `</tbody></table>`;
+  const name = (type: UnitType) => UNIT_LORE[type].name;
+  const chips = (["all", ...MODES] as const)
+    .map((k) => `<button class="chip${statsMode === k ? " on" : ""}" data-stats="${k}">${{ all: "All", public: "Public", private: "Private", solo: "Solo" }[k]}</button>`)
+    .join("");
+  const rate = r.played > 0 ? (r.wins / r.played) * 100 : 0;
+  return (
+    `<div class="record wide">` +
+    `<div class="chips">${chips}</div>` +
+    `<div class="winrate"><div><span>Win rate</span><b>${rate.toFixed(1)}%</b></div>` +
+    `<div class="tally"><div><span>Played</span><b>${r.played}</b></div><div><span>Victories</span><b class="good">${r.wins}</b></div><div><span>Losses</span><b class="bad">${r.played - r.wins}</b></div></div></div>` +
+    (r.played === 0 ? `<p class="dim">No games of this kind on your record yet. Finish one while signed in and it will be counted here.</p>` : "") +
+    group("Buildings", tile(`${name(UnitType.City)}s built`, small(per(u("city", 0))), "green") + tile(`${name(UnitType.Port)}s built`, small(per(u("port", 0))), "green") + tile(`${name(UnitType.Factory)}s built`, small(per(u("fact", 0))), "green") + tile(`${name(UnitType.DefensePost)}s built`, small(per(u("defp", 0))), "green")) +
+    group("At sea", tile("Longships sent", small(per(b("trans", 0))), "blue") + tile("Longships landed", small(per(b("trans", 1))), "blue") + tile("Cogs arrived", small(per(b("trade", 1))), "blue") + tile("Cogs captured", small(per(b("trade", 2))), "blue")) +
+    group("War", tile("Levies sent", fmtTroops(per(a(0))), "red") + tile("Levies faced", fmtTroops(per(a(1))), "red") + tile("Sorcery cast", small(per(cast)), "red") + tile(`${name(UnitType.Warship)}s built`, small(per(u("wshp", 0))), "red")) +
+    group("Gold earned", tile("Trade", fmt(per(g(2))), "gold") + tile("Piracy", fmt(per(g(3))), "gold") + tile("Your roads", fmt(per(g(4))), "gold") + tile("Others' roads", fmt(per(g(5))), "gold")) +
+    tableOf("Buildings", ["Building", "Built", "Destroyed", "Captured", "Lost"],
+      ([["city", UnitType.City], ["port", UnitType.Port], ["fact", UnitType.Factory], ["defp", UnitType.DefensePost], ["silo", UnitType.MissileSilo], ["saml", UnitType.SAMLauncher]] as const)
+        .map(([k, type]) => [name(type), u(k, 0), u(k, 1), u(k, 2), u(k, 3)])) +
+    tableOf(`${name(UnitType.Warship)}s`, ["Built", "Sunk", "Captured", "Lost"], [[String(u("wshp", 0)), u("wshp", 1), u("wshp", 2), u("wshp", 3)]]) +
+    tableOf("Ships", ["Ship", "Sent", "Arrived", "Captured", "Sunk"], [["Cog", b("trade", 0), b("trade", 1), b("trade", 2), b("trade", 3)], ["Longship", b("trans", 0), b("trans", 1), b("trans", 2), b("trans", 3)]]) +
+    tableOf("Sorcery", ["Spell", "Cast", "Landed", "Shot down"],
+      ([["abomb", UnitType.AtomBomb], ["hbomb", UnitType.HydrogenBomb], ["mirv", UnitType.MIRV]] as const).map(([k, type]) => [name(type), m(k, 0), m(k, 1), m(k, 2)])
+        .concat([["Falling stars", m("mirvw", 0), m("mirvw", 1), m("mirvw", 2)]])) +
+    tableOf("Levies", ["Sent", "Faced", "Called back"], [[fmtTroops(a(0)), fmtTroops(a(1)), fmtTroops(a(2))]]) +
+    tableOf("Gold", ["Subjects", "Conquest", "Trade", "Piracy", "Your roads", "Others' roads"], [[fmt(g(0)), g(1), g(2), g(3), g(4), g(5)]]) +
+    tableOf("Realms and pacts", ["Lords conquered", "Kingdoms conquered", "Tribes conquered", "Pacts broken"], [[String(t.conquests[0] ?? 0), t.conquests[1] ?? 0, t.conquests[2] ?? 0, t.betrayals]]) +
+    `</div>`
+  );
+}
+
+/**
+ * The Customisation tab: what you own, slot by slot, and which of it you
+ * wear. Apart from the store, so it is there whether the store is open or not.
+ */
+function drawCustom(): string {
+  const slots = (Object.keys(SLOT_NAMES) as Slot[]).filter((slot) => slot !== "banner");
+  let bought = 0;
+  const blocks = slots
+    .map((slot) => {
+      const mine = ITEMS.filter((i) => i.slot === slot && account.owns(i.id));
+      bought += mine.filter((i) => i.crowns > 0).length;
+      return `<h3>${SLOT_NAMES[slot]}</h3><div class="cards dense">${mine.map(card).join("")}</div>`;
+    })
+    .join("");
+  return (
+    `<p class="sub">Choose what your realm wears in games. Everything here is yours already.</p>` +
+    (bought === 0
+      ? `<p class="dim small">You have the kit every house starts with. ${STORE_OPEN ? "The store has more." : "More will be on offer when the store opens."}</p>`
+      : "") +
+    blocks +
+    (account.mayCustomiseArms() ? drawArms() : "")
   );
 }
 
@@ -276,18 +390,56 @@ function drawName(): string {
   );
 }
 
+/** What the button on the landing page says. */
+function openLabel(): string {
+  const s = account.state;
+  if (!s) return STORE_OPEN ? "Sign in · Store" : "Sign in";
+  const shield = shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT);
+  return STORE_OPEN
+    ? `${shield} ${s.crowns.toLocaleString("en-US")} ♛ · Store`
+    : `${shield} ${esc(s.username ?? s.name)} · ${standing(s.record).title}`;
+}
+
+const PROVIDER_BUTTONS: Record<Exclude<Provider, "email">, string> = {
+  discord: "Continue with Discord",
+  google: "Continue with Google",
+  steam: "Continue with Steam",
+};
+
+/** The ways of signing in, as buttons above the emailed link. */
+function drawSignIn() {
+  const others = SIGN_IN.filter((p): p is Exclude<Provider, "email"> => p !== "email");
+  const box = el("acct-providers");
+  box.hidden = others.length === 0;
+  box.innerHTML = others.map((p) => `<button class="wide provider ${p}" data-provider="${p}">${PROVIDER_BUTTONS[p]}</button>`).join("");
+  for (const b of Array.from(box.querySelectorAll<HTMLButtonElement>("button"))) {
+    b.onclick = async () => {
+      say("Taking you there…");
+      const err = await account.signInWith(b.dataset.provider as Exclude<Provider, "email">);
+      if (err) say(err, true);
+    };
+  }
+  const email = SIGN_IN.includes("email");
+  el("acct-form").hidden = !email;
+  el("acct-or").hidden = !email || others.length === 0;
+  el("acct-email-note").hidden = !email;
+  el("acct-pitch").textContent = STORE_OPEN
+    ? "The game is free. An account keeps your record, your Crowns, your house name and what you wear."
+    : "The game is free, and you can play without an account. Sign in and your record is kept: games, victories and your standing, on any device.";
+}
+
 function draw() {
   const s = account.state;
   const open = el("account-open");
   open.hidden = !accountsEnabled;
-  open.innerHTML = s
-    ? `${shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT)} ${s.crowns.toLocaleString("en-US")} ♛ · Store`
-    : "Sign in · Store";
+  open.innerHTML = openLabel();
+  el("acct-title").textContent = STORE_OPEN ? "Store" : "Account";
+  el("acct-crowns").hidden = !STORE_OPEN;
   el("acct-out").hidden = s !== null;
   el("acct-in").hidden = s === null;
   el("account").querySelector(".store")!.classList.toggle("signed-out", s === null);
   if (!s) return;
-  el("acct-email").textContent = s.username ?? s.email;
+  el("acct-email").textContent = s.username ?? s.name;
   el("acct-crowns").innerHTML = `${s.crowns.toLocaleString("en-US")} ♛`;
   el("store-nav").innerHTML = TABS.map(
     (t) => `<button class="${t.id === tab ? "on" : ""}${t.id === "crowns" ? " get" : ""}" data-tab="${t.id}"><i>${t.icon}</i>${t.label}</button>`,
@@ -303,8 +455,11 @@ function draw() {
   const body = el("store-body");
   const keep = body.scrollTop;
   body.innerHTML =
-    loadout() +
-    (tab === "featured" ? drawFeatured()
+    (OWN_TABS.includes(tab) ? "" : loadout()) +
+    (tab === "account" ? drawAccount()
+      : tab === "stats" ? drawStats()
+      : tab === "custom" ? drawCustom()
+      : tab === "featured" ? drawFeatured()
       : tab === "crowns" ? drawPacks()
       : tab === "name" ? drawName()
       : drawSlot(tab));
@@ -315,6 +470,7 @@ function draw() {
   };
   on("button[data-go]", (b) => { tab = b.dataset.go as Tab; filter = "all"; draw(); });
   on("button[data-filter]", (b) => { filter = b.dataset.filter as typeof filter; draw(); });
+  on("button[data-stats]", (b) => { statsMode = b.dataset.stats as typeof statsMode; draw(); });
   on("button[data-pack]", async (b) => {
     say("Taking you to the payment page…");
     const err = await account.buyPack(b.dataset.pack!);
@@ -401,7 +557,7 @@ function show(message = "", bad = false) {
  */
 export function drawEndOffer() {
   const box = el("end-offer");
-  box.hidden = !accountsEnabled || adFree();
+  box.hidden = !STORE_OPEN || !accountsEnabled || adFree();
   if (box.hidden) return;
   // One each of troops, ships and buildings: the models are what is worth showing.
   const picks = (["troops", "ships", "buildings"] as Slot[]).flatMap((slot) => {
@@ -460,10 +616,22 @@ export async function initAccountPanel() {
     if (account.state?.skin && dialog.hidden) draft = { ...account.state.skin };
     if (!dialog.hidden || !account.state) draw();
     else {
-      const s = account.state;
-      el("account-open").innerHTML = `${shieldSVG("preview", hexToRGB((account.skin ?? DEFAULT).color), 16, account.skin ?? DEFAULT)} ${s.crowns.toLocaleString("en-US")} ♛ · Store`;
+      el("account-open").innerHTML = openLabel();
     }
   };
+  drawSignIn();
+  // Back from Steam with nothing to show for it.
+  const failed = new URLSearchParams(location.search).get("signin");
+  if (failed) {
+    history.replaceState(null, "", location.pathname);
+    dialog.hidden = false;
+    say(
+      failed === "steam-cancelled" ? "Steam sign-in was cancelled."
+      : failed === "steam-off" ? "Signing in through Steam is not switched on."
+      : "Steam sign-in did not work. Please try again.",
+      true,
+    );
+  }
   await account.init();
   draw();
   // The reserved name is the house name, unless the player typed something else.

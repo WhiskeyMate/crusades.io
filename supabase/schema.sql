@@ -205,6 +205,103 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.cosmetics_for(uuid) from public, anon, authenticated;
 
+-- ------------------------------------------------------------------ records
+-- A signed-in player's record. One row per account and kind of game
+-- ('public', 'private', 'solo'): how many were played and won, time played,
+-- the most land held, and `totals`, the running sums of everything the game
+-- counts (buildings, ships, sorcery, levies, gold; see src/account/Record.ts
+-- for its shape). Players read their own; it is written only by record_game
+-- below, which the player's own browser calls when a game ends. Self-reported,
+-- so the function bounds what it takes and accepts at most one game a minute.
+drop table if exists public.records_old;
+do $$ begin
+  -- An earlier shape of this table had no `mode` column; nothing was ever kept in it.
+  if exists (select 1 from information_schema.tables where table_schema = 'public' and table_name = 'records')
+     and not exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'records' and column_name = 'mode') then
+    drop table public.records;
+  end if;
+end $$;
+create table if not exists public.records (
+  user_id uuid not null references auth.users on delete cascade,
+  mode text not null check (mode in ('public', 'private', 'solo')),
+  played integer not null default 0,
+  wins integer not null default 0,
+  seconds bigint not null default 0,
+  best_land real not null default 0,
+  totals jsonb not null default '{}'::jsonb,
+  last_map text,
+  last_at timestamptz,
+  primary key (user_id, mode)
+);
+alter table public.records enable row level security;
+drop policy if exists "read own record" on public.records;
+create policy "read own record" on public.records for select using (auth.uid() = user_id);
+
+-- Adds two totals together: numbers add, lists add place by place, and
+-- objects add key by key. Anything else is dropped.
+create or replace function public.jsonb_sum(a jsonb, b jsonb) returns jsonb
+language plpgsql immutable as $$
+declare
+  ta text := coalesce(jsonb_typeof(a), 'null');
+  tb text := coalesce(jsonb_typeof(b), 'null');
+  n integer;
+  out jsonb;
+  k text;
+begin
+  if ta = 'null' then ta := tb; a := case tb when 'number' then '0'::jsonb when 'array' then '[]'::jsonb when 'object' then '{}'::jsonb else null end; end if;
+  if tb = 'null' then tb := ta; b := case ta when 'number' then '0'::jsonb when 'array' then '[]'::jsonb when 'object' then '{}'::jsonb else null end; end if;
+  if ta <> tb then return a; end if;
+  if ta = 'number' then
+    return to_jsonb(greatest(0, (a #>> '{}')::numeric) + greatest(0, (b #>> '{}')::numeric));
+  elsif ta = 'array' then
+    n := least(greatest(jsonb_array_length(a), jsonb_array_length(b)), 8);
+    out := '[]'::jsonb;
+    for i in 0 .. n - 1 loop
+      out := out || jsonb_build_array(public.jsonb_sum(a -> i, b -> i));
+    end loop;
+    return out;
+  elsif ta = 'object' then
+    out := '{}'::jsonb;
+    for k in select distinct key from (select jsonb_object_keys(a) as key union all select jsonb_object_keys(b)) keys loop
+      out := out || jsonb_build_object(k, public.jsonb_sum(a -> k, b -> k));
+    end loop;
+    return out;
+  end if;
+  return null;
+end $$;
+
+drop function if exists public.record_game(boolean, boolean, integer, real, integer, text);
+create or replace function public.record_game(mode text, won boolean, land real, secs integer, map text, totals jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  prev timestamptz;
+  l real := greatest(0, least(coalesce(land, 0), 100));
+  t integer := least(coalesce(secs, 0), 4 * 3600);
+  add jsonb := coalesce(totals, '{}'::jsonb);
+begin
+  if uid is null then raise exception 'not signed in'; end if;
+  if mode not in ('public', 'private', 'solo') then raise exception 'no such kind of game'; end if;
+  -- Too short to be a game.
+  if t < 60 then return; end if;
+  select max(r.last_at) into prev from public.records r where r.user_id = uid;
+  if prev is not null and now() - prev < interval '60 seconds' then return; end if;
+  -- Totals far larger than a game could produce are not taken.
+  if jsonb_typeof(add) <> 'object' or pg_column_size(add) > 4000 then add := '{}'::jsonb; end if;
+  insert into public.records as r (user_id, mode, played, wins, seconds, best_land, totals, last_map, last_at)
+  values (uid, record_game.mode, 1, case when won then 1 else 0 end, t, l, public.jsonb_sum(add, '{}'::jsonb), left(map, 60), now())
+  on conflict (user_id, mode) do update set
+    played = r.played + 1,
+    wins = r.wins + excluded.wins,
+    seconds = r.seconds + excluded.seconds,
+    best_land = greatest(r.best_land, excluded.best_land),
+    totals = public.jsonb_sum(r.totals, excluded.totals),
+    last_map = excluded.last_map,
+    last_at = excluded.last_at;
+end $$;
+revoke all on function public.record_game(text, boolean, real, integer, text, jsonb) from public, anon;
+grant execute on function public.record_game(text, boolean, real, integer, text, jsonb) to authenticated;
+
 -- ------------------------------------------------------- catalogue mirror
 -- Generated by `npm run catalog-sql` from src/store/Catalog.ts. Do not edit by hand.
 -- Whatever is no longer sold stops being sold: the table is rebuilt whole.

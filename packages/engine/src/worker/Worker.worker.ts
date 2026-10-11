@@ -4,6 +4,7 @@ import {
 } from "@crusades/engine-api/game/GameUpdates";
 import {
   AttackClusteredPositionsResultMessage,
+  ClientStatsResultMessage,
   InitErrorMessage,
   InitializedMessage,
   MainThreadMessage,
@@ -358,6 +359,26 @@ async function onMessage(e: MessageEvent<MainThreadMessage>) {
           id: message.id,
           attacks: [],
         } as AttackClusteredPositionsResultMessage);
+      }
+      break;
+    case "client_stats":
+      if (!gameRunner) {
+        throw new Error("Game runner not initialized");
+      }
+      try {
+        const all = (await gameRunner).game.stats().stats();
+        sendMessage({
+          type: "client_stats_result",
+          id: message.id,
+          stats: all[message.clientID] ?? null,
+        } as ClientStatsResultMessage);
+      } catch (error) {
+        console.error("Failed to get client stats:", error);
+        sendMessage({
+          type: "client_stats_result",
+          id: message.id,
+          stats: null,
+        } as ClientStatsResultMessage);
       }
       break;
     case "transport_ship_spawn":

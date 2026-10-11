@@ -1,3 +1,4 @@
+import type { PlayerStats } from "../StatsSchemas";
 import { TileRef } from "../game/GameMap";
 import {
   BuildableUnit,
@@ -33,6 +34,8 @@ export type WorkerMessageType =
   | "player_border_tiles_result"
   | "attack_clustered_positions"
   | "attack_clustered_positions_result"
+  | "client_stats"
+  | "client_stats_result"
   | "transport_ship_spawn"
   | "transport_ship_spawn_result"
   | "snapshot"
@@ -178,6 +181,18 @@ export interface AttackClusteredPositionsResultMessage extends BaseWorkerMessage
   attacks: { id: string; positions: { x: number; y: number }[] }[];
 }
 
+// crusades.io: the statistics the engine keeps for one client, at any point
+// in the game (upstream only hands them out with the winner).
+export interface ClientStatsMessage extends BaseWorkerMessage {
+  type: "client_stats";
+  clientID: string;
+}
+
+export interface ClientStatsResultMessage extends BaseWorkerMessage {
+  type: "client_stats_result";
+  stats: PlayerStats | null;
+}
+
 export interface TransportShipSpawnMessage extends BaseWorkerMessage {
   type: "transport_ship_spawn";
   playerID: PlayerID;
@@ -211,6 +226,7 @@ export type MainThreadMessage =
   | PlayerProfileMessage
   | PlayerBorderTilesMessage
   | AttackClusteredPositionsMessage
+  | ClientStatsMessage
   | TransportShipSpawnMessage
   | SnapshotMessage;
 
@@ -228,5 +244,6 @@ export type WorkerMessage =
   | PlayerProfileResultMessage
   | PlayerBorderTilesResultMessage
   | AttackClusteredPositionsResultMessage
+  | ClientStatsResultMessage
   | TransportShipSpawnResultMessage
   | SnapshotResultMessage;
