@@ -654,7 +654,8 @@ function findSeat(clientID: string, secret: string): { lobby: Lobby; member: Mem
 async function claimName(client: Client, wanted: string) {
   const owner = await nameOwner(wanted);
   if (owner && owner !== client.uid) {
-    client.name = "";
+    // Someone already seated keeps the name they sat down under.
+    if (!client.lobby) client.name = "";
     client.nameError = `"${wanted}" is a reserved house name. Choose another.`;
     log(`name "${wanted}" refused for ${client.clientID}: reserved by another account`);
     fail(client, client.nameError);
@@ -662,6 +663,18 @@ async function claimName(client: Client, wanted: string) {
   }
   client.name = wanted;
   client.nameError = null;
+  // Renamed while the lords are still gathering: everyone there sees it at
+  // once. Once a game has begun the names in it are fixed.
+  const seated = client.lobby;
+  if (seated && seated.status === "open") {
+    const m = seated.members.get(client.clientID);
+    if (m && (m.name !== wanted || m.clanTag !== client.clanTag)) {
+      log(`lobby ${seated.code}: ${m.name} is now ${wanted}`);
+      m.name = wanted;
+      m.clanTag = client.clanTag;
+      seated.broadcast({ type: "lobby", lobby: seated.view(), now: Date.now() });
+    }
+  }
   // A clan's roll shows the name each member plays under.
   if (client.uid && client.clanTag && client.rollName !== wanted) {
     client.rollName = wanted;

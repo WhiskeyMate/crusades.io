@@ -324,6 +324,11 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     el("lobby-countdown").hidden = !pub;
     el("lobby-invite").hidden = pub;
     el<HTMLInputElement>("lobby-link").value = `${location.origin}${location.pathname}?join=${lobby.code}`;
+    // Your own name can be changed while the lords are still gathering.
+    const mine = lobby.members.find((m) => m.clientID === me);
+    const nameBox = el<HTMLInputElement>("lobby-name");
+    el("lobby-name-row").hidden = lobby.status !== "open" || !mine;
+    if (mine && document.activeElement !== nameBox) nameBox.value = mine.name;
     el("lobby-members").innerHTML = lobby.members
       .map(
         (m) =>
@@ -346,6 +351,22 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     if (code.length !== 6) return status("A game code has six letters.", true);
     void joinCode(code);
   };
+  const rename = () => {
+    const box = el<HTMLInputElement>("lobby-name");
+    // The front page's box is where the name lives: it cleans it up and remembers it.
+    const front = el<HTMLInputElement>("opt-name");
+    front.value = box.value;
+    front.dispatchEvent(new Event("input", { bubbles: true }));
+    const name = hooks.name();
+    if (box.value.trim().length < 3) return status("A house name needs at least three letters.", true);
+    box.value = name;
+    box.blur();
+    online?.setName(name);
+  };
+  el("lobby-rename").onclick = rename;
+  el("lobby-name").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") rename();
+  });
   el("lobby-start").onclick = () => online?.start();
   el("lobby-leave").onclick = () => {
     online?.leave();

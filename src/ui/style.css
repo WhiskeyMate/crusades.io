@@ -900,3 +900,8 @@ body.phone .hero { min-height: calc(100vh - 51px); padding-top: 12px; }
 body.phone #public-list { grid-template-columns: 1fr; }
 body.phone #public-list .pub.lead { grid-row: auto; min-height: 150px; }
 body.phone #hall .hall-row { grid-template-columns: 1fr; }
+/* Renaming yourself in the lobby. */
+.lobby-name { display: flex; align-items: center; gap: 8px; margin: 10px 0 4px; }
+.lobby-name[hidden] { display: none; }
+.lobby-name label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--dim); white-space: nowrap; }
+.lobby-name input { flex: 1; min-width: 0; margin: 0; }
