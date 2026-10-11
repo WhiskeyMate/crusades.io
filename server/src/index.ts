@@ -783,7 +783,7 @@ const http = createServer((req, res) => {
       const result = fn(arg);
       log(`admin: ${result}`);
       return result;
-    })
+    }, (result) => log(`admin: ${result}`))
   ) {
     return;
   }

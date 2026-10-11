@@ -118,8 +118,12 @@ approval. A player is in one clan at a time.
   one report per clan each, ten a day). Reports land in `public.clan_reports`;
   the view `public.clan_reports_open` lists reported clans, most reported
   first, with the reasons and notes. Nothing is hidden automatically.
-- **Removing a clan.** Delete its row from `public.clans` in the table editor;
-  its roll, requests and reports go with it.
+- **From the server's dashboard.** The Clans section of `/admin` on the game
+  server shows the reported clans (with reasons and notes, and buttons to
+  dismiss the reports or delete the clan), every clan with a search, and the
+  banned words with a form to add one. It needs the server's Supabase
+  settings. Deleting a clan takes its roll, requests and reports with it and
+  cannot be undone.
 
 ## Trying it without Supabase
 

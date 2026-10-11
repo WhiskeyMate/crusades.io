@@ -4,8 +4,13 @@
 //
 // Access: from the machine itself (127.0.0.1) always; from elsewhere only
 // with ?token=ADMIN_TOKEN, which the install script generates.
+//
+// It also looks after the clans (moderation.ts): reported clans, every clan,
+// and the words clans may not use. Those are read from /admin/clans, less
+// often than the rest.
 
 import { IncomingMessage, ServerResponse } from "node:http";
+import { clanAct, clanBoard } from "./moderation";
 
 export interface AdminSnapshot {
   version: string;
@@ -73,6 +78,8 @@ export function handleAdmin(
   token: string | undefined,
   snapshot: () => AdminSnapshot,
   act: (action: string, arg: string) => string,
+  /** Told what was done to the clans, for the log. */
+  onClanAct: (result: string) => void = () => {},
 ): boolean {
   if (!url.pathname.startsWith("/admin")) return false;
   if (!allowed(req, url, token)) {
@@ -82,6 +89,21 @@ export function handleAdmin(
         ? "Forbidden: open this page as /admin?token=... (the token is in C:\\crusades\\admin-token.txt on the server)."
         : "Forbidden: the dashboard is only reachable from the server itself unless ADMIN_TOKEN is set.",
     );
+    return true;
+  }
+  if (url.pathname === "/admin/clans") {
+    const json = (body: unknown) => {
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(JSON.stringify(body));
+    };
+    if (req.method === "POST") {
+      void clanAct(url.searchParams.get("action") ?? "", url.searchParams.get("arg") ?? "").then(async (result) => {
+        onClanAct(result);
+        json({ result, board: await clanBoard(true) });
+      });
+    } else {
+      void clanBoard().then(json);
+    }
     return true;
   }
   if (url.pathname === "/admin/api") {
@@ -145,6 +167,16 @@ const PAGE = /* html */ `<!doctype html>
   .controls button:hover { border-color:var(--gold); color:var(--ink); }
   button.kick { padding:0 5px; font-size:11px; margin-left:4px; }
   .switch input { accent-color:#c0392b; }
+  details { margin-top:10px; }
+  summary { cursor:pointer; color:var(--gold); font-size:13px; }
+  .clan-tag { font-family:Consolas,monospace; color:var(--gold); border:1px solid var(--edge); border-radius:3px; padding:0 5px; }
+  .words { display:flex; flex-wrap:wrap; gap:5px; margin:8px 0; }
+  .words span { border:1px solid var(--edge); border-radius:10px; padding:1px 4px 1px 9px; font-size:12px; }
+  .words span i { font-style:normal; color:var(--dim); font-size:10px; margin-left:4px; }
+  .words button { border:0; background:none; padding:0 4px; color:var(--dim); }
+  select { font:inherit; color:var(--ink); background:#120c07; border:1px solid var(--edge); border-radius:4px; padding:3px 6px; }
+  #clan-find { font:inherit; color:var(--ink); background:#120c07; border:1px solid var(--edge); border-radius:4px; padding:4px 8px; margin:8px 0; min-width:240px; }
+  .count { display:inline-block; min-width:18px; text-align:center; padding:0 6px; border-radius:9px; background:var(--bad); color:#1b1410; font-size:11px; }
 </style>
 </head>
 <body>
@@ -180,6 +212,27 @@ const PAGE = /* html */ `<!doctype html>
   <section>
     <h2>Connected <small id="client-note"></small></h2>
     <table><thead><tr><th>House</th><th>Id</th><th>In</th><th>From</th><th>For</th></tr></thead><tbody id="clients"></tbody></table>
+  </section>
+  <section class="wide controls">
+    <h2>Clans <small id="clan-note"></small></h2>
+    <div id="clan-reported"></div>
+    <details id="clan-all-box"><summary>All clans</summary>
+      <input id="clan-find" placeholder="Find by name or tag">
+      <table><thead><tr><th>Clan</th><th>About</th><th>Members</th><th>Joins</th><th>Founded</th><th></th></tr></thead><tbody id="clan-all"></tbody></table>
+    </details>
+    <details id="clan-words-box"><summary>Banned words</summary>
+      <div class="row">
+        <label>Ban <input id="ban-word" maxlength="24" placeholder="word" style="min-width:160px"></label>
+        <select id="ban-kind">
+          <option value="part">inside a word</option>
+          <option value="whole">as a whole word</option>
+          <option value="any">anywhere, even across spaces</option>
+          <option value="tag">as a tag</option>
+        </select>
+        <button id="ban-add">Add</button>
+      </div>
+      <div id="clan-words" class="words"></div>
+    </details>
   </section>
   <section class="wide">
     <h2>Log <small>last 400 lines, newest at the bottom</small></h2>
@@ -253,6 +306,52 @@ document.getElementById("notice").onkeydown = e => { if (e.key === "Enter") docu
 document.getElementById("set-wait").onclick = () => act("wait", document.getElementById("wait").value);
 document.getElementById("maint").onchange = e => act("maintenance", e.target.checked ? "1" : "0");
 document.getElementById("verbose").onchange = e => act("verbose", e.target.checked ? "1" : "0");
+// ------------------------------------------------------------------ clans
+let board = null;
+function drawClans() {
+  const d = board;
+  if (!d) return;
+  const note = document.getElementById("clan-note");
+  if (!d.enabled) { note.textContent = "Supabase is not set up on this server"; return; }
+  if (d.error) { note.innerHTML = '<span class="bad">could not read the clans (has supabase/schema.sql been run?): ' + esc(d.error) + '</span>'; return; }
+  note.textContent = d.clans.length + " clan" + (d.clans.length === 1 ? "" : "s") + " · " + d.reported.length + " reported";
+  const who = c => '<span class="clan-tag">' + esc(c.tag) + '</span> ' + esc(c.name);
+  document.getElementById("clan-reported").innerHTML = d.reported.length === 0
+    ? '<p class="dim">No clan has been reported.</p>'
+    : '<table><thead><tr><th>Reported clan</th><th>About</th><th>Members</th><th>Reports</th><th>Why</th><th>Notes</th><th>Latest</th><th></th></tr></thead><tbody>'
+      + d.reported.map(r => '<tr><td>' + who(r) + '</td><td class="dim">' + esc(r.blurb || "") + '</td><td>' + r.members + '</td>'
+        + '<td><span class="count">' + r.reports + '</span></td><td>' + esc(r.reasons || "") + '</td><td class="dim">' + esc(r.notes || "") + '</td>'
+        + '<td class="dim">' + ago(Date.now() - Date.parse(r.latest)) + ' ago</td>'
+        + '<td><button data-clan-dismiss="' + r.clan_id + '" data-name="' + esc(r.name) + '">Dismiss</button> <button data-clan-delete="' + r.clan_id + '" data-name="' + esc(r.name) + '">Delete clan</button></td></tr>').join("")
+      + '</tbody></table>';
+  const find = document.getElementById("clan-find").value.trim().toLowerCase();
+  const shown = find ? d.clans.filter(c => c.name.toLowerCase().includes(find) || c.tag.toLowerCase().includes(find)) : d.clans;
+  document.getElementById("clan-all").innerHTML = shown.map(c => '<tr><td>' + who(c) + '</td><td class="dim">' + esc(c.blurb || "") + '</td><td>' + c.members + '</td>'
+    + '<td class="dim">' + (c.open ? "open" : "by approval") + '</td><td class="dim">' + new Date(c.created_at).toLocaleDateString() + '</td>'
+    + '<td><button data-clan-delete="' + c.id + '" data-name="' + esc(c.name) + '">Delete</button></td></tr>').join("") || '<tr><td colspan="6" class="dim">None.</td></tr>';
+  document.getElementById("clan-words").innerHTML = d.words.map(w => '<span>' + esc(w.word) + '<i>' + w.kind + '</i><button data-unban="' + w.kind + ':' + esc(w.word) + '" title="Allow again">×</button></span>').join("");
+  for (const b of document.querySelectorAll("[data-clan-delete]")) b.onclick = () => confirm("Delete the clan " + b.dataset.name + "? Its members are left without a clan. This cannot be undone.") && clanAct("delete", b.dataset.clanDelete);
+  for (const b of document.querySelectorAll("[data-clan-dismiss]")) b.onclick = () => clanAct("dismiss", b.dataset.clanDismiss);
+  for (const b of document.querySelectorAll("[data-unban]")) b.onclick = () => clanAct("unban", b.dataset.unban);
+}
+async function clanTick() {
+  try {
+    const r = await fetch("/admin/clans" + q, { cache: "no-store" });
+    if (r.ok) { board = await r.json(); drawClans(); }
+  } catch (e) { /* the main tick already says the server cannot be reached */ }
+}
+async function clanAct(action, arg) {
+  const r = await fetch("/admin/clans" + (q ? q + "&" : "?") + "action=" + action + "&arg=" + encodeURIComponent(arg), { method: "POST" });
+  const d = await r.json();
+  document.getElementById("result").textContent = d.result;
+  board = d.board;
+  drawClans();
+}
+document.getElementById("clan-find").oninput = drawClans;
+document.getElementById("ban-add").onclick = () => { const i = document.getElementById("ban-word"); if (i.value.trim()) { clanAct("ban", document.getElementById("ban-kind").value + ":" + i.value.trim()); i.value = ""; } };
+document.getElementById("ban-word").onkeydown = e => { if (e.key === "Enter") document.getElementById("ban-add").click(); };
+clanTick();
+setInterval(clanTick, 15000);
 tick();
 setInterval(tick, 2000);
 </script>
