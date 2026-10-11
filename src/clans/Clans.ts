@@ -1,4 +1,4 @@
-// Clans of players: a name, a tag of two to four letters carried in front of
+// Clans of players: a name, a tag of two to five letters carried in front of
 // its members' house names, a few words about itself, and a pin on the world
 // map saying where it calls home. (The small AI realms in a game are
 // "tribes".) Anyone may look; founding or joining one needs an account.
@@ -32,8 +32,14 @@ export const REPORT_REASONS: [ReportReason, string][] = [
 ];
 
 export interface ClanMember {
+  /** The account. A member is the account, whatever it is called. */
   id: string;
+  /** The house name they last played under. */
   name: string;
+  /** The house name they had when they joined, if it was another. */
+  joinedAs: string | null;
+  /** When they last connected to the game server, if they have since joining. */
+  seen: string | null;
   founder: boolean;
 }
 
@@ -127,7 +133,7 @@ class ClanService {
       const clan = at && s.clans.find((c) => c.id === at.clan);
       this.myTag = clan ? clan.tag : null;
       if (!clan) return null;
-      const roll = Object.entries(s.rolls).filter(([, r]) => r.clan === clan.id).map(([id, r]) => ({ id, name: r.name, founder: id === clan.founder }));
+      const roll = Object.entries(s.rolls).filter(([, r]) => r.clan === clan.id).map(([id, r]) => ({ id, name: r.name, joinedAs: null, seen: null, founder: id === clan.founder }));
       return { clan, founder: clan.founder === me, roll, asks: clan.founder === me ? s.asks.filter((a) => a.clan === clan.id).map((a) => ({ id: a.user, name: a.name })) : [] };
     }
     if (!this.db) return null;
@@ -140,7 +146,7 @@ class ClanService {
     const id = at.data.clan_id as string;
     const [clan, roll, asks] = await Promise.all([
       this.db.from("clans").select(COLUMNS).eq("id", id).single(),
-      this.db.from("clan_members").select("user_id, name, role").eq("clan_id", id).order("joined_at"),
+      this.db.from("clan_members").select("user_id, name, role, joined_as, last_seen").eq("clan_id", id).order("joined_at"),
       this.db.from("clan_requests").select("user_id, name").eq("clan_id", id).order("created_at"),
     ]);
     if (clan.error) throw new Error(why(clan.error));
@@ -149,7 +155,13 @@ class ClanService {
     return {
       clan: c,
       founder: c.founder === me,
-      roll: (roll.data ?? []).map((r) => ({ id: r.user_id as string, name: r.name as string, founder: r.role === "founder" })),
+      roll: (roll.data ?? []).map((r) => ({
+        id: r.user_id as string,
+        name: r.name as string,
+        joinedAs: r.joined_as && r.joined_as !== r.name ? (r.joined_as as string) : null,
+        seen: (r.last_seen as string | null) ?? null,
+        founder: r.role === "founder",
+      })),
       // The database only shows asks to the founder.
       asks: (asks.data ?? []).filter((r) => r.user_id !== me).map((r) => ({ id: r.user_id as string, name: r.name as string })),
     };
@@ -175,7 +187,7 @@ class ClanService {
       const tag = c.tag.trim().toUpperCase();
       if (s.rolls[me]) return "You are already in a clan. Leave it first.";
       if (name.length < 3 || name.length > 24) return "A clan name is 3 to 24 letters, digits and spaces.";
-      if (!/^[A-Z0-9]{2,4}$/.test(tag)) return "A tag is 2 to 4 letters or digits.";
+      if (!/^[A-Z0-9]{2,5}$/.test(tag)) return "A tag is 2 to 5 letters or digits.";
       if (s.clans.some((k) => k.tag === tag || k.name.toLowerCase() === name.toLowerCase())) return "That name or tag is already taken.";
       const id = `dev-${Date.now()}`;
       s.clans.push({ id, name, tag, blurb: c.blurb.slice(0, 200), open: c.open, x: c.x, y: c.y, members: 1, founder: me });

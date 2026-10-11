@@ -66,7 +66,7 @@ export async function identify(token: string | undefined): Promise<Identity | nu
     let clanTag: string | null = null;
     try {
       const tag = await call("/rest/v1/rpc/clan_tag_for", { method: "POST", body: JSON.stringify({ uid: user.id }) });
-      if (typeof tag === "string" && /^[A-Z0-9]{2,4}$/.test(tag)) clanTag = tag;
+      if (typeof tag === "string" && /^[A-Z0-9]{2,5}$/.test(tag)) clanTag = tag;
     } catch {
       clanTag = null;
     }
@@ -79,6 +79,24 @@ export async function identify(token: string | undefined): Promise<Identity | nu
   } catch (e) {
     console.error("identify failed:", e instanceof Error ? e.message : e);
     return null;
+  }
+}
+
+/**
+ * A clan member has connected under this house name: the clan's roll shows it
+ * from now on, so a member cannot slip out of sight by changing their name.
+ */
+export async function clanSeen(uid: string, name: string): Promise<void> {
+  if (!identityEnabled) return;
+  try {
+    await fetch(`${URL_}/rest/v1/rpc/clan_seen`, {
+      method: "POST",
+      headers: { apikey: KEY!, Authorization: `Bearer ${KEY!}`, "content-type": "application/json" },
+      body: JSON.stringify({ uid, display: name }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    console.error("clanSeen failed:", e instanceof Error ? e.message : e);
   }
 }
 

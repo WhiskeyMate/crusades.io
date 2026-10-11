@@ -318,7 +318,7 @@ grant execute on function public.record_game(text, boolean, real, integer, text,
 
 -- -------------------------------------------------------------------- clans
 -- Clans of players (the small AI realms in a game are "tribes"). A clan has a
--- name, a tag of two to four letters and digits that its members carry in
+-- name, a tag of two to five letters and digits that its members carry in
 -- front of their house names, a few words about itself, and a pin on the
 -- world map saying where it calls home. A player is in at most one clan.
 --
@@ -329,7 +329,7 @@ grant execute on function public.record_game(text, boolean, real, integer, text,
 create table if not exists public.clans (
   id uuid primary key default gen_random_uuid(),
   name text not null check (char_length(name) between 3 and 24),
-  tag text not null check (tag ~ '^[A-Z0-9]{2,4}$'),
+  tag text not null check (tag ~ '^[A-Z0-9]{2,5}$'),
   blurb text not null default '' check (char_length(blurb) <= 200),
   open boolean not null default true,
   pin_x real not null check (pin_x between 0 and 1),
@@ -338,6 +338,9 @@ create table if not exists public.clans (
   members integer not null default 1,
   created_at timestamptz not null default now()
 );
+-- Tags were two to four at first; a database made then is brought up to five.
+alter table public.clans drop constraint if exists clans_tag_check;
+alter table public.clans add constraint clans_tag_check check (tag ~ '^[A-Z0-9]{2,5}$');
 create unique index if not exists clans_name_once on public.clans (lower(name));
 create unique index if not exists clans_tag_once on public.clans (tag);
 
@@ -348,6 +351,13 @@ create table if not exists public.clan_members (
   name text not null default 'A lord',
   joined_at timestamptz not null default now()
 );
+-- A member is an account, not a name: `name` is the house name they last
+-- played under (the game server keeps it current, see clan_seen), `joined_as`
+-- the one they had when they joined, and `last_seen` when they last connected
+-- to the game server. Changing house name changes nothing about who they are
+-- on the roll, and the founder removes the account, whatever it is called.
+alter table public.clan_members add column if not exists joined_as text;
+alter table public.clan_members add column if not exists last_seen timestamptz;
 create index if not exists clan_members_by_clan on public.clan_members (clan_id);
 
 create table if not exists public.clan_requests (
@@ -484,7 +494,7 @@ begin
   if char_length(n) < 3 or char_length(n) > 24 or n !~ '^[A-Za-z0-9À-ÖØ-öø-ÿ _.\-]+$' then
     raise exception 'A clan name is 3 to 24 letters, digits and spaces.';
   end if;
-  if t !~ '^[A-Z0-9]{2,4}$' then raise exception 'A tag is 2 to 4 letters or digits.'; end if;
+  if t !~ '^[A-Z0-9]{2,5}$' then raise exception 'A tag is 2 to 5 letters or digits.'; end if;
   if foul(n) then raise exception 'That clan name is not allowed.'; end if;
   if foul_tag(t) then raise exception 'That tag is not allowed.'; end if;
   if foul(blurb) then raise exception 'That description is not allowed.'; end if;
@@ -495,7 +505,7 @@ begin
   exception when unique_violation then
     raise exception 'That name or tag is already taken.';
   end;
-  insert into clan_members (user_id, clan_id, role, name) values (uid, made, 'founder', clan_display(display));
+  insert into clan_members (user_id, clan_id, role, name, joined_as) values (uid, made, 'founder', clan_display(display), clan_display(display));
   delete from clan_requests r where r.user_id = uid;
   return made;
 end $$;
@@ -514,7 +524,7 @@ begin
   if not found then raise exception 'No such clan.'; end if;
   if c.members >= 200 then raise exception 'That clan is full.'; end if;
   if c.open then
-    insert into clan_members (user_id, clan_id, role, name) values (uid, c.id, 'member', clan_display(display));
+    insert into clan_members (user_id, clan_id, role, name, joined_as) values (uid, c.id, 'member', clan_display(display), clan_display(display));
     update clans set members = members + 1 where id = c.id;
     delete from clan_requests r where r.user_id = uid;
     return 'joined';
@@ -566,7 +576,7 @@ begin
   if not accept then return; end if;
   if exists (select 1 from clan_members m where m.user_id = who) then raise exception 'They have joined another clan.'; end if;
   if c.members >= 200 then raise exception 'Your clan is full.'; end if;
-  insert into clan_members (user_id, clan_id, role, name) values (who, c.id, 'member', asked.name);
+  insert into clan_members (user_id, clan_id, role, name, joined_as) values (who, c.id, 'member', asked.name, asked.name);
   update clans set members = members + 1 where id = c.id;
   delete from clan_requests r where r.user_id = who;
 end $$;
@@ -602,6 +612,14 @@ begin
   where founder = uid;
   if not found then raise exception 'Only a clan''s founder changes it.'; end if;
 end $$;
+
+-- Called by the game server (service role only) when a clan member connects
+-- under a house name: the roll shows that name from then on.
+create or replace function public.clan_seen(uid uuid, display text)
+returns void language sql security definer set search_path = public as $$
+  update public.clan_members set name = public.clan_display(display), last_seen = now() where user_id = uid;
+$$;
+revoke all on function public.clan_seen(uuid, text) from public, anon, authenticated;
 
 -- The tag a player carries, for the game server (service role only).
 create or replace function public.clan_tag_for(uid uuid) returns text

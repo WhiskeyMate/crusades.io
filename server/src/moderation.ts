@@ -79,8 +79,8 @@ export async function clanAct(action: string, arg: string): Promise<string> {
         const [kind, raw] = arg.split(":");
         const word = kind === "tag" ? (raw ?? "").trim().toUpperCase() : (raw ?? "").trim().toLowerCase();
         if (!KINDS.includes(kind)) return "clans: no such kind of match";
-        if (!(kind === "tag" ? /^[A-Z0-9]{2,4}$/ : /^[a-z]{2,24}$/).test(word)) {
-          return kind === "tag" ? "clans: a tag is 2 to 4 letters or digits" : "clans: a word is 2 to 24 letters, no spaces";
+        if (!(kind === "tag" ? /^[A-Z0-9]{2,5}$/ : /^[a-z]{2,24}$/).test(word)) {
+          return kind === "tag" ? "clans: a tag is 2 to 5 letters or digits" : "clans: a word is 2 to 24 letters, no spaces";
         }
         await rest("banned_words", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates" }, body: JSON.stringify({ word, kind }) });
         return `"${word}" banned from clans (${kind})`;

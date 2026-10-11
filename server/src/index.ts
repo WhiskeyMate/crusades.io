@@ -39,7 +39,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { realmHash } from "../../src/worldgen/RealmHash";
 import { AdminSnapshot, handleAdmin, recentLog, remember } from "./admin";
-import { Cosmetic, identify, identityEnabled, nameOwner } from "./identity";
+import { clanSeen, Cosmetic, identify, identityEnabled, nameOwner } from "./identity";
 
 const PORT = Number(process.env.PORT ?? 8765);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -129,6 +129,8 @@ interface Client {
   cosmetic: Cosmetic | null;
   /** The tag of the clan the account belongs to, if any. */
   clanTag: string | null;
+  /** The name last written to the clan's roll for this connection. */
+  rollName: string | null;
   /** Why the last name was refused, to repeat when they try to play. */
   nameError: string | null;
   /** Messages are handled one at a time per client, in order. */
@@ -660,6 +662,11 @@ async function claimName(client: Client, wanted: string) {
   }
   client.name = wanted;
   client.nameError = null;
+  // A clan's roll shows the name each member plays under.
+  if (client.uid && client.clanTag && client.rollName !== wanted) {
+    client.rollName = wanted;
+    void clanSeen(client.uid, wanted);
+  }
 }
 
 async function handle(client: Client, msg: ClientMessage) {
@@ -821,6 +828,7 @@ wss.on("connection", (ws: WebSocket, req: IncomingMessage) => {
     uid: null,
     cosmetic: null,
     clanTag: null,
+    rollName: null,
     nameError: null,
     queue: Promise.resolve(),
   };

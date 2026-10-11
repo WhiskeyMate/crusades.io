@@ -93,7 +93,7 @@ personal record but not for anything with a prize attached.
 ## Clans
 
 Signed-in players can found or join a clan from the Clans button on the
-landing page. A clan has a name, a tag of two to four letters or digits, a few
+landing page. A clan has a name, a tag of two to five letters or digits, a few
 words about itself, and a pin its founder places on a map of the world. The
 World map tab glows where clans gather; clicking a region lists the clans
 pinned there. A founder chooses whether anyone may join or each ask needs

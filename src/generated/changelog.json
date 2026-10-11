@@ -1,8 +1,18 @@
 {
-  "version": "0.1.118",
+  "version": "0.1.120",
   "builtAt": "2026-10-11",
-  "commits": 118,
+  "commits": 120,
   "entries": [
+    {
+      "hash": "35439a7",
+      "date": "2026-10-11",
+      "subject": "The server's dashboard looks after the clans: reported clans, every clan, and the banned words"
+    },
+    {
+      "hash": "ab5abb2",
+      "date": "2026-10-11",
+      "subject": "Clans: a word filter on names, tags and descriptions, and a link to report a clan"
+    },
     {
       "hash": "9b0f9ec",
       "date": "2026-10-11",

@@ -138,6 +138,12 @@ function spot(canvas: HTMLCanvasElement, e: MouseEvent): { x: number; y: number 
   return { x: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), y: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) };
 }
 
+/** How long ago, in words. */
+function since(iso: string): string {
+  const days = Math.floor((Date.now() - Date.parse(iso)) / 86_400_000);
+  return days <= 0 ? "today" : days === 1 ? "yesterday" : days < 60 ? `${days} days ago` : `${Math.round(days / 30)} months ago`;
+}
+
 function joinButton(c: Clan): string {
   if (mine?.clan.id === c.id) return `<span class="yours">Your clan</span>`;
   if (mine) return "";
@@ -202,7 +208,7 @@ function drawMine(): string {
       `<p class="dim small">You are in no clan. Join one from the map or the list, or found your own here. A house belongs to one clan at a time.</p>` +
       `<div class="found"><div class="fields">` +
       `<label>Name<input id="clan-name" maxlength="24" placeholder="The Iron Wolves" /></label>` +
-      `<label>Tag <span class="dim">(2 to 4 letters or digits, shown before your house name)</span><input id="clan-tag" maxlength="4" placeholder="WOLF" autocapitalize="characters" /></label>` +
+      `<label>Tag <span class="dim">(2 to 5 letters or digits, shown before your house name)</span><input id="clan-tag" maxlength="5" placeholder="WOLF" autocapitalize="characters" /></label>` +
       `<label>About <span class="dim">(optional)</span><textarea id="clan-blurb" maxlength="200" rows="3" placeholder="Who you are, when you play."></textarea></label>` +
       `<label class="check"><input id="clan-open" type="checkbox" checked /> Anyone may join. Untick to approve each member yourself.</label>` +
       `<button id="clan-found" class="primary wide">Found the clan</button></div>` +
@@ -223,8 +229,12 @@ function drawMine(): string {
         mine.asks.map((a) => `<div class="clan-row"><div class="about"><b>${esc(a.name)}</b></div><button class="primary" data-accept="${a.id}">Accept</button><button data-decline="${a.id}">Decline</button></div>`).join("")
       : "") +
     `<div class="found"><div class="fields"><h3>The roll <span>${mine.roll.length}</span></h3>` +
+    `<p class="dim small">Each line is one account, shown under the house name it last played as. Changing house name does not make a new member.</p>` +
     mine.roll
-      .map((m) => `<div class="clan-row slim"><div class="about"><b>${esc(m.name)}</b>${m.founder ? "<small>founder</small>" : ""}</div>${mine!.founder && m.id !== me ? `<button data-remove="${m.id}">Remove</button>` : ""}</div>`)
+      .map((m) => {
+        const notes = [m.founder ? "founder" : "", m.joinedAs ? `joined as ${esc(m.joinedAs)}` : "", m.seen ? `last played ${since(m.seen)}` : ""].filter(Boolean).join(" · ");
+        return `<div class="clan-row slim"><div class="about"><b>${esc(m.name)}</b>${notes ? `<small>${notes}</small>` : ""}</div>${mine!.founder && m.id !== me ? `<button data-remove="${m.id}">Remove</button>` : ""}</div>`;
+      })
       .join("") +
     (mine.founder
       ? `<h3>Running it</h3>` +
