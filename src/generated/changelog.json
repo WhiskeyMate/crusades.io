@@ -1,8 +1,13 @@
 {
-  "version": "0.1.132",
+  "version": "0.1.133",
   "builtAt": "2026-10-11",
-  "commits": 132,
+  "commits": 133,
   "entries": [
+    {
+      "hash": "b843fc5",
+      "date": "2026-10-11",
+      "subject": "Joining or hosting waits to hear whether you are signed in, so the game server always learns your account: clan tag, reserved name and arms"
+    },
     {
       "hash": "73c9343",
       "date": "2026-10-11",

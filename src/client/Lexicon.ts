@@ -108,11 +108,23 @@ const EVENT_TEXT: Record<string, string> = {
   "events_display.unit_voluntarily_deleted": "Your {unit} was torn down.",
 };
 
+/** Names the engine uses for things in its messages that are not its unit types. */
+const UNIT_KEYS: Record<string, string> = {
+  boat: "longship",
+  mirv: "falling star",
+};
+
+/**
+ * What a thing is called here, for the middle of a sentence. The engine names
+ * it either by its unit type ("Atom Bomb") or by a translation key
+ * ("unit_type.atom_bomb", "unit_type.warship").
+ */
 function loreName(raw: string): string {
-  const hit = (Object.keys(UNIT_LORE) as UnitType[]).find(
-    (k) => k.toLowerCase() === raw.toLowerCase(),
-  );
-  return hit ? UNIT_LORE[hit].name : raw;
+  const key = raw.replace(/^unit_type\./, "");
+  if (UNIT_KEYS[key]) return UNIT_KEYS[key];
+  const plain = key.replace(/_/g, " ").toLowerCase();
+  const hit = (Object.keys(UNIT_LORE) as UnitType[]).find((k) => k.toLowerCase() === plain);
+  return hit ? UNIT_LORE[hit].name.toLowerCase() : plain;
 }
 
 export function eventText(
@@ -120,6 +132,10 @@ export function eventText(
   params?: Record<string, string | number>,
 ): string {
   let text = EVENT_TEXT[message] ?? message;
+  // Ships are sunk, not destroyed.
+  if (message === "events_display.unit_destroyed" && /unit_type\.(boat|warship)$/.test(String(params?.unit ?? ""))) {
+    text = "Your {unit} was sunk.";
+  }
   if (params) {
     for (const [k, v] of Object.entries(params)) {
       const s = k === "unit" ? loreName(String(v)) : String(v);
