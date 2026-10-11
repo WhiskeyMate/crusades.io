@@ -408,6 +408,11 @@ export class Game {
   }
 
   private async click(hit: PickHit | null, button: number, ev: PointerEvent) {
+    // A right-click while placing something only puts it down again: no wheel.
+    if (button === 2 && this.hud.placing !== null) {
+      this.hud.place(null);
+      return;
+    }
     if (!hit) return;
     const session = this.session;
     const state = session.state;

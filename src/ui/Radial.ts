@@ -162,14 +162,34 @@ export function openRadial(clientX: number, clientY: number, wheel: Wheel) {
   if (!root) {
     root = document.getElementById("radial");
     if (!root) return;
-    // A press anywhere else puts it away.
+    // A press anywhere else puts it away, and does nothing more: the press
+    // and everything that follows from it (the release, the click, a second
+    // menu) are kept from the map underneath.
+    let swallowing = 0;
     document.addEventListener(
       "pointerdown",
       (e) => {
-        if (radialOpen() && !root!.contains(e.target as Node)) closeRadial();
+        if (!radialOpen() || root!.contains(e.target as Node)) return;
+        closeRadial();
+        swallowing = performance.now();
+        e.stopPropagation();
+        e.preventDefault();
       },
       true,
     );
+    for (const kind of ["pointerup", "click", "contextmenu", "mousedown", "mouseup"] as const) {
+      document.addEventListener(
+        kind,
+        (e) => {
+          // The tail of that same press; a later one is its own business.
+          if (performance.now() - swallowing > 700) return;
+          e.stopPropagation();
+          e.preventDefault();
+          if (kind === "click" || kind === "contextmenu") swallowing = 0;
+        },
+        true,
+      );
+    }
     root.addEventListener("contextmenu", (e) => e.preventDefault());
   }
   const half = SIZE / 2 + 8;
