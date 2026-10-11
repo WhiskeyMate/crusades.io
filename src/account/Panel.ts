@@ -285,8 +285,9 @@ function drawCustom(): string {
     (bought === 0
       ? `<p class="dim small">You have the kit every house starts with. ${STORE_OPEN ? "The store has more." : "More will be on offer when the store opens."}</p>`
       : "") +
-    blocks +
-    (account.mayCustomiseArms() ? drawArms() : drawPlainArms())
+    // The banner first: it is the one thing every house can make its own.
+    (account.mayCustomiseArms() ? drawArms() : drawPlainArms()) +
+    blocks
   );
 }
 

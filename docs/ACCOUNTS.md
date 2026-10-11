@@ -28,6 +28,10 @@ Run `supabase/schema.sql` in the Supabase SQL editor. It is safe to re-run. It
 adds the `records` table and the `record_game` function the Stats tab needs.
 Until it has been run, signing in works but nothing is recorded.
 
+`npm run schema-test` runs the whole file against a Postgres inside Node, with
+stand-ins for what Supabase supplies, and then calls each function the site
+uses. Run it after any change to the schema.
+
 ## Redirect addresses
 
 In Supabase, under Authentication > URL Configuration:

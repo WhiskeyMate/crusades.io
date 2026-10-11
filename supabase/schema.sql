@@ -259,7 +259,7 @@ declare
   ta text := coalesce(jsonb_typeof(a), 'null');
   tb text := coalesce(jsonb_typeof(b), 'null');
   n integer;
-  out jsonb;
+  acc jsonb;
   k text;
 begin
   if ta = 'null' then ta := tb; a := case tb when 'number' then '0'::jsonb when 'array' then '[]'::jsonb when 'object' then '{}'::jsonb else null end; end if;
@@ -269,17 +269,17 @@ begin
     return to_jsonb(greatest(0, (a #>> '{}')::numeric) + greatest(0, (b #>> '{}')::numeric));
   elsif ta = 'array' then
     n := least(greatest(jsonb_array_length(a), jsonb_array_length(b)), 8);
-    out := '[]'::jsonb;
+    acc := '[]'::jsonb;
     for i in 0 .. n - 1 loop
-      out := out || jsonb_build_array(public.jsonb_sum(a -> i, b -> i));
+      acc := acc || jsonb_build_array(public.jsonb_sum(a -> i, b -> i));
     end loop;
-    return out;
+    return acc;
   elsif ta = 'object' then
-    out := '{}'::jsonb;
+    acc := '{}'::jsonb;
     for k in select distinct key from (select jsonb_object_keys(a) as key union all select jsonb_object_keys(b)) keys loop
-      out := out || jsonb_build_object(k, public.jsonb_sum(a -> k, b -> k));
+      acc := acc || jsonb_build_object(k, public.jsonb_sum(a -> k, b -> k));
     end loop;
-    return out;
+    return acc;
   end if;
   return null;
 end $$;
@@ -287,6 +287,9 @@ end $$;
 drop function if exists public.record_game(boolean, boolean, integer, real, integer, text);
 create or replace function public.record_game(mode text, won boolean, land real, secs integer, map text, totals jsonb)
 returns void language plpgsql security definer set search_path = public as $$
+-- `mode` and `totals` are both arguments here and columns of the table: where
+-- a bare name could be either (the ON CONFLICT list below), it is the column.
+#variable_conflict use_column
 declare
   uid uuid := auth.uid();
   prev timestamptz;
@@ -490,7 +493,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare
   uid uuid := auth.uid();
   n text := btrim(regexp_replace(coalesce(name, ''), '\s+', ' ', 'g'));
-  old text;
+  had text;
   changed timestamptz;
 begin
   if uid is null then raise exception 'Sign in first.'; end if;
@@ -498,9 +501,9 @@ begin
     raise exception 'An account name is 3 to 20 letters, digits and spaces.';
   end if;
   if foul(n) then raise exception 'That account name is not allowed.'; end if;
-  select p.handle, p.handle_changed_at into old, changed from profiles p where p.id = uid;
-  if old is not null and old = n then return; end if;
-  if old is not null and changed is not null and now() - changed < interval '30 days' then
+  select p.handle, p.handle_changed_at into had, changed from profiles p where p.id = uid;
+  if had is not null and had = n then return; end if;
+  if had is not null and changed is not null and now() - changed < interval '30 days' then
     raise exception 'An account name can be changed once in thirty days. You can change yours again on %.', to_char(changed + interval '30 days', 'FMDD Mon YYYY');
   end if;
   begin
