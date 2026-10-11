@@ -64,14 +64,28 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.profiles p where p.id = uid and p.premium)
       or exists (select 1 from public.inventory i where i.user_id = uid and i.item_id = 'banner-custom');
 $$;
+-- The plain banner any signed-in player may fly: a muted field, a simple
+-- division, one of a few charges, no second colour and no charge colour.
+-- The lists mirror FREE_COLORS, FREE_DIVISIONS and FREE_CHARGES in
+-- src/client/Heraldry.ts.
+create or replace function public.free_skin(skin jsonb) returns boolean
+language sql immutable as $$
+  select coalesce(
+    lower(skin ->> 'color') in ('#7a3b3b', '#8a5a3a', '#8a7a45', '#5f7045', '#46705f', '#3f6475', '#4a5680', '#6a5078', '#5b4636', '#4a4f57')
+    and (skin ->> 'division') in ('4', '0', '5', '6', '1', '12')
+    and (skin ->> 'charge') in ('12', '0', '1', '2', '3', '4')
+    and coalesce(jsonb_typeof(skin -> 'second'), 'null') = 'null'
+    and coalesce(jsonb_typeof(skin -> 'ink'), 'null') = 'null',
+    false);
+$$;
 drop policy if exists "premium sets own skin" on public.skins;
 drop policy if exists "premium changes own skin" on public.skins;
 drop policy if exists "owner sets own skin" on public.skins;
 create policy "owner sets own skin" on public.skins
-  for insert with check (auth.uid() = user_id and public.may_customise_arms(auth.uid()));
+  for insert with check (auth.uid() = user_id and (public.may_customise_arms(auth.uid()) or public.free_skin(skin)));
 drop policy if exists "owner changes own skin" on public.skins;
 create policy "owner changes own skin" on public.skins
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id and public.may_customise_arms(auth.uid()));
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id and (public.may_customise_arms(auth.uid()) or public.free_skin(skin)));
 
 -- Every new sign-up gets a profile row.
 create or replace function public.handle_new_user() returns trigger

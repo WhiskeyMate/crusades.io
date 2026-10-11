@@ -2,7 +2,7 @@
 // reserve a house name, design your arms, and choose what to wear.
 
 import { adFree } from "../ui/Ads";
-import { CHARGES, DIVISION_COUNT, DIVISION_NAMES, hexToRGB, shieldSVG, Skin } from "../client/Heraldry";
+import { CHARGES, DIVISION_COUNT, DIVISION_NAMES, FREE_CHARGES, FREE_COLORS, FREE_DIVISIONS, freeSkin, hexToRGB, shieldSVG, Skin } from "../client/Heraldry";
 import {
   BUNDLES, Bundle, defaultItem, Item, ITEMS, itemById, NAME_COST, PACKS, rarityOf, Slot, SLOT_NAMES,
 } from "../store/Catalog";
@@ -178,52 +178,88 @@ function drawAccount(): string {
   );
 }
 
-/** The Stats tab: everything counted, for all games or one kind of them. */
+/**
+ * The Stats tab, kept as a chronicle rather than a dashboard: a seal with the
+ * share of games won, then a ledger in chapters (holdings, the sea, the
+ * field, sorcery, the treasury). Each line gives the total and, in small, the
+ * average for a game. For all games or one kind of them.
+ */
 function drawStats(): string {
   const rec = account.state!.record;
   const r = statsMode === "all" ? overall(rec) : rec[statsMode];
   const t = r.totals;
-  const per = (n: number) => (r.played > 0 ? n / r.played : 0);
-  const small = (n: number) => (n >= 100 ? fmt(n) : n >= 10 ? n.toFixed(0) : n.toFixed(1));
-  const u = (k: string, i: number) => t.units[k]?.[i] ?? 0;
-  const b = (k: string, i: number) => t.boats[k]?.[i] ?? 0;
-  const m = (k: string, i: number) => t.bombs[k]?.[i] ?? 0;
-  const g = (i: number) => t.gold[i] ?? 0;
-  const a = (i: number) => t.attacks[i] ?? 0;
-  const cast = BOMB_KEYS.filter((k) => k !== "mirvw").reduce((n, k) => n + m(k, 0), 0);
-  const tile = (label: string, value: string, tone: string) => `<div class="tile ${tone}"><span>${label}</span><b>${value}</b><i>per game</i></div>`;
-  const group = (title: string, tiles: string) => `<h4>${title}</h4><div class="tiles">${tiles}</div>`;
-  const tableOf = (title: string, head: string[], rows: (string | number)[][]) =>
-    `<h3>${title}</h3><table class="stat-table"><thead><tr>${head.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
-    rows.map((row) => `<tr>${row.map((c, n) => `<td>${typeof c === "number" ? (n === 0 ? c : fmt(c)) : c}</td>`).join("")}</tr>`).join("") +
-    `</tbody></table>`;
+  const u = (k: string, n: number) => t.units[k]?.[n] ?? 0;
+  const b = (k: string, n: number) => t.boats[k]?.[n] ?? 0;
+  const m = (k: string, n: number) => t.bombs[k]?.[n] ?? 0;
+  const g = (n: number) => t.gold[n] ?? 0;
+  const a = (n: number) => t.attacks[n] ?? 0;
   const name = (type: UnitType) => UNIT_LORE[type].name;
-  const chips = (["all", ...MODES] as const)
-    .map((k) => `<button class="chip${statsMode === k ? " on" : ""}" data-stats="${k}">${{ all: "All", public: "Public", private: "Private", solo: "Solo" }[k]}</button>`)
+  const each = (n: number, show: (x: number) => string) => {
+    if (r.played === 0) return "";
+    const x = n / r.played;
+    return `<i>${x >= 100 ? show(x) : x >= 10 ? x.toFixed(0) : x.toFixed(1)} a game</i>`;
+  };
+  /** One line of the ledger: what, how many in all, and how many a game. */
+  const line = (label: string, n: number, show: (x: number) => string = fmt) =>
+    `<li><span>${label}</span><u></u><b>${n < 1000 && show === fmt ? n : show(n)}</b>${each(n, show)}</li>`;
+  const chapter = (title: string, sub: string, body: string, cls = "") =>
+    `<section class="chapter ${cls}"><header><h3>${title}</h3><span>${sub}</span></header>${body}</section>`;
+
+  const modes = (["all", ...MODES] as const)
+    .map((k) => `<button class="${statsMode === k ? "on" : ""}" data-stats="${k}">${{ all: "All games", public: "Public", private: "Private", solo: "Solo" }[k]}</button>`)
     .join("");
-  const rate = r.played > 0 ? (r.wins / r.played) * 100 : 0;
+
+  // The seal: a ring filled as far as the share of games won.
+  const rate = r.played > 0 ? r.wins / r.played : 0;
+  const round = 2 * Math.PI * 34;
+  const seal =
+    `<svg class="seal" viewBox="0 0 84 84" aria-hidden="true"><circle cx="42" cy="42" r="34" class="ring"/>` +
+    `<circle cx="42" cy="42" r="34" class="won" stroke-dasharray="${(round * rate).toFixed(1)} ${round.toFixed(1)}" transform="rotate(-90 42 42)"/>` +
+    `<text x="42" y="40" class="pc">${Math.round(rate * 100)}%</text><text x="42" y="54" class="cap">won</text></svg>`;
+  const hours = r.seconds / 3600;
+
+  const kinds = ([["city", UnitType.City], ["port", UnitType.Port], ["fact", UnitType.Factory], ["defp", UnitType.DefensePost], ["silo", UnitType.MissileSilo], ["saml", UnitType.SAMLauncher]] as const);
+  const holdings =
+    `<table class="roll"><thead><tr><th></th><th>Raised</th><th>Razed</th><th>Taken</th><th>Lost</th></tr></thead><tbody>` +
+    kinds.map(([k, type]) => `<tr><td>${name(type)}</td><td>${fmt(u(k, 0))}</td><td>${fmt(u(k, 1))}</td><td>${fmt(u(k, 2))}</td><td>${fmt(u(k, 3))}</td></tr>`).join("") +
+    `</tbody></table>`;
+
+  const spells = ([["abomb", UnitType.AtomBomb], ["hbomb", UnitType.HydrogenBomb], ["mirv", UnitType.MIRV]] as const);
+  const sorcery =
+    `<table class="roll"><thead><tr><th></th><th>Cast</th><th>Struck</th><th>Shot down</th></tr></thead><tbody>` +
+    spells.map(([k, type]) => `<tr><td>${name(type)}</td><td>${fmt(m(k, 0))}</td><td>${fmt(m(k, 1))}</td><td>${fmt(m(k, 2))}</td></tr>`).join("") +
+    `<tr><td>Falling stars</td><td>${fmt(m("mirvw", 0))}</td><td>${fmt(m("mirvw", 1))}</td><td>${fmt(m("mirvw", 2))}</td></tr>` +
+    `</tbody></table>`;
+
+  // The treasury: each source of gold as a bar, as long as its share of the whole.
+  const sources: [string, number][] = [
+    ["Trade by sea", g(2)], ["Piracy", g(3)], ["Spoils of conquest", g(1)], ["Your roads", g(4)], ["Others' roads", g(5)], ["Your subjects", g(0)],
+  ];
+  const most = Math.max(1, ...sources.map(([, n]) => n));
+  const earned = sources.reduce((n, [, x]) => n + x, 0);
+  const treasury =
+    `<ul class="bars">` +
+    sources.map(([label, n]) => `<li><span>${label}</span><div><i style="width:${((n / most) * 100).toFixed(1)}%"></i></div><b>${fmt(n)}</b></li>`).join("") +
+    `</ul><p class="foot">${fmt(earned)} gold in all${r.played > 0 ? ` · ${fmt(earned / r.played)} a game` : ""}</p>`;
+
   return (
-    `<div class="record wide">` +
-    `<div class="chips">${chips}</div>` +
-    `<div class="winrate"><div><span>Win rate</span><b>${rate.toFixed(1)}%</b></div>` +
-    `<div class="tally"><div><span>Played</span><b>${r.played}</b></div><div><span>Victories</span><b class="good">${r.wins}</b></div><div><span>Losses</span><b class="bad">${r.played - r.wins}</b></div></div></div>` +
-    (r.played === 0 ? `<p class="dim">No games of this kind on your record yet. Finish one while signed in and it will be counted here.</p>` : "") +
-    group("Buildings", tile(`${name(UnitType.City)}s built`, small(per(u("city", 0))), "green") + tile(`${name(UnitType.Port)}s built`, small(per(u("port", 0))), "green") + tile(`${name(UnitType.Factory)}s built`, small(per(u("fact", 0))), "green") + tile(`${name(UnitType.DefensePost)}s built`, small(per(u("defp", 0))), "green")) +
-    group("At sea", tile("Longships sent", small(per(b("trans", 0))), "blue") + tile("Longships landed", small(per(b("trans", 1))), "blue") + tile("Cogs arrived", small(per(b("trade", 1))), "blue") + tile("Cogs captured", small(per(b("trade", 2))), "blue")) +
-    group("War", tile("Levies sent", fmtTroops(per(a(0))), "red") + tile("Levies faced", fmtTroops(per(a(1))), "red") + tile("Sorcery cast", small(per(cast)), "red") + tile(`${name(UnitType.Warship)}s built`, small(per(u("wshp", 0))), "red")) +
-    group("Gold earned", tile("Trade", fmt(per(g(2))), "gold") + tile("Piracy", fmt(per(g(3))), "gold") + tile("Your roads", fmt(per(g(4))), "gold") + tile("Others' roads", fmt(per(g(5))), "gold")) +
-    tableOf("Buildings", ["Building", "Built", "Destroyed", "Captured", "Lost"],
-      ([["city", UnitType.City], ["port", UnitType.Port], ["fact", UnitType.Factory], ["defp", UnitType.DefensePost], ["silo", UnitType.MissileSilo], ["saml", UnitType.SAMLauncher]] as const)
-        .map(([k, type]) => [name(type), u(k, 0), u(k, 1), u(k, 2), u(k, 3)])) +
-    tableOf(`${name(UnitType.Warship)}s`, ["Built", "Sunk", "Captured", "Lost"], [[String(u("wshp", 0)), u("wshp", 1), u("wshp", 2), u("wshp", 3)]]) +
-    tableOf("Ships", ["Ship", "Sent", "Arrived", "Captured", "Sunk"], [["Cog", b("trade", 0), b("trade", 1), b("trade", 2), b("trade", 3)], ["Longship", b("trans", 0), b("trans", 1), b("trans", 2), b("trans", 3)]]) +
-    tableOf("Sorcery", ["Spell", "Cast", "Landed", "Shot down"],
-      ([["abomb", UnitType.AtomBomb], ["hbomb", UnitType.HydrogenBomb], ["mirv", UnitType.MIRV]] as const).map(([k, type]) => [name(type), m(k, 0), m(k, 1), m(k, 2)])
-        .concat([["Falling stars", m("mirvw", 0), m("mirvw", 1), m("mirvw", 2)]])) +
-    tableOf("Levies", ["Sent", "Faced", "Called back"], [[fmtTroops(a(0)), fmtTroops(a(1)), fmtTroops(a(2))]]) +
-    tableOf("Gold", ["Subjects", "Conquest", "Trade", "Piracy", "Your roads", "Others' roads"], [[fmt(g(0)), g(1), g(2), g(3), g(4), g(5)]]) +
-    tableOf("Realms and pacts", ["Lords conquered", "Kingdoms conquered", "Tribes conquered", "Pacts broken"], [[String(t.conquests[0] ?? 0), t.conquests[1] ?? 0, t.conquests[2] ?? 0, t.betrayals]]) +
-    `</div>`
+    `<div class="chronicle">` +
+    `<nav class="kinds">${modes}</nav>` +
+    `<div class="summary">${seal}` +
+    `<dl><div><dt>Played</dt><dd>${r.played}</dd></div><div><dt>Won</dt><dd class="good">${r.wins}</dd></div><div><dt>Lost</dt><dd class="bad">${r.played - r.wins}</dd></div>` +
+    `<div><dt>Most land held</dt><dd>${r.bestLand.toFixed(1)}%</dd></div><div><dt>Hours on campaign</dt><dd>${hours >= 10 ? Math.round(hours) : hours.toFixed(1)}</dd></div></dl></div>` +
+    (r.played === 0 ? `<p class="dim">Nothing is written here yet. Finish a game of this kind while signed in and it will be entered.</p>` : "") +
+    `<div class="chapters">` +
+    chapter("Holdings", "what you raised, and what became of it", holdings, "span") +
+    chapter("In the field", "levies and conquests",
+      `<ul class="ledger">` + line("Levies sent to war", a(0), fmtTroops) + line("Levies that came against you", a(1), fmtTroops) + line("Levies called back", a(2), fmtTroops) +
+      line("Tribes conquered", t.conquests[2] ?? 0) + line("Kingdoms conquered", t.conquests[1] ?? 0) + line("Lords conquered", t.conquests[0] ?? 0) + line("Pacts broken", t.betrayals) + `</ul>`) +
+    chapter("The sea", "longships, cogs and war galleys",
+      `<ul class="ledger">` + line("Longships sent", b("trans", 0)) + line("Longships landed", b("trans", 1)) + line("Cogs sent to trade", b("trade", 0)) + line("Cogs come to harbour", b("trade", 1)) +
+      line("Cogs taken as prizes", b("trade", 2)) + line(`${name(UnitType.Warship)}s built`, u("wshp", 0)) + line("Ships sunk by your galleys", u("wshp", 1)) + line(`${name(UnitType.Warship)}s lost`, u("wshp", 3)) + `</ul>`) +
+    chapter("Sorcery", "what you cast, and what got through", sorcery) +
+    chapter("The treasury", "where your gold came from", treasury) +
+    `</div></div>`
   );
 }
 
@@ -247,7 +283,7 @@ function drawCustom(): string {
       ? `<p class="dim small">You have the kit every house starts with. ${STORE_OPEN ? "The store has more." : "More will be on offer when the store opens."}</p>`
       : "") +
     blocks +
-    (account.mayCustomiseArms() ? drawArms() : "")
+    (account.mayCustomiseArms() ? drawArms() : drawPlainArms())
   );
 }
 
@@ -308,7 +344,60 @@ function drawPacks(): string {
   );
 }
 
+/** Whether the editor on the page is the plain, free one. */
+let armsPlain = false;
+const PLAIN: Skin = { color: FREE_COLORS[0], division: 4, charge: 12 };
+
+/** The plain banner's editor: muted fields, a few divisions, a few charges. */
+function drawPlainArms(): string {
+  armsPlain = true;
+  if (!freeSkin(draft)) draft = freeSkin(account.state?.skin) ? { ...account.state!.skin! } : { ...PLAIN };
+  return (
+    `<h3>Your banner</h3>` +
+    `<p class="dim small">Every signed-in house may fly a plain banner of its own.${STORE_OPEN ? " Any colour, every division and charge come with “Your own arms” in the store." : ""}</p>` +
+    `<div id="acct-editor"><div class="arms-left"><div id="acct-preview"></div>` +
+    `<button id="acct-random">⚄ Surprise me</button>` +
+    `<button id="acct-save" class="primary">Save my banner</button></div>` +
+    `<div class="controls">` +
+    `<div class="field-label">Field</div><div id="acct-colors" class="row-wrap"></div>` +
+    `<div class="field-label">Division</div><div id="acct-divisions" class="row-wrap"></div>` +
+    `<div class="field-label">Charge</div><div id="acct-charges" class="row-wrap charges"></div>` +
+    `</div></div>`
+  );
+}
+
+function wirePlainArms() {
+  const preview = () => (el("acct-preview").innerHTML = shieldSVG("preview", hexToRGB(draft.color), 150, draft));
+  preview();
+  el("acct-colors").innerHTML = FREE_COLORS.map((c) => `<button class="swatch${c === draft.color ? " on" : ""}" data-c="${c}" style="background:${c}"></button>`).join("");
+  el("acct-divisions").innerHTML = FREE_DIVISIONS.map(
+    (i) => `<button class="pick${i === draft.division ? " on" : ""}" data-d="${i}" title="${DIVISION_NAMES[i]}">${shieldSVG("preview", hexToRGB(draft.color), 30, { ...draft, division: i, charge: 12 })}</button>`,
+  ).join("");
+  el("acct-charges").innerHTML = FREE_CHARGES.map(
+    (i) => `<button class="pick glyph${i === draft.charge ? " on" : ""}" data-g="${i}">${CHARGES[i] ? CHARGES[i] + "︎" : "∅"}</button>`,
+  ).join("");
+  for (const b of Array.from(el("acct-editor").querySelectorAll<HTMLButtonElement>(".controls button"))) {
+    b.onclick = () => {
+      if (b.dataset.c) draft.color = b.dataset.c;
+      if (b.dataset.d) draft.division = Number(b.dataset.d);
+      if (b.dataset.g) draft.charge = Number(b.dataset.g);
+      wirePlainArms();
+    };
+  }
+  el("acct-random").onclick = () => {
+    const pick = <T,>(a: T[]) => a[(Math.random() * a.length) | 0];
+    draft = { color: pick(FREE_COLORS), division: pick(FREE_DIVISIONS), charge: pick(FREE_CHARGES) };
+    wirePlainArms();
+  };
+  el("acct-save").onclick = async () => {
+    const err = await account.saveSkin({ color: draft.color, division: draft.division, charge: draft.charge });
+    say(err ?? "Saved. Your next game flies this banner.", Boolean(err));
+    if (!err) draw();
+  };
+}
+
 function drawArms(): string {
+  armsPlain = false;
   const locked = !account.mayCustomiseArms();
   return (
     `<h3>Design your arms</h3>` +
@@ -328,6 +417,7 @@ function drawArms(): string {
 
 function wireArms() {
   if (!document.getElementById("acct-editor")) return;
+  if (armsPlain) return wirePlainArms();
   const preview = () => (el("acct-preview").innerHTML = shieldSVG("preview", hexToRGB(draft.color), 150, draft));
   preview();
   el("acct-colors").innerHTML =

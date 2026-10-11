@@ -12,7 +12,7 @@
 // browser is never trusted with a balance. See docs/DEPLOY.md.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { Skin, validSkin } from "../client/Heraldry";
+import { freeSkin, Skin, validSkin } from "../client/Heraldry";
 import { BUNDLES, Equipped, ITEMS, itemById, PACKS, Slot } from "../store/Catalog";
 import { addModes, type Mode, MODES, noMode, noRecord, plain, type PlayerRecord, type Totals } from "./Record";
 
@@ -92,7 +92,10 @@ class AccountService {
 
   /** The arms to wear in game: for players allowed custom arms who chose some. */
   get skin(): Skin | null {
-    return this.state && this.mayCustomiseArms() ? this.state.skin : null;
+    const s = this.state;
+    if (!s || !s.skin) return null;
+    // The full workshop for those who own it; the plain banner for anyone signed in.
+    return this.mayCustomiseArms() || freeSkin(s.skin) ? s.skin : null;
   }
 
   mayCustomiseArms(): boolean {
@@ -249,7 +252,7 @@ class AccountService {
 
   async saveSkin(skin: Skin): Promise<string | null> {
     if (!this.state) return "Sign in first.";
-    if (!this.mayCustomiseArms()) return "Custom arms need the “Your own arms” item.";
+    if (!this.mayCustomiseArms() && !freeSkin(skin)) return "Those arms need the “Your own arms” item. The plain banner is free.";
     if (DEV_PREVIEW) {
       this.state.skin = skin;
       this.saveDev();

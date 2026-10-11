@@ -6,6 +6,8 @@
 // All optional: without SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in the
 // server's environment everyone is a guest and no name is reserved.
 
+import { freeSkin } from "../../src/client/Heraldry";
+
 const URL_ = process.env.SUPABASE_URL?.replace(/\/$/, "");
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -53,14 +55,15 @@ export async function identify(token: string | undefined): Promise<Identity | nu
       body: JSON.stringify({ uid: user.id }),
     })) as { username: string | null; equipped: Record<string, string> | null; skin: Cosmetic["skin"] }[];
     const row = rows[0];
-    // Custom arms only travel with the item that unlocks them.
+    // Custom arms only travel with the item that unlocks them; the plain
+    // banner anyone signed in may fly travels on its own.
     const inv = (await call(
       `/rest/v1/inventory?select=item_id&user_id=eq.${user.id}&item_id=eq.banner-custom`,
     )) as unknown[];
     return {
       uid: user.id,
       username: row?.username ?? null,
-      cosmetic: { equipped: row?.equipped ?? {}, skin: inv.length > 0 ? (row?.skin ?? null) : null },
+      cosmetic: { equipped: row?.equipped ?? {}, skin: inv.length > 0 || freeSkin(row?.skin) ? (row?.skin ?? null) : null },
     };
   } catch (e) {
     console.error("identify failed:", e instanceof Error ? e.message : e);

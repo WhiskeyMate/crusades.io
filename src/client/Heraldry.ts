@@ -109,6 +109,32 @@ export const CHARGES = [
 ].slice(0, 76);
 
 
+// The plain banner any signed-in player may fly without buying anything: a
+// muted field, one of the simplest divisions, one of a handful of charges,
+// and the herald's own choice of second colour. The full workshop (any
+// colour, every division and charge, a second tincture, a charge colour)
+// comes with the "Your own arms" item.
+/** Muted fields: earth, moss, slate, wine. Nothing bright. Lower case. */
+export const FREE_COLORS = [
+  "#7a3b3b", "#8a5a3a", "#8a7a45", "#5f7045", "#46705f", "#3f6475", "#4a5680", "#6a5078", "#5b4636", "#4a4f57",
+];
+/** Plain, per pale, per fess, quarterly, chief, fess. */
+export const FREE_DIVISIONS = [4, 0, 5, 6, 1, 12];
+/** None, cross, tower, fleur-de-lis, star, knight. */
+export const FREE_CHARGES = [12, 0, 1, 2, 3, 4];
+
+/** Whether these are arms within the free banner's limits. */
+export function freeSkin(v: unknown): v is Skin {
+  if (!validSkin(v)) return false;
+  return (
+    FREE_COLORS.includes(v.color.toLowerCase()) &&
+    FREE_DIVISIONS.includes(v.division) &&
+    FREE_CHARGES.includes(v.charge) &&
+    (v.second === undefined || v.second === null) &&
+    (v.ink === undefined || v.ink === null)
+  );
+}
+
 /** A small shield as inline SVG: field in the realm's colour, a division and a charge. */
 export function shieldSVG(name: string, color: RGB, size = 18, skin?: Skin | null): string {
   const h = hash(name);
