@@ -2,6 +2,7 @@
 // standings, the build bar, the chronicle, wars, pact offers and the
 // right-click menu.
 
+import { closeRadial, ICON, openRadial, radialOpen, Slice } from "./Radial";
 import { Choice, quality } from "../render/Quality";
 import { track } from "./Analytics";
 import { drawEndOffer } from "../account/Panel";
@@ -97,6 +98,7 @@ export class Hud {
     document.removeEventListener("pointerdown", this.dismiss, true);
     el("hud").hidden = true;
     el("menu-ctx").hidden = true;
+    closeRadial();
     el("endgame").hidden = true;
     el("offers").innerHTML = "";
     el("raids").innerHTML = "";
@@ -116,6 +118,7 @@ export class Hud {
       this.place(null);
       this.onCancel();
       el("menu-ctx").hidden = true;
+      closeRadial();
       el("help").hidden = true;
     } else if (e.code === "Space") {
       e.preventDefault();
@@ -568,7 +571,7 @@ export class Hud {
   /** The little card that follows the cursor. */
   hover(tile: TileRef | null, clientX: number, clientY: number, unit?: UnitState) {
     const tip = el("tip");
-    if (tile === null || !el("menu-ctx").hidden) {
+    if (tile === null || !el("menu-ctx").hidden || radialOpen()) {
       tip.hidden = true;
       return;
     }
@@ -598,7 +601,11 @@ export class Hud {
     tip.style.transform = `translate(${clientX + 16}px, ${clientY + 18}px)`;
   }
 
-  /** Right-click: what can be done to whoever holds this tile. */
+  /**
+   * Right-click: a wheel of what can be done here. Marching is the middle;
+   * around it are building, sailing, pacts, gifts and a closer look at
+   * whoever holds the ground.
+   */
   async context(tile: TileRef, clientX: number, clientY: number) {
     const state = this.session.state;
     const me = state.me;
@@ -606,71 +613,139 @@ export class Hud {
     const actions = await this.session.actions(tile, [UnitType.TransportShip]);
     if (!actions) return;
     const owner = state.owner(tile);
+    const other = owner && owner !== me ? owner : null;
+    const it = other ? actions.interaction : undefined;
+    const troops = me.troops * this.ratio;
+    const send = fmtTroops(troops);
+    const whom = owner ? owner.name : state.map.isLand(tile) ? "the wilds" : "open water";
+    const go = (intent: Intent) => () => this.session.send(intent);
+
+    const pact: Slice = it?.canBreakAlliance
+      ? { icon: ICON.broken, label: "Break pact", tone: "bad", about: `Break faith with ${whom}. You will be named oathbreaker.`, act: go({ type: "breakAlliance", recipient: other!.id }) }
+      : it?.canSendAllianceRequest
+        ? { icon: ICON.pact, label: "Offer pact", about: `Offer ${whom} a pact of peace.`, act: go({ type: "allianceRequest", recipient: other!.id }) }
+        : other && me.outgoingAllianceRequests.includes(other.id)
+          ? { icon: ICON.pact, label: "Pact offered", about: `${whom} has not answered yet.`, disabled: true }
+          : { icon: ICON.pact, label: "Pact", about: other ? "No pact can be offered now." : "Pacts are sworn with other realms.", disabled: true };
+
+    openRadial(clientX, clientY, {
+      caption: owner ? owner.name : state.map.isLand(tile) ? "Unclaimed wilds" : "Open water",
+      centre: {
+        icon: ICON.sword, label: "March", sub: actions.canAttack ? send : undefined, disabled: !actions.canAttack,
+        about: actions.canAttack ? `Send ${send} levies against ${whom}.` : owner === me ? "This is your own land." : "Your border does not reach here.",
+        act: go({ type: "attack", targetID: owner?.id ?? null, troops }),
+      },
+      slices: [
+        {
+          icon: ICON.scroll, label: "Realm", disabled: !owner,
+          about: owner ? `What is known of ${owner.name}, and your dealings with them.` : "Nobody holds this.",
+          act: () => void this.inform(tile, clientX, clientY),
+        },
+        {
+          icon: ICON.hammer, label: "Build",
+          about: "Raise a building or cast sorcery on this spot.",
+          children: () => this.buildSlices(tile),
+        },
+        {
+          icon: ICON.ship, label: "Sail", sub: owner !== me && canSail(actions.buildableUnits) ? send : undefined,
+          disabled: owner === me || !canSail(actions.buildableUnits),
+          about: owner === me ? "This is your own land." : canSail(actions.buildableUnits) ? `Land ${send} levies here by longship.` : "No longship of yours can reach here.",
+          act: go({ type: "boat", troops, dst: tile }),
+        },
+        pact,
+        {
+          icon: ICON.gift, label: "Give", disabled: !it || (!it.canDonateTroops && !it.canDonateGold),
+          about: other ? (it?.canDonateTroops || it?.canDonateGold ? `Lend levies or send gold to ${whom}.` : "Gifts go to those you have a pact with.") : "Gifts go to other realms.",
+          children: () => [
+            { icon: ICON.men, label: "Lend levies", disabled: !it?.canDonateTroops, about: `Lend ${whom} a share of your levies.`, act: go({ type: "donate_troops", recipient: other!.id, troops: null }) },
+            { icon: ICON.coin, label: "Send gold", disabled: !it?.canDonateGold, about: `Send ${whom} a share of your gold.`, act: go({ type: "donate_gold", recipient: other!.id, gold: null }) },
+          ],
+        },
+      ],
+    });
+    el("menu-ctx").hidden = true;
+    el("tip").hidden = true;
+  }
+
+  /** The ring of things to build on a tile: each with its cost, greyed if it cannot go there. */
+  private async buildSlices(tile: TileRef): Promise<Slice[]> {
+    const can = await this.session.buildables(tile);
+    return BUILD_ORDER.map((type): Slice => {
+      const lore = UNIT_LORE[type];
+      const b = can.find((x) => x.type === type);
+      const raise = b !== undefined && b.canUpgrade !== false;
+      const able = b !== undefined && (raise || b.canBuild !== false);
+      return {
+        icon: lore.glyph, label: raise ? `Raise ${lore.name}` : lore.name,
+        sub: b ? fmt(Number(b.cost)) : undefined, disabled: !able,
+        about: able ? (raise ? "Raises the one already here by a level." : lore.blurb) : `${lore.name} cannot be placed here now.`,
+        act: () =>
+          this.session.send(
+            raise
+              ? { type: "upgrade_structure", unit: type, unitId: b!.canUpgrade as number }
+              : { type: "build_unit", unit: type, tile },
+          ),
+      };
+    });
+  }
+
+  /** The card on a realm: what it has, how you stand with it, and what you may do about it. */
+  private async inform(tile: TileRef, clientX: number, clientY: number) {
+    const state = this.session.state;
+    const me = state.me;
+    const owner = state.owner(tile);
+    if (!me || !owner) return;
+    const actions = owner === me ? undefined : await this.session.actions(tile, [UnitType.TransportShip]);
+    const it = actions?.interaction;
     const menu = el("menu-ctx");
+    const kind = owner === me ? "Your realm" : owner.type === PlayerType.Bot ? "Clan" : owner.type === PlayerType.Human ? "A rival lord" : "Kingdom";
+    const share = ((owner.tilesOwned / state.map.numLandTiles()) * 100).toFixed(1);
+    const rows: [string, string][] = [
+      ["Levies", fmtTroops(owner.troops)],
+      ["Gold", fmt(owner.gold)],
+      ["Land", `${share}% of the realm`],
+    ];
+    if (owner !== me) {
+      const sworn = me.allies.includes(owner.smallID);
+      const left = it?.allianceInfo ? Math.max(0, Math.round((it.allianceInfo.expiresAt - state.tick) / 10)) : 0;
+      rows.push([
+        "Pact",
+        sworn ? `Sworn${left ? `, ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")} left` : ""}` : me.outgoingAllianceRequests.includes(owner.id) ? "Offered, not yet answered" : "None",
+      ]);
+      rows.push(["Trade", me.embargoes.has(owner.id) ? "Forbidden by you" : "Open"]);
+      if (me.targets.includes(owner.smallID)) rows.push(["Marked", "You have named them a common foe"]);
+    }
     const items: { label: string; intent: Intent; tone?: string }[] = [];
-    const send = fmtTroops(me.troops * this.ratio);
-    if (actions.canAttack) {
-      items.push({
-        label: `⚔ March on ${owner ? esc(owner.name) : "the wilds"} (${send})`,
-        intent: { type: "attack", targetID: owner?.id ?? null, troops: me.troops * this.ratio },
-      });
-    }
-    if (owner !== me && canSail(actions.buildableUnits)) {
-      items.push({
-        label: `🛶 Land longships here (${send})`,
-        intent: { type: "boat", troops: me.troops * this.ratio, dst: tile },
-      });
-    }
-    const it = actions.interaction;
-    if (owner && owner !== me && it) {
-      if (it.canSendAllianceRequest) {
-        items.push({ label: "🤝 Offer a pact", intent: { type: "allianceRequest", recipient: owner.id } });
-      }
-      if (it.allianceInfo?.canExtend) {
-        items.push({ label: "📜 Renew our pact", intent: { type: "allianceExtension", recipient: owner.id } });
-      }
-      if (it.canBreakAlliance) {
-        items.push({ label: "🗡 Break our pact", tone: "bad", intent: { type: "breakAlliance", recipient: owner.id } });
-      }
-      if (it.canTarget) {
-        items.push({ label: "🎯 Name them a common foe", intent: { type: "targetPlayer", target: owner.id } });
-      }
-      if (it.canDonateTroops) {
-        items.push({ label: "🎁 Lend levies", intent: { type: "donate_troops", recipient: owner.id, troops: null } });
-      }
-      if (it.canDonateGold) {
-        items.push({ label: "💰 Send gold", intent: { type: "donate_gold", recipient: owner.id, gold: null } });
-      }
+    if (it) {
+      if (it.canSendAllianceRequest) items.push({ label: "Offer a pact", intent: { type: "allianceRequest", recipient: owner.id } });
+      if (it.allianceInfo?.canExtend) items.push({ label: "Renew our pact", intent: { type: "allianceExtension", recipient: owner.id } });
+      if (it.canDonateTroops) items.push({ label: "Lend levies", intent: { type: "donate_troops", recipient: owner.id, troops: null } });
+      if (it.canDonateGold) items.push({ label: "Send gold", intent: { type: "donate_gold", recipient: owner.id, gold: null } });
+      if (it.canTarget) items.push({ label: "Name them a common foe", intent: { type: "targetPlayer", target: owner.id } });
       items.push(
         it.canEmbargo
-          ? { label: "⛔ Forbid trade with them", intent: { type: "embargo", targetID: owner.id, action: "start" } }
-          : { label: "✅ Reopen trade with them", intent: { type: "embargo", targetID: owner.id, action: "stop" } },
+          ? { label: "Forbid trade with them", intent: { type: "embargo", targetID: owner.id, action: "start" } }
+          : { label: "Reopen trade with them", intent: { type: "embargo", targetID: owner.id, action: "stop" } },
       );
-    }
-    let head: string;
-    if (owner) {
-      head =
-        `<div class="head">${shieldSVG(owner.name, owner.color, 30, owner.arms)}<div><b>${esc(owner.name)}</b>` +
-        `<span>${fmtTroops(owner.troops)} levies · ${fmt(owner.gold)} gold · ${owner.tilesOwned.toLocaleString("en-US")} tiles</span>` +
-        `${owner.isTraitor ? "<span class='bad'>Oathbreaker</span>" : ""}</div></div>`;
-    } else {
-      head = `<div class="head"><div><b>${state.map.isLand(tile) ? "Unclaimed wilds" : "Open water"}</b></div></div>`;
+      if (it.canBreakAlliance) items.push({ label: "Break our pact", tone: "bad", intent: { type: "breakAlliance", recipient: owner.id } });
     }
     menu.innerHTML =
-      head +
-      (items.length === 0
-        ? `<div class="none">Nothing to be done here.</div>`
-        : items.map((it2, i) => `<button class="${it2.tone ?? ""}" data-i="${i}">${it2.label}</button>`).join(""));
-    for (const b of Array.from(menu.querySelectorAll("button"))) {
+      `<div class="head">${shieldSVG(owner.name, owner.color, 38, owner.arms)}<div><b>${esc(owner.name)}</b>` +
+      `<span>${kind}</span>${owner.isTraitor ? "<span class='bad'>Oathbreaker</span>" : ""}</div></div>` +
+      `<dl class="facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("")}</dl>` +
+      items.map((x, i) => `<button class="${x.tone ?? ""}" data-i="${i}">${x.label}</button>`).join("") +
+      `<button data-show>Show on the map</button>`;
+    for (const b of Array.from(menu.querySelectorAll<HTMLButtonElement>("button"))) {
       b.onclick = () => {
-        this.session.send(items[Number(b.dataset.i)].intent);
+        if (b.dataset.show !== undefined) this.onFocus(state.map.ref(Math.round(owner.nameX), Math.round(owner.nameY)));
+        else this.session.send(items[Number(b.dataset.i)].intent);
         menu.hidden = true;
       };
     }
     menu.hidden = false;
     const r = menu.getBoundingClientRect();
-    menu.style.left = `${Math.min(clientX, window.innerWidth - r.width - 8)}px`;
-    menu.style.top = `${Math.min(clientY, window.innerHeight - r.height - 8)}px`;
+    menu.style.left = `${Math.max(8, Math.min(clientX - r.width / 2, window.innerWidth - r.width - 8))}px`;
+    menu.style.top = `${Math.max(8, Math.min(clientY - 40, window.innerHeight - r.height - 8))}px`;
     el("tip").hidden = true;
   }
 }

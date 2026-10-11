@@ -1,8 +1,13 @@
 {
-  "version": "0.1.106",
+  "version": "0.1.107",
   "builtAt": "2026-10-11",
-  "commits": 106,
+  "commits": 107,
   "entries": [
+    {
+      "hash": "f79853f",
+      "date": "2026-10-11",
+      "subject": "The conquest banner is smaller"
+    },
     {
       "hash": "0ba4416",
       "date": "2026-10-11",

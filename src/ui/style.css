@@ -650,3 +650,35 @@ body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top))
 .conquest-mark { position: absolute; left: 0; top: 0; z-index: 3; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 3px 10px 4px; border-radius: 5px; border: 1px solid #f2d27a; background: rgba(28, 20, 10, 0.88); box-shadow: 0 0 12px rgba(242, 210, 122, 0.55); white-space: nowrap; will-change: transform, opacity; }
 .conquest-mark b { font-size: 11.5px; color: #ffe9b0; font-weight: normal; letter-spacing: 0.3px; }
 .conquest-mark span { font-size: 16px; color: var(--gold); font-weight: bold; text-shadow: 0 1px 3px #000; }
+/* The wheel under a right-click. */
+#radial { position: fixed; z-index: 7; width: 0; height: 0; }
+#radial[hidden] { display: none; }
+.wheel { position: absolute; left: -134px; top: -134px; width: 268px; height: 268px; filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6)); }
+.wheel.fresh { animation: wheel-in 0.14s ease-out; }
+@keyframes wheel-in { from { transform: scale(0.72); opacity: 0; } }
+.wheel svg { display: block; }
+.wheel .slice { fill: rgba(30, 21, 12, 0.95); stroke: #6b5330; stroke-width: 1.2; cursor: pointer; transition: fill 0.08s; }
+.wheel .slice:hover { fill: #5a4018; stroke: var(--gold); }
+.wheel .slice.bad:hover { fill: #6a1d1a; stroke: #e08a70; }
+.wheel .slice.off { fill: rgba(24, 18, 12, 0.88); cursor: default; }
+.wheel .slice.off:hover { fill: rgba(24, 18, 12, 0.88); stroke: #6b5330; }
+.wheel .hub { fill: #8a1e23; stroke: #e2a07c; stroke-width: 1.6; cursor: pointer; }
+.wheel .hub:hover { fill: #a8272d; stroke: var(--gold); }
+.wheel .hub.back { fill: #3a2a14; stroke: #8a6c3c; }
+.wheel .hub.back:hover { fill: #5a4018; }
+.wheel .hub.off, .wheel .hub.off:hover { fill: #2b2118; stroke: #5a4a36; cursor: default; }
+.slice-face { position: absolute; transform: translate(-50%, -50%); pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 1px; color: #f2d99a; text-align: center; white-space: nowrap; }
+.slice-face b { font-size: 11.5px; font-weight: normal; color: var(--ink); line-height: 1.1; }
+.slice-face span { font-size: 10.5px; color: var(--gold); line-height: 1.1; }
+.slice-face i { font-style: normal; line-height: 1.05; }
+.slice-face.bad { color: #ff9d86; }
+.slice-face.off { opacity: 0.34; }
+.hub-face { color: #ffe9c2; }
+.hub-face b { font-size: 12px; }
+.wheel-caption { position: absolute; left: -150px; top: 138px; width: 300px; text-align: center; pointer-events: none; display: flex; flex-direction: column; gap: 1px; padding: 4px 10px 5px; border-radius: 5px; background: rgba(24, 17, 11, 0.9); border: 1px solid var(--edge); }
+.wheel-caption b { font-size: 13.5px; color: var(--gold); font-weight: normal; }
+.wheel-caption span { font-size: 12px; color: #d9ccae; line-height: 1.3; }
+/* The card on a realm. */
+#menu-ctx .facts { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 2px 4px 6px; font-size: 13px; }
+#menu-ctx .facts dt { color: var(--dim); }
+#menu-ctx .facts dd { margin: 0; text-align: right; }
