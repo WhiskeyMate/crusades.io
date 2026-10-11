@@ -1,8 +1,13 @@
 {
-  "version": "0.1.110",
+  "version": "0.1.111",
   "builtAt": "2026-10-11",
-  "commits": 110,
+  "commits": 111,
   "entries": [
+    {
+      "hash": "8aed485",
+      "date": "2026-10-11",
+      "subject": "The wheel: Build on your own land (town, market, harbour, mage tower, ballista tower), Attack elsewhere (war galley, fireball, dragon, starfall)"
+    },
     {
       "hash": "ba880b0",
       "date": "2026-10-11",

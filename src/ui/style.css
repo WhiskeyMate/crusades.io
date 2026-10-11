@@ -708,3 +708,16 @@ body.phone #support-note { bottom: auto; top: max(8px, env(safe-area-inset-top))
 #menu-ctx .deeds button { text-align: center; padding: 7px 6px; font-size: 13px; }
 #menu-ctx .deeds button.wide2 { grid-column: 1 / -1; }
 #menu-ctx .deeds button.warn { color: #f0b46a; }
+/* The wheel's slices, coloured by what they do. */
+.wheel .slice.t-info { fill: rgba(62, 70, 84, 0.96); }
+.wheel .slice.t-info:hover { fill: #556072; }
+.wheel .slice.t-sail { fill: rgba(40, 78, 104, 0.96); }
+.wheel .slice.t-sail:hover { fill: #37688a; }
+.wheel .slice.t-pact { fill: rgba(52, 104, 58, 0.96); }
+.wheel .slice.t-pact:hover { fill: #45874c; }
+.wheel .slice.t-attack { fill: rgba(128, 36, 34, 0.96); }
+.wheel .slice.t-attack:hover { fill: #a8302c; }
+.wheel .slice.t-build { fill: rgba(122, 88, 30, 0.96); }
+.wheel .slice.t-build:hover { fill: #9a7128; }
+.wheel .slice.off[class*="t-"], .wheel .slice.off[class*="t-"]:hover { fill: rgba(40, 36, 32, 0.9); }
+.slice-face { color: #fff3d6; }

@@ -14,6 +14,8 @@ export interface Slice {
   about?: string;
   disabled?: boolean;
   tone?: "bad";
+  /** The colour of the slice, by what kind of thing it does. */
+  tint?: "info" | "sail" | "pact" | "attack" | "build";
   act?: () => void;
   /** Opens a ring of these instead of acting. */
   children?: () => Slice[] | Promise<Slice[]>;
@@ -25,6 +27,8 @@ export interface Wheel {
   slices: Slice[];
   /** Shown under the wheel when nothing is pointed at. */
   caption: string;
+  /** Icons only, drawn large: the caption under the wheel names them. */
+  bare?: boolean;
 }
 
 // Drawings, in the manner of the cursors: plain strokes, gold on dark.
@@ -87,14 +91,14 @@ function render(wheel: Wheel, fresh: boolean) {
   const n = wheel.slices.length;
   // A crowded ring has no room for words: there the icons stand alone and the
   // caption under the wheel does the talking.
-  const crowded = n > 6;
+  const crowded = n > 6 || wheel.bare === true;
   const span = n > 0 ? 360 / n : 360;
   const gap = n > 1 ? 1.6 : 0;
   let shapes = "";
   let words = "";
   wheel.slices.forEach((s, i) => {
     const mid = i * span;
-    const cls = `slice${s.disabled ? " off" : ""}${s.tone === "bad" ? " bad" : ""}`;
+    const cls = `slice${s.disabled ? " off" : ""}${s.tone === "bad" ? " bad" : ""}${s.tint ? ` t-${s.tint}` : ""}`;
     shapes +=
       n === 1
         ? `<path class="${cls}" data-i="${i}" fill-rule="evenodd" d="M${C - OUTER} ${C}a${OUTER} ${OUTER} 0 1 0 ${OUTER * 2} 0a${OUTER} ${OUTER} 0 1 0 ${-OUTER * 2} 0M${C - INNER} ${C}a${INNER} ${INNER} 0 1 0 ${INNER * 2} 0a${INNER} ${INNER} 0 1 0 ${-INNER * 2} 0"/>`
@@ -102,7 +106,7 @@ function render(wheel: Wheel, fresh: boolean) {
     const [x, y] = at(MID, mid);
     words +=
       `<div class="slice-face${s.disabled ? " off" : ""}${s.tone === "bad" ? " bad" : ""}" style="left:${x.toFixed(1)}px;top:${y.toFixed(1)}px">` +
-      drawing(s.icon, crowded ? 26 : 24) +
+      drawing(s.icon, wheel.bare ? 34 : crowded ? 26 : 24) +
       (crowded ? "" : `<b>${esc(s.label)}</b>`) +
       (s.sub ? `<span>${esc(s.sub)}</span>` : "") +
       `</div>`;

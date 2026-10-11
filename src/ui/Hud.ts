@@ -621,15 +621,19 @@ export class Hud {
     const go = (intent: Intent) => () => this.session.send(intent);
 
     const pact: Slice = it?.canBreakAlliance
-      ? { icon: ICON.broken, label: "Break pact", tone: "bad", about: `Break faith with ${whom}. You will be named oathbreaker.`, act: go({ type: "breakAlliance", recipient: other!.id }) }
+      ? { icon: ICON.broken, label: "Break pact", tint: "attack", about: `Break faith with ${whom}. You will be named oathbreaker.`, act: go({ type: "breakAlliance", recipient: other!.id }) }
       : it?.canSendAllianceRequest
-        ? { icon: ICON.pact, label: "Offer pact", about: `Offer ${whom} a pact of peace.`, act: go({ type: "allianceRequest", recipient: other!.id }) }
+        ? { icon: ICON.pact, label: "Offer pact", tint: "pact", about: `Offer ${whom} a pact of peace.`, act: go({ type: "allianceRequest", recipient: other!.id }) }
         : other && me.outgoingAllianceRequests.includes(other.id)
-          ? { icon: ICON.pact, label: "Pact offered", about: `${whom} has not answered yet.`, disabled: true }
-          : { icon: ICON.pact, label: "Pact", about: other ? "No pact can be offered now." : "Pacts are sworn with other realms.", disabled: true };
+          ? { icon: ICON.pact, label: "Pact offered", tint: "pact", about: `${whom} has not answered yet.`, disabled: true }
+          : { icon: ICON.pact, label: "Pact", tint: "pact", about: other ? "No pact can be offered now." : "Pacts are sworn with other realms.", disabled: true };
 
+    // Four slices, as on a compass: the realm above, the sea to the right,
+    // pacts below, and to the left what to raise here (on your own ground)
+    // or what to send against it (anywhere else). Marching is the middle.
     openRadial(clientX, clientY, {
       caption: owner ? owner.name : state.map.isLand(tile) ? "Unclaimed wilds" : "Open water",
+      bare: true,
       centre: {
         icon: ICON.sword, label: "March", sub: actions.canAttack ? send : undefined, disabled: !actions.canAttack,
         about: actions.canAttack ? `Send ${send} levies against ${whom}.` : owner === me ? "This is your own land." : "Your border does not reach here.",
@@ -637,37 +641,28 @@ export class Hud {
       },
       slices: [
         {
-          icon: ICON.scroll, label: "Realm", disabled: !owner,
+          icon: ICON.scroll, label: "Realm", tint: "info", disabled: !owner,
           about: owner ? `What is known of ${owner.name}, and your dealings with them.` : "Nobody holds this.",
           act: () => void this.inform(tile, clientX, clientY),
         },
-        // On your own ground, what to raise there; anywhere else, what to send against it.
-        owner === me
-          ? {
-              icon: ICON.hammer, label: "Build",
-              about: "Raise a building on this spot.",
-              children: () => this.buildSlices(tile, RAISED),
-            }
-          : {
-              icon: ICON.flame, label: "Attack",
-              about: "Send war galleys or cast sorcery here.",
-              children: () => this.buildSlices(tile, SENT),
-            },
         {
-          icon: ICON.ship, label: "Sail", sub: owner !== me && canSail(actions.buildableUnits) ? send : undefined,
+          icon: ICON.ship, label: "Sail", tint: "sail", sub: owner !== me && canSail(actions.buildableUnits) ? send : undefined,
           disabled: owner === me || !canSail(actions.buildableUnits),
           about: owner === me ? "This is your own land." : canSail(actions.buildableUnits) ? `Land ${send} levies here by longship.` : "No longship of yours can reach here.",
           act: go({ type: "boat", troops, dst: tile }),
         },
         pact,
-        {
-          icon: ICON.gift, label: "Give", disabled: !it || (!it.canDonateTroops && !it.canDonateGold),
-          about: other ? (it?.canDonateTroops || it?.canDonateGold ? `Lend levies or send gold to ${whom}.` : "Gifts go to those you have a pact with.") : "Gifts go to other realms.",
-          children: () => [
-            { icon: ICON.men, label: "Lend levies", disabled: !it?.canDonateTroops, about: `Lend ${whom} a share of your levies.`, act: go({ type: "donate_troops", recipient: other!.id, troops: null }) },
-            { icon: ICON.coin, label: "Send gold", disabled: !it?.canDonateGold, about: `Send ${whom} a share of your gold.`, act: go({ type: "donate_gold", recipient: other!.id, gold: null }) },
-          ],
-        },
+        owner === me
+          ? {
+              icon: ICON.hammer, label: "Build", tint: "build",
+              about: "Raise a building on this spot.",
+              children: () => this.buildSlices(tile, RAISED),
+            }
+          : {
+              icon: ICON.flame, label: "Attack", tint: "attack",
+              about: "Send war galleys or cast sorcery here.",
+              children: () => this.buildSlices(tile, SENT),
+            },
       ],
     });
     el("menu-ctx").hidden = true;
