@@ -1,8 +1,13 @@
 {
-  "version": "0.1.125",
+  "version": "0.1.126",
   "builtAt": "2026-10-11",
-  "commits": 125,
+  "commits": 126,
   "entries": [
+    {
+      "hash": "e7d3910",
+      "date": "2026-10-11",
+      "subject": "The landing page has a tall banner either side of its column; the corner stack is for games only"
+    },
     {
       "hash": "24e1f2c",
       "date": "2026-10-11",

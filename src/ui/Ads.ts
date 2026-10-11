@@ -26,6 +26,42 @@ const SLOTS: Record<string, string | undefined> = {
   rail: unit(import.meta.env.VITE_AD_SLOT_RAIL, "6933794104"),
 };
 
+/** Every slot Google has been asked to fill, to tell afterwards whether it really answered. */
+const asked: HTMLElement[] = [];
+
+/**
+ * Asks Google to fill the slot just put on the page, and keeps its holder
+ * out of sight until an advertisement has really arrived. A slot Google has
+ * nothing for, or one a blocker has quietly swallowed, never shows as an
+ * empty box.
+ *
+ * (A blocker may put a stand-in for Google's script on the page, one that
+ * says it has loaded and accepts every request but does nothing. The only
+ * sure sign of the real script is the answer it writes on the slot:
+ * data-ad-status, "filled" or "unfilled".)
+ */
+function request(holder: HTMLElement) {
+  const ins = holder.querySelector<HTMLElement>("ins.adsbygoogle");
+  if (!ins) return;
+  holder.classList.add("awaiting");
+  asked.push(ins);
+  try {
+    const win = window as unknown as { adsbygoogle?: unknown[] };
+    (win.adsbygoogle = win.adsbygoogle || []).push({});
+  } catch (e) {
+    console.warn("ad not shown", e);
+  }
+  let checks = 0;
+  const watch = window.setInterval(() => {
+    const status = ins.dataset.adStatus;
+    if (status === "filled") holder.classList.remove("awaiting");
+    // Nothing to show, or no answer in twenty seconds: the holder goes.
+    else if (status === "unfilled" || ++checks > 40) holder.hidden = true;
+    else return;
+    window.clearInterval(watch);
+  }, 500);
+}
+
 /** Anyone who has bought anything at all plays without ads. */
 export function adFree(): boolean {
   const s = account.state;
@@ -60,7 +96,6 @@ function corner(local: boolean, tries = 0) {
   if (landing && !landing.hidden) return void window.setTimeout(() => corner(local, tries), 1000);
   box.dataset.filled = "1";
   box.hidden = false;
-  const win = window as unknown as { adsbygoogle?: unknown[] };
   const add = ([w, h]: number[]) => {
     const one = document.createElement("div");
     one.style.width = `${w}px`;
@@ -73,12 +108,7 @@ function corner(local: boolean, tries = 0) {
       one.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:${w}px;height:${h}px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins>`;
     }
     box.appendChild(one);
-    if (local) return;
-    try {
-      (win.adsbygoogle = win.adsbygoogle || []).push({});
-    } catch (e) {
-      console.warn("ad not shown", e);
-    }
+    if (!local) request(one);
   };
   // The first box now; the rest of the stack the first time a game is on
   // screen, so that no advertisement is fetched only to sit hidden.
@@ -94,8 +124,8 @@ function corner(local: boolean, tries = 0) {
 }
 
 /**
- * The landing page's rails: a tall banner (160 by 600) in the empty ground
- * either side of the middle column. Only where there is room for them: a
+ * The landing page's rails: a tall banner (160 by 600) against each edge of
+ * the window, either side of the middle column. Only where there is room for them: a
  * window at least 1200 wide and 700 tall. They belong to the first screen and
  * scroll away with it.
  */
@@ -120,12 +150,7 @@ function rails(local: boolean, tries = 0) {
       continue;
     }
     box.innerHTML = `<ins class="adsbygoogle" style="display:inline-block;width:160px;height:600px" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}"></ins>`;
-    try {
-      const win = window as unknown as { adsbygoogle?: unknown[] };
-      (win.adsbygoogle = win.adsbygoogle || []).push({});
-    } catch (e) {
-      console.warn("ad not shown", e);
-    }
+    request(box);
   }
   // Bought something while they were showing: they go.
   const watch = window.setInterval(() => {
@@ -143,25 +168,23 @@ function fill(box: HTMLElement) {
   box.innerHTML =
     `<span class="ad-label">Advertisement</span>` +
     `<ins class="adsbygoogle" style="display:block" data-ad-client="${AD_CLIENT}" data-ad-slot="${slot}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;
-  try {
-    const w = window as unknown as { adsbygoogle?: unknown[] };
-    (w.adsbygoogle = w.adsbygoogle || []).push({});
-  } catch (e) {
-    console.warn("ad not shown", e);
-  }
+  request(box);
 }
 
 // The names here keep clear of "ad": a blocker would hide the note itself.
 const NOTE_PUT_OFF = "crusades.support.later";
 
 /**
- * A small note asking for the blocker to be turned off, shown when Google's
- * script has not loaded some seconds after the page has. Dismissing it puts
- * it off for a week.
+ * A small note asking for the blocker to be turned off. Shown when, some
+ * seconds after the page has loaded, Google's script is missing, or is there
+ * but has answered none of the slots it was asked to fill (a blocker's
+ * stand-in). Dismissing it puts it off for a week.
  */
 function askForSupport(force = false) {
   const google = (window as unknown as { adsbygoogle?: { loaded?: boolean } }).adsbygoogle;
-  if (!force && (google?.loaded || adFree())) return;
+  const silent = asked.length > 0 && !asked.some((ins) => ins.dataset.adStatus);
+  const blocked = !google?.loaded || silent;
+  if (!force && (!blocked || adFree())) return;
   try {
     if (!force && Date.now() < Number(localStorage.getItem(NOTE_PUT_OFF) ?? 0)) return;
   } catch {
@@ -192,7 +215,7 @@ export function initAds() {
     if (new URLSearchParams(location.search).has("blocked")) askForSupport(true);
     return;
   }
-  window.setTimeout(() => askForSupport(), 8000);
+  window.setTimeout(() => askForSupport(), 12000);
   const boxes = Array.from(document.querySelectorAll<HTMLElement>("[data-ad]")).filter((b) => b.dataset.ad !== "corner" && b.dataset.ad !== "rail");
   if (boxes.length === 0 || !("IntersectionObserver" in window)) return;
   // A place is filled when it is first really on screen, which for the lobby

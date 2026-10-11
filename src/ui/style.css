@@ -896,11 +896,15 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 .lobby-name[hidden] { display: none; }
 .lobby-name label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--dim); white-space: nowrap; }
 .lobby-name input { flex: 1; min-width: 0; margin: 0; }
-/* The landing page's tall banners: one in the middle of the empty ground
+/* The landing page's tall banners: one against each edge of the window,
    either side of the column. They sit in the first screen and scroll away with it. */
 .hero { position: relative; }
 .side-banner { position: absolute; top: 50%; width: 160px; height: 600px; margin-top: -300px; overflow: hidden; border-radius: 4px; background: rgba(24, 17, 11, 0.55); box-shadow: 0 0 0 1px var(--edge); }
 .side-banner[hidden] { display: none; }
-.side-banner.left { left: max(12px, calc((100% - 780px) / 4 - 80px)); }
-.side-banner.right { right: max(12px, calc((100% - 780px) / 4 - 80px)); }
+/* Hard against the edges of the window. */
+.side-banner.left { left: 0; }
+.side-banner.right { right: 0; }
+.side-banner { border-radius: 0; }
 .side-banner.mock { display: flex; align-items: center; justify-content: center; text-align: center; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+/* A slot Google has been asked to fill, kept out of sight until an advertisement arrives. */
+.awaiting { visibility: hidden; }
