@@ -8,6 +8,7 @@
 //
 // The terrain files are OpenFront map data (CC BY-SA 4.0, see NOTICE.md).
 
+import { ATLAS } from "./Atlas";
 import { historicNames } from "./History";
 import { GameMapSize, GameMapType } from "@crusades/engine-api/game/GameTypes";
 import { MapFiles, MapManifest, Nation } from "@crusades/engine-api/game/MapFiles";
@@ -23,36 +24,10 @@ export interface MapInfoFile {
   miniNumLandTiles: number;
 }
 
-export const MAP_DIR: Record<GameMapType, string> = {
-  [GameMapType.Earth]: "earth",
-  [GameMapType.Europe]: "europe",
-  [GameMapType.Mediterranean]: "mediterranean",
-  [GameMapType.Greece]: "greece",
-  [GameMapType.SunderedSea]: "sundered",
-  [GameMapType.Ironspine]: "ironspine",
-  [GameMapType.CrownIsles]: "crownisles",
-  [GameMapType.Mirrormere]: "mirrormere",
-  [GameMapType.Serpent]: "serpent",
-  [GameMapType.FourRealms]: "fourrealms",
-  [GameMapType.ShatteredIsles]: "shattered",
-  [GameMapType.Maelstrom]: "maelstrom",
-};
+export const MAP_DIR = Object.fromEntries(ATLAS.map((m) => [m.map, m.dir])) as Record<GameMapType, string>;
 
-/** Kingdoms a map holds by default: the counts the upstream maps use. */
-export const DEFAULT_KINGDOMS: Record<GameMapType, number> = {
-  [GameMapType.Earth]: 107,
-  [GameMapType.Europe]: 52,
-  [GameMapType.Mediterranean]: 38,
-  [GameMapType.Greece]: 29,
-  [GameMapType.SunderedSea]: 60,
-  [GameMapType.Ironspine]: 70,
-  [GameMapType.CrownIsles]: 44,
-  [GameMapType.Mirrormere]: 56,
-  [GameMapType.Serpent]: 48,
-  [GameMapType.FourRealms]: 56,
-  [GameMapType.ShatteredIsles]: 40,
-  [GameMapType.Maelstrom]: 40,
-};
+/** Kingdoms a map holds by default. */
+export const DEFAULT_KINGDOMS = Object.fromEntries(ATLAS.map((m) => [m.map, m.kingdoms])) as Record<GameMapType, number>;
 /** Tribes (the small AI realms; "clans" in the code, from before players had clans of their own) by default, as upstream. */
 export const DEFAULT_CLANS = 400;
 export const MAX_KINGDOMS = 120;
@@ -310,7 +285,8 @@ export function buildRealm(
       // Impassable (31) counts as mountain for the picture but never as land to settle.
       land[i] = m === 31 ? 0 : 1;
       mag[i] = Math.min(30, m);
-      elevation[i] = Math.min(30, m);
+      // 31 is kept as it is: the renderer draws it as ground beyond the realm.
+      elevation[i] = m;
       dist[i] = m === 31 ? 1 : 0;
     } else {
       dist[i] = m * 2;

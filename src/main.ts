@@ -1,5 +1,6 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
+import { ATLAS, atlasOf, MAP_GROUPS, MapGroup } from "./worldgen/Atlas";
 import { clans } from "./clans/Clans";
 import { initClans } from "./clans/Panel";
 import { quality } from "./render/Quality";
@@ -25,20 +26,8 @@ const SOURCE_URL = "https://github.com/WhiskeyMate/crusades.io";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-const REALMS: { map: GameMapType; blurb: string }[] = [
-  { map: GameMapType.Europe, blurb: "From Iberia to the Urals" },
-  { map: GameMapType.Mediterranean, blurb: "The sea in the middle" },
-  { map: GameMapType.Greece, blurb: "Aegean isles and straits" },
-  { map: GameMapType.Earth, blurb: "The whole world, slowly" },
-  { map: GameMapType.SunderedSea, blurb: "Two continents and the strait between" },
-  { map: GameMapType.Ironspine, blurb: "A mountain chain and a walled province" },
-  { map: GameMapType.CrownIsles, blurb: "Nine isles in a ring; the tenth must be taken" },
-  { map: GameMapType.Mirrormere, blurb: "A ring of land round an inland sea" },
-  { map: GameMapType.Serpent, blurb: "One long land, pinched at every bend" },
-  { map: GameMapType.FourRealms, blurb: "Four lands, a cross of sea, one isle between" },
-  { map: GameMapType.ShatteredIsles, blurb: "No mainland: thirty islands" },
-  { map: GameMapType.Maelstrom, blurb: "A land coiled round a stronghold" },
-];
+/** The shelf of the map picker that is open. */
+let shelf: MapGroup = "old";
 
 let chosen = GameMapType.Europe;
 let game: Game | null = null;
@@ -174,7 +163,16 @@ function drawRealms() {
   el("opt-map-live").dataset.map = chosen;
   el("opt-map-name").textContent = chosen;
   startLiveMaps();
-  for (const r of REALMS) {
+  // The shelves: one kind of map at a time, so only its pictures are made.
+  const shelves = el("opt-shelves");
+  shelves.innerHTML = MAP_GROUPS.map((g) => `<button class="chip${g.id === shelf ? " on" : ""}" data-shelf="${g.id}" title="${g.blurb}">${g.name} <i>${ATLAS.filter((m) => m.group === g.id).length}</i></button>`).join("");
+  for (const b of Array.from(shelves.querySelectorAll<HTMLButtonElement>("button"))) {
+    b.onclick = () => {
+      shelf = b.dataset.shelf as MapGroup;
+      drawRealms();
+    };
+  }
+  for (const r of ATLAS.filter((m) => m.group === shelf)) {
     const b = document.createElement("button");
     b.innerHTML = `${mapStillHTML(r.map, "map-thumb")}${r.map}<small>${r.blurb}</small>`;
     b.dataset.map = r.map;

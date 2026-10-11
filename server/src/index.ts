@@ -33,6 +33,7 @@ import {
   ServerMessage,
   TURN_MS,
 } from "../../src/net/Protocol";
+import { ATLAS, MAP_GROUPS } from "../../src/worldgen/Atlas";
 import { buildRealm, DEFAULT_CLANS, DEFAULT_KINGDOMS, MAP_DIR, MapInfoFile, Realm } from "../../src/worldgen/RealmGen";
 import { readFileSync, existsSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -63,20 +64,14 @@ const PUBLIC_FULL = 40;
 let booted = false;
 /** How many public games are open to join at any moment. */
 const PUBLIC_GAMES = Math.min(6, Math.max(1, Math.round(Number(process.env.PUBLIC_GAMES ?? 3)) || 3));
-const PUBLIC_REALMS = [
-  GameMapType.Europe,
-  GameMapType.Mediterranean,
-  GameMapType.Greece,
-  GameMapType.Earth,
-  GameMapType.SunderedSea,
-  GameMapType.Ironspine,
-  GameMapType.CrownIsles,
-  GameMapType.Mirrormere,
-  GameMapType.Serpent,
-  GameMapType.FourRealms,
-  GameMapType.ShatteredIsles,
-  GameMapType.Maelstrom,
-];
+// Every map but the largest, in an order that walks the shelves of the
+// picker in turn, so that three games open at once are three kinds of map.
+const PUBLIC_REALMS = (() => {
+  const shelves = MAP_GROUPS.map((g) => ATLAS.filter((m) => m.group === g.id && !m.heavy).map((m) => m.map));
+  const out: GameMapType[] = [];
+  for (let i = 0; shelves.some((s) => i < s.length); i++) for (const s of shelves) if (i < s.length) out.push(s[i]);
+  return out;
+})();
 
 /**
  * Where the map terrain lives: MAPS_DIR, else ./maps beside the bundle (the

@@ -913,3 +913,9 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 .topbar .mark { justify-self: start; }
 .topbar #tabs { flex: none; justify-content: center; }
 .topbar #account-open { justify-self: end; grid-column: 3; }
+/* The shelves of the map picker. */
+#opt-shelves { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
+#opt-shelves .chip { font-size: 12.5px; padding: 3px 10px; border-radius: 12px; }
+#opt-shelves .chip i { font-style: normal; color: var(--dim); font-size: 11px; margin-left: 2px; }
+#opt-shelves .chip.on { background: linear-gradient(#7b5a22, #5a3f12); border-color: var(--gold); }
+#opt-maps { max-height: 330px; overflow-y: auto; padding-right: 2px; }

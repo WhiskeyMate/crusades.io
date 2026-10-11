@@ -50,7 +50,12 @@ async function build(map: GameMapType): Promise<Model | null> {
       for (let x = 0; x < mw; x++) {
         const b = mini[y * mw + x];
         const o = (y * mw + x) * 4;
-        if (b & 0x80) {
+        if ((b & 0x80) && (b & 0x1f) === 31) {
+          // Ground beyond the realm: on the map but not in play.
+          px[o] = 46;
+          px[o + 1] = 42;
+          px[o + 2] = 36;
+        } else if (b & 0x80) {
           // Land is one level and one green: the game has no hills to show.
           // Its northern edge catches the light.
           const lit = y > 0 && !(mini[(y - 1) * mw + x] & 0x80) ? 1.18 : 1;

@@ -240,7 +240,8 @@ function pack(landMask: Uint8Array, magn: Uint8Array, W: number, H: number): { d
     let b = 0;
     if (me) {
       b |= 0x80;
-      numLand++;
+      // Impassable ground (magnitude 31) is on the map but not in play: it is not counted.
+      if (magn[i] !== 31) numLand++;
       dist[i] = 0;
     } else if (labels[i] === ocean) b |= 0x20;
     if (shore) {
@@ -268,7 +269,8 @@ function pack(landMask: Uint8Array, magn: Uint8Array, W: number, H: number): { d
     if (t < N - W) step(t + W);
   }
   for (let i = 0; i < N; i++) {
-    if (landMask[i]) data[i] |= Math.min(30, magn[i]);
+    // 31 marks impassable ground and is kept; any other land is 0 to 30.
+    if (landMask[i]) data[i] |= magn[i] === 31 ? 31 : Math.min(30, magn[i]);
     else data[i] |= Math.min(31, Math.ceil((dist[i] === 0xffff ? 62 : dist[i]) / 2));
   }
   return { data, numLand };

@@ -1,8 +1,13 @@
 {
-  "version": "0.1.133",
+  "version": "0.1.134",
   "builtAt": "2026-10-11",
-  "commits": 133,
+  "commits": 134,
   "entries": [
+    {
+      "hash": "761bf0e",
+      "date": "2026-10-11",
+      "subject": "Messages name ships and spells in words: a war galley is sunk, not a unit_type.warship destroyed"
+    },
     {
       "hash": "b843fc5",
       "date": "2026-10-11",

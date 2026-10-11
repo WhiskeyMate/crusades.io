@@ -31,6 +31,8 @@ interface Sketch {
   water?: P[][];
   /** Land put back last of all: islands standing in a lake or channel. */
   isles?: P[][];
+  /** Tiles to a unit, if not the usual ten: fewer for a map that is mostly land, to keep it a playable size. */
+  scale?: number;
 }
 
 const TILES_PER_UNIT = 10;
@@ -259,7 +261,419 @@ function maelstrom(): Sketch {
   };
 }
 
+
+// ---------------------------------------------------------------- more lands
+// A second batch of invented maps. Each is a plain idea (two lands and a
+// neck between, a wheel, a river with three fords) so that a glance at the
+// picture says how the war will go.
+
+/** A round outline of `n` corners. */
+function disc(cx: number, cy: number, rx: number, ry: number, n = 28): P[] {
+  return Array.from({ length: n }, (_, i): P => [cx + Math.cos((i / n) * Math.PI * 2) * rx, cy + Math.sin((i / n) * Math.PI * 2) * ry]);
+}
+
+/** A slice of a ring: between two radii and two angles. */
+function sector(cx: number, cy: number, r0: number, r1: number, a0: number, a1: number, steps = 10): P[] {
+  const out: P[] = [];
+  for (let i = 0; i <= steps; i++) {
+    const a = a0 + ((a1 - a0) * i) / steps;
+    out.push([cx + Math.cos(a) * r1, cy + Math.sin(a) * r1]);
+  }
+  for (let i = steps; i >= 0; i--) {
+    const a = a0 + ((a1 - a0) * i) / steps;
+    out.push([cx + Math.cos(a) * r0, cy + Math.sin(a) * r0]);
+  }
+  return out;
+}
+
+/** The Hourglass: two lands, north and south, and the one neck that joins them. */
+function hourglass(): Sketch {
+  const rnd = dice(151);
+  return {
+    width: 110,
+    height: 150,
+    seed: 151,
+    land: [
+      isle(55, 38, 42, 30, 0.2, lumpy(rnd, 16)),
+      isle(55, 112, 42, 30, 1.1, lumpy(rnd, 16)),
+      // The neck.
+      [[50, 58], [60, 58], [59, 92], [51, 92]],
+      isle(14, 75, 5, 7, 0.4, lumpy(rnd, 9)),
+      isle(96, 75, 5, 7, 2.0, lumpy(rnd, 9)),
+    ],
+    lakes: [[40, 34, 5, 4], [70, 116, 5, 4]],
+    ranges: [
+      { line: [[30, 46], [55, 52], [80, 46]], width: 2.2, height: 26 },
+      { line: [[30, 104], [55, 98], [80, 104]], width: 2.2, height: 26 },
+    ],
+  };
+}
+
+/** The Three Sisters: three great islands at the corners of a triangle, and a small one between. */
+function threeSisters(): Sketch {
+  const rnd = dice(157);
+  const land: P[][] = [];
+  const ranges: Range[] = [];
+  const C: P = [70, 68];
+  for (let i = 0; i < 3; i++) {
+    const a = -Math.PI / 2 + (i / 3) * Math.PI * 2;
+    const cx = C[0] + Math.cos(a) * 40;
+    const cy = C[1] + Math.sin(a) * 38;
+    land.push(isle(cx, cy, 26 + i * 2, 23 - i, a, lumpy(rnd, 15)));
+    ranges.push({ line: [[cx - 9, cy - 4], [cx + 9, cy + 4]], width: 2.2, height: 22 + i * 3 });
+  }
+  land.push(isle(C[0], C[1] + 4, 6.5, 6, 0.5, lumpy(rnd, 10)));
+  return { width: 140, height: 135, seed: 157, land, lakes: [[70, 28, 4, 3.4]], ranges };
+}
+
+/** The Wheel: a hub, a rim, and six spokes of land between them; six seas between the spokes. */
+function wheel(): Sketch {
+  const C = 70;
+  const water: P[][] = [];
+  const isles: P[][] = [];
+  const rnd = dice(163);
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + 0.26;
+    // Each sea is a slice of the ring, stopping short of its neighbours: the gap is the spoke.
+    water.push(sector(C, C, 22, 47, a + 0.2, a + Math.PI / 3 - 0.2));
+    if (i % 2 === 0) isles.push(isle(C + Math.cos(a + Math.PI / 6) * 35, C + Math.sin(a + Math.PI / 6) * 35, 4.2, 3.6, a, lumpy(rnd, 8)));
+  }
+  return {
+    width: 140,
+    height: 140,
+    seed: 163,
+    land: [isle(C, C, 62, 62, 0.1, lumpy(rnd, 24).map((k) => 0.94 + (k - 1) * 0.35))],
+    lakes: [],
+    water,
+    isles,
+    ranges: [
+      { line: [[C - 6, C], [C + 6, C]], width: 2.6, height: 30 },
+      { line: [[C, C - 6], [C, C + 6]], width: 2.6, height: 30 },
+    ],
+  };
+}
+
+/** The Crossing: one land in the shape of a cross, its four arms broad at the ends. */
+function crossing(): Sketch {
+  const C = 70;
+  const arm = (dx: number, dy: number): P[] => {
+    // From a waist near the middle out to a flared end.
+    const px = -dy;
+    const py = dx;
+    return [
+      [C + dx * 8 + px * 9, C + dy * 8 + py * 9],
+      [C + dx * 40 + px * 12, C + dy * 40 + py * 12],
+      [C + dx * 58 + px * 22, C + dy * 58 + py * 22],
+      [C + dx * 62, C + dy * 62],
+      [C + dx * 58 - px * 22, C + dy * 58 - py * 22],
+      [C + dx * 40 - px * 12, C + dy * 40 - py * 12],
+      [C + dx * 8 - px * 9, C + dy * 8 - py * 9],
+    ];
+  };
+  const rnd = dice(167);
+  return {
+    width: 140,
+    height: 140,
+    seed: 167,
+    land: [
+      disc(C, C, 15, 15, 16), arm(1, 0), arm(-1, 0), arm(0, 1), arm(0, -1),
+      // An isle in each quarter of the sea.
+      isle(28, 28, 8, 7, 0.3, lumpy(rnd, 10)), isle(112, 28, 7, 8, 1.2, lumpy(rnd, 10)),
+      isle(28, 112, 7, 8, 2.2, lumpy(rnd, 10)), isle(112, 112, 8, 7, 0.8, lumpy(rnd, 10)),
+    ],
+    lakes: [[C, C, 4.5, 4.5]],
+    ranges: [
+      { line: [[C + 30, C - 6], [C + 44, C + 6]], width: 2, height: 24 },
+      { line: [[C - 30, C + 6], [C - 44, C - 6]], width: 2, height: 24 },
+      { line: [[C - 6, C - 30], [C + 6, C - 44]], width: 2, height: 24 },
+      { line: [[C + 6, C + 30], [C - 6, C + 44]], width: 2, height: 24 },
+    ],
+  };
+}
+
+/** The Crescent: a horned moon of land about a wide bay, and an island in the bay. */
+function crescent(): Sketch {
+  const rnd = dice(173);
+  return {
+    width: 140,
+    height: 130,
+    seed: 173,
+    land: [isle(62, 65, 56, 56, 0.3, lumpy(rnd, 22).map((k) => 0.95 + (k - 1) * 0.4))],
+    lakes: [[26, 64, 5, 6]],
+    // The bay: a rounder bite out of the eastern side.
+    water: [disc(92, 65, 40, 37, 30)],
+    isles: [isle(96, 65, 12, 10, 0.6, lumpy(rnd, 12)), isle(120, 38, 4.5, 4, 1.4, lumpy(rnd, 8)), isle(120, 94, 4.5, 4, 2.4, lumpy(rnd, 8))],
+    ranges: [
+      { line: [[30, 30], [20, 55], [22, 80], [34, 102]], width: 2.4, height: 28 },
+      { line: [[92, 62], [100, 68]], width: 1.8, height: 20 },
+    ],
+  };
+}
+
+/** The Great River: one land, and a broad river through the midst of it with three fords. */
+function greatRiver(): Sketch {
+  const rnd = dice(179);
+  const course = curve([[36, -4], [44, 14], [70, 26], [96, 38], [104, 56], [86, 70], [58, 78], [48, 96], [66, 112], [96, 118], [112, 134]], 14);
+  // The river is cut in four reaches; the land left between them is a ford.
+  const reach = (from: number, to: number) => band(course.slice(Math.floor(from * course.length), Math.ceil(to * course.length)), () => 3.4);
+  return {
+    width: 150,
+    height: 130,
+    seed: 179,
+    scale: 8,
+    land: [isle(75, 65, 70, 60, 0.15, lumpy(rnd, 26).map((k) => 0.96 + (k - 1) * 0.3))],
+    lakes: [[24, 40, 5, 4], [122, 84, 6, 4.5]],
+    water: [reach(0, 0.21), reach(0.27, 0.5), reach(0.56, 0.78), reach(0.84, 1)],
+    ranges: [
+      { line: [[14, 70], [26, 92], [40, 106]], width: 2.4, height: 28 },
+      { line: [[110, 20], [128, 38], [134, 58]], width: 2.4, height: 28 },
+    ],
+  };
+}
+
+/** The Lakelands: more water inside the land than around it. */
+function lakelands(): Sketch {
+  const rnd = dice(181);
+  const lakes: Sketch["lakes"] = [];
+  const placed: [number, number, number][] = [];
+  let guard = 0;
+  while (placed.length < 15 && guard++ < 3000) {
+    const r = 5 + rnd() * 6;
+    const x = 22 + rnd() * 106;
+    const y = 20 + rnd() * 90;
+    if (placed.some(([px, py, pr]) => Math.hypot(px - x, py - y) < pr + r + 7)) continue;
+    placed.push([x, y, r]);
+    lakes.push([x, y, r * (0.9 + rnd() * 0.5), r * (0.8 + rnd() * 0.4)]);
+  }
+  return {
+    width: 150,
+    height: 130,
+    seed: 181,
+    land: [isle(75, 65, 70, 60, 0.4, lumpy(rnd, 24).map((k) => 0.96 + (k - 1) * 0.3))],
+    lakes,
+    ranges: [
+      { line: [[18, 30], [30, 16], [52, 10]], width: 2, height: 24 },
+      { line: [[100, 120], [124, 110], [136, 92]], width: 2, height: 24 },
+    ],
+  };
+}
+
+/** The Fjord Coast: a land along the east, and long arms of the sea reaching into it from the west. */
+function fjords(): Sketch {
+  const rnd = dice(191);
+  const water: P[][] = [];
+  const isles: P[][] = [];
+  for (let i = 0; i < 6; i++) {
+    const y = 14 + i * 21;
+    const reach = 62 + (i % 2) * 22 + rnd() * 10;
+    const bend = (rnd() - 0.5) * 16;
+    const line = curve([[-4, y], [reach * 0.4, y + bend * 0.5], [reach * 0.75, y + bend], [reach, y + bend * 0.6]], 10);
+    water.push(band(line, (t) => 4.6 - t * 1.6));
+    if (i % 2 === 1) isles.push(isle(10 + rnd() * 6, y + 10.5, 3.6, 3, rnd() * 3, lumpy(rnd, 8)));
+  }
+  return {
+    width: 140,
+    height: 140,
+    seed: 191,
+    scale: 8,
+    land: [[[0, 0], [118, 0], [124, 12], [120, 30], [128, 48], [122, 70], [130, 92], [124, 112], [128, 130], [120, 140], [0, 140]]],
+    lakes: [[104, 34, 4, 5], [108, 100, 4.5, 4]],
+    water,
+    isles,
+    ranges: [{ line: [[112, 8], [108, 40], [114, 72], [108, 104], [114, 132]], width: 2.6, height: 30 }],
+  };
+}
+
+/** The Honeycomb: nineteen six-sided islands, fitted together with a strait round each. */
+function honeycomb(): Sketch {
+  const land: P[][] = [];
+  const ranges: Range[] = [];
+  const R = 14.2;
+  const gap = 2.6;
+  const C: P = [75, 68];
+  for (let q = -2; q <= 2; q++) {
+    for (let r = -2; r <= 2; r++) {
+      if (Math.abs(q + r) > 2) continue;
+      const cx = C[0] + (R + gap) * 1.5 * q;
+      const cy = C[1] + (R + gap) * Math.sqrt(3) * (r + q / 2);
+      land.push(Array.from({ length: 6 }, (_, i): P => [cx + Math.cos((i / 6) * Math.PI * 2) * R, cy + Math.sin((i / 6) * Math.PI * 2) * R]));
+      if (q === 0 && r === 0) ranges.push({ line: [[cx - 5, cy], [cx + 5, cy]], width: 2.4, height: 30 });
+    }
+  }
+  return { width: 150, height: 136, seed: 193, land, lakes: [], ranges };
+}
+
+/** The Ladder: two long lands side by side, and five rungs across the water between. */
+function ladder(): Sketch {
+  const rnd = dice(197);
+  const land: P[][] = [
+    isle(28, 70, 22, 66, 0.1, lumpy(rnd, 20).map((k) => 0.96 + (k - 1) * 0.3)),
+    isle(102, 70, 22, 66, 0.9, lumpy(rnd, 20).map((k) => 0.96 + (k - 1) * 0.3)),
+  ];
+  for (let i = 0; i < 5; i++) {
+    const y = 18 + i * 26;
+    land.push([[40, y - 3.6], [90, y - 3.6], [90, y + 3.6], [40, y + 3.6]]);
+  }
+  return {
+    width: 130,
+    height: 140,
+    seed: 197,
+    scale: 8,
+    land,
+    lakes: [],
+    ranges: [
+      { line: [[16, 20], [14, 70], [18, 120]], width: 2.2, height: 28 },
+      { line: [[114, 20], [116, 70], [112, 120]], width: 2.2, height: 28 },
+    ],
+  };
+}
+
+/** The Star: a land of five points about a lake. */
+function star(): Sketch {
+  const C = 70;
+  const pts: P[] = [];
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + (i / 10) * Math.PI * 2;
+    const r = i % 2 === 0 ? 64 : 30;
+    pts.push([C + Math.cos(a) * r, C + 4 + Math.sin(a) * r]);
+  }
+  const ranges: Range[] = [];
+  for (let i = 0; i < 5; i++) {
+    const a = -Math.PI / 2 + (i / 5) * Math.PI * 2;
+    ranges.push({ line: [[C + Math.cos(a) * 22, C + 4 + Math.sin(a) * 22], [C + Math.cos(a) * 44, C + 4 + Math.sin(a) * 44]], width: 1.8, height: 24 });
+  }
+  return { width: 140, height: 140, seed: 199, land: [pts], lakes: [[C, C + 4, 9, 9]], ranges };
+}
+
+/** The Pinwheel: four arms sweeping round from one middle, each curling the same way. */
+function pinwheel(): Sketch {
+  const C = 70;
+  const land: P[][] = [disc(C, C, 14, 14, 18)];
+  const rnd = dice(211);
+  for (let i = 0; i < 4; i++) {
+    const a0 = (i / 4) * Math.PI * 2;
+    const pts: P[] = [];
+    for (let k = 0; k <= 30; k++) {
+      const t = k / 30;
+      const a = a0 + t * 1.9;
+      const r = 10 + t * 50;
+      pts.push([C + Math.cos(a) * r, C + Math.sin(a) * r]);
+    }
+    land.push(band(pts, (t) => 7 + Math.sin(t * Math.PI) * 5));
+  }
+  return {
+    width: 140,
+    height: 140,
+    seed: 211,
+    land,
+    lakes: [],
+    isles: [],
+    ranges: [{ line: [[C - 4, C - 4], [C + 4, C + 4]], width: 2.4, height: 30 }],
+  };
+}
+
+/** The Necklace: a mainland in one corner, and a long chain of islands strung from it across the sea. */
+function necklace(): Sketch {
+  const rnd = dice(223);
+  const land: P[][] = [isle(22, 108, 30, 30, 0.2, lumpy(rnd, 16)), isle(134, 22, 20, 18, 1.3, lumpy(rnd, 14))];
+  const chain = curve([[44, 84], [56, 56], [78, 42], [102, 46], [116, 36]], 3);
+  chain.forEach(([x, y], i) => {
+    if (i === 0 || i === chain.length - 1) return;
+    land.push(isle(x, y, 6.5 + (i % 3), 5.5 + ((i + 1) % 3), rnd() * 6, lumpy(rnd, 10)));
+  });
+  // The far side of the sea has its own scattering.
+  for (const [x, y] of [[100, 96], [122, 82], [78, 104], [132, 108], [58, 118]] as P[]) land.push(isle(x, y, 7 + rnd() * 3, 6 + rnd() * 3, rnd() * 6, lumpy(rnd, 10)));
+  return {
+    width: 160,
+    height: 130,
+    seed: 223,
+    land,
+    lakes: [],
+    ranges: [
+      { line: [[10, 96], [24, 112]], width: 2.4, height: 28 },
+      { line: [[128, 14], [140, 26]], width: 2, height: 24 },
+    ],
+  };
+}
+
+/** The Great Plain: land from edge to edge, a few lakes and three ranges, and no sea to hide behind. */
+function greatPlain(): Sketch {
+  return {
+    width: 150,
+    height: 110,
+    seed: 227,
+    scale: 8,
+    land: [[[3, 3], [147, 3], [147, 107], [3, 107]]],
+    lakes: [[40, 30, 7, 5], [104, 76, 8, 6], [76, 54, 5, 4], [124, 26, 5, 4], [26, 82, 5, 4.5]],
+    ranges: [
+      { line: [[58, 10], [64, 32], [58, 50]], width: 2.4, height: 30 },
+      { line: [[90, 100], [86, 78], [94, 60]], width: 2.4, height: 30 },
+      { line: [[12, 54], [30, 58]], width: 2, height: 24 },
+      { line: [[120, 50], [138, 54]], width: 2, height: 24 },
+    ],
+  };
+}
+
+/** The Delta: a land in the north, and a river that parts into five on its way to the southern sea. */
+function delta(): Sketch {
+  const water: P[][] = [];
+  const mouths = [14, 44, 74, 104, 134];
+  for (const x of mouths) {
+    const line = curve([[74, 34], [74 + (x - 74) * 0.35, 62], [74 + (x - 74) * 0.8, 96], [x, 134]], 10);
+    water.push(band(line, (t) => 2.6 + t * 3.4));
+  }
+  const rnd = dice(229);
+  return {
+    width: 150,
+    height: 130,
+    seed: 229,
+    scale: 8,
+    land: [[[0, 0], [150, 0], [150, 112], [140, 122], [118, 118], [100, 126], [78, 120], [56, 127], [36, 119], [14, 124], [0, 114]]],
+    // The head of the river: a lake where the five arms part.
+    lakes: [[74, 30, 8, 6]],
+    water,
+    ranges: [
+      { line: [[14, 14], [50, 10], [90, 12], [134, 16]], width: 2.6, height: 30 },
+    ],
+  };
+}
+
+/** The Horseshoe: one land bent round a deep gulf, open to the south. */
+function horseshoe(): Sketch {
+  const rnd = dice(233);
+  return {
+    width: 140,
+    height: 140,
+    seed: 233,
+    land: [isle(70, 66, 62, 58, 0.25, lumpy(rnd, 24).map((k) => 0.96 + (k - 1) * 0.3))],
+    lakes: [[70, 22, 6, 4.5]],
+    // The gulf, from the middle down and out through the southern coast.
+    water: [[[50, 50], [70, 42], [90, 50], [94, 100], [100, 144], [40, 144], [46, 100]]],
+    isles: [isle(70, 74, 9, 8, 0.5, lumpy(rnd, 11)), isle(70, 110, 6, 5, 1.4, lumpy(rnd, 9))],
+    ranges: [
+      { line: [[22, 40], [18, 70], [26, 98]], width: 2.4, height: 28 },
+      { line: [[118, 40], [122, 70], [114, 98]], width: 2.4, height: 28 },
+    ],
+  };
+}
+
 const SKETCHES: Record<string, Sketch> = {
+  hourglass: hourglass(),
+  threesisters: threeSisters(),
+  wheel: wheel(),
+  crossing: crossing(),
+  crescent: crescent(),
+  greatriver: greatRiver(),
+  lakelands: lakelands(),
+  fjords: fjords(),
+  honeycomb: honeycomb(),
+  ladder: ladder(),
+  star: star(),
+  pinwheel: pinwheel(),
+  necklace: necklace(),
+  greatplain: greatPlain(),
+  delta: delta(),
+  horseshoe: horseshoe(),
   crownisles: crownIsles(),
   mirrormere: mirrormere(),
   serpent: serpent(),
@@ -434,7 +848,7 @@ const name = process.argv[2];
 const sketch = SKETCHES[name];
 if (!sketch) throw new Error(`usage: mapdraw <${Object.keys(SKETCHES).join("|")}>`);
 
-const S = TILES_PER_UNIT;
+const S = sketch.scale ?? TILES_PER_UNIT;
 const w = sketch.width * S;
 const h = sketch.height * S;
 const rand = mulberry32(sketch.seed);
