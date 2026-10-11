@@ -1,8 +1,13 @@
 {
-  "version": "0.1.134",
-  "builtAt": "2026-10-11",
-  "commits": 134,
+  "version": "0.1.136",
+  "builtAt": "2026-10-12",
+  "commits": 136,
   "entries": [
+    {
+      "hash": "e652793",
+      "date": "2026-10-11",
+      "subject": "Forty more maps, on five shelves: the Old World, the Wide World, Lands of Legend, Isles and Seas, and Curiosities"
+    },
     {
       "hash": "761bf0e",
       "date": "2026-10-11",

@@ -47,6 +47,8 @@ export interface SessionOptions {
   cosmetic?: Cosmetic;
   /** The tag of the player's clan, if they are in one. */
   clanTag?: string | null;
+  /** Teams to sort the realms into; none for every house for itself. */
+  teams?: number;
 }
 
 /** Everything a Session needs, however the game was arranged. */
@@ -90,7 +92,8 @@ export async function soloSession(options: SessionOptions): Promise<Session> {
       // A solo game starts when the player picks a seat. With nobody to
       // pick one, use the timed opening the engine gives shared games.
       gameType: options.spectate ? GameType.Private : GameType.Singleplayer,
-      gameMode: GameMode.FFA,
+      gameMode: options.teams && options.teams >= 2 ? GameMode.Team : GameMode.FFA,
+      ...(options.teams && options.teams >= 2 ? { playerTeams: options.teams } : {}),
       gameMapSize: GameMapSize.Normal,
       nations: options.kingdoms > 0 ? "default" : "disabled",
       bots: options.clans,

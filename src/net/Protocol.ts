@@ -59,6 +59,8 @@ export const LobbyConfigSchema = z.object({
   kingdoms: z.number().int().min(0).max(120),
   clans: z.number().int().min(0).max(400),
   maxPlayers: z.number().int().min(2).max(64),
+  /** How many teams the lords are sorted into; none (or 0) for every house for itself. */
+  teams: z.number().int().min(0).max(4).optional(),
 });
 export type LobbyConfig = z.infer<typeof LobbyConfigSchema>;
 
@@ -128,6 +130,12 @@ export interface LobbyMember {
   name: string;
   /** The tag of the clan they belong to, if any. */
   tag?: string | null;
+  /**
+   * In a team game, which team they are on for now (0 is the first). The
+   * server sorts the lobby afresh as lords come and go; it is fixed when the
+   * game starts.
+   */
+  team?: number;
   connected: boolean;
 }
 
@@ -185,5 +193,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "16";
+export const PROTOCOL_VERSION = "17";
 export const TURN_MS = 100;

@@ -2,6 +2,7 @@
 // standings, the build bar, the chronicle, wars, pact offers and the
 // right-click menu.
 
+import { teamCSS } from "../client/Teams";
 import { closeRadial, ICON, openRadial, radialOpen, Slice } from "./Radial";
 import { Choice, quality } from "../render/Quality";
 import { track } from "./Analytics";
@@ -376,12 +377,18 @@ export class Hud {
     for (const win of u[GameUpdateType.Win]) {
       const w = win.winner;
       if (!w) continue;
-      const mine = w[0] === "player" && w[1] === this.session.clientID;
+      // A team game is won by a side: everyone on it has won.
+      const side = w[0] === "team" ? String(w[1]) : null;
+      const mine = side !== null ? me?.team === side : w[0] === "player" && w[1] === this.session.clientID;
       this.end(
         mine ? "Victory" : "Defeat",
-        mine
-          ? "The realm bends the knee. Every banner flies beneath yours."
-          : `${w[0] === "nation" ? w[1] : "Another lord"} has claimed the crown of the realm.`,
+        side !== null
+          ? mine
+            ? `The ${side} host has taken the realm, and you with it.`
+            : `The ${side} host has taken the realm.`
+          : mine
+            ? "The realm bends the knee. Every banner flies beneath yours."
+            : `${w[0] === "nation" ? w[1] : "Another lord"} has claimed the crown of the realm.`,
       );
     }
     if (me && me.hasSpawned && !me.isAlive && !state.inSpawnPhase && !this.ended) {
@@ -570,10 +577,11 @@ export class Hud {
       .map((p) => {
         const rank = ranked.indexOf(p) + 1;
         const ally = me && me.allies.includes(p.smallID);
+        const side = p.team ? `<i class="side-dot" style="background:${teamCSS(p.team)}" title="${p.team} team"></i>` : "";
         return (
           `<tr class="${p === me ? "me" : ""}" data-tile="${Math.round(p.nameY) * state.map.width() + Math.round(p.nameX)}">` +
           `<td class="n">${rank}</td><td class="who">${shieldSVG(p.name, p.color, 15, p.arms)}` +
-          `<span>${esc(p.name)}</span>${ally ? '<i title="Pact">🤝</i>' : ""}${p.isTraitor ? '<i title="Oathbreaker">🗡</i>' : ""}</td>` +
+          `${side}<span>${esc(p.name)}</span>${ally ? '<i title="Pact">🤝</i>' : ""}${p.isTraitor ? '<i title="Oathbreaker">🗡</i>' : ""}</td>` +
           `<td>${((p.tilesOwned / land) * 100).toFixed(1)}%</td><td>${fmtTroops(p.troops)}</td><td>${fmt(p.gold)}</td></tr>`
         );
       })
@@ -637,7 +645,7 @@ export class Hud {
       const kind = owner === state.me ? "Your realm" : owner.type === PlayerType.Bot ? "Tribe" : "Kingdom";
       text =
         `<b>${shieldSVG(owner.name, owner.color, 14, owner.arms)} ${esc(owner.name)}</b>` +
-        `<span>${kind} · ${fmtTroops(owner.troops)} levies${state.me && state.me.allies.includes(owner.smallID) ? " · sworn pact" : ""}</span>`;
+        `<span>${kind} · ${fmtTroops(owner.troops)} levies${state.me && state.me.allies.includes(owner.smallID) ? " · sworn pact" : ""}${owner.team ? ` · ${owner.team} team${state.me && state.me !== owner && state.me.team === owner.team ? " (yours)" : ""}` : ""}</span>`;
     } else if (map.isLand(tile)) {
       const t = map.terrainType(tile);
       text = `<b>Unclaimed ${t === TerrainType.Mountain ? "mountains" : t === TerrainType.Highland ? "highlands" : "lowlands"}</b>`;

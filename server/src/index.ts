@@ -52,7 +52,13 @@ const MAX_GAME_MS = 4 * 60 * 60_000;
 const INTENTS_PER_TURN = 40;
 const MAX_LOBBIES = 200;
 /** How long a public game gathers players before it starts. */
-let PUBLIC_WAIT_MS = Number(process.env.PUBLIC_WAIT_SECONDS ?? 90) * 1000;
+// How long a public game waits once its first lord has joined. Until then it
+// only waits its turn in the rotation (see ROTATE_MS).
+let PUBLIC_WAIT_MS = Number(process.env.PUBLIC_WAIT_SECONDS ?? 150) * 1000;
+/** A team game waits half as long again: sides take longer to fill than seats. */
+const TEAM_WAIT_MS = () => Math.round(PUBLIC_WAIT_MS * 1.5);
+/** An empty public game gives way to another map after about this long. */
+const ROTATE_MS = 30_000;
 /** Set from the dashboard: no new games while on. */
 let maintenance = false;
 /** Log every message in and out, per client. Set from the dashboard or VERBOSE=1. */
@@ -186,13 +192,52 @@ class Lobby {
       owner: this.owner,
       config: this.config,
       status: this.status,
-      members: [...this.members.values()].map((m) => ({
-        clientID: m.clientID,
-        name: m.name,
-        tag: m.clanTag,
-        connected: m.client !== null,
-      })),
+      members: (() => {
+        const teams = this.teamsNow();
+        return [...this.members.values()].map((m) => ({
+          clientID: m.clientID,
+          name: m.name,
+          tag: m.clanTag,
+          ...(teams.has(m.clientID) ? { team: teams.get(m.clientID) } : {}),
+          connected: m.client !== null,
+        }));
+      })(),
     };
+  }
+
+  /**
+   * In a team game, who is on which team as the lobby stands. Worked out
+   * afresh from who is here each time it is asked for, so the teams settle as
+   * lords come and go, and nobody chooses: clans first, largest first, each
+   * kept whole on whichever team is smallest; then everyone else, one by one,
+   * onto the smallest team. Keeping a clan together comes before even numbers.
+   * What this says when the game begins is what the game is played with.
+   */
+  teamsNow(): Map<string, number> {
+    const out = new Map<string, number>();
+    const n = this.config.teams ?? 0;
+    if (n < 2) return out;
+    const sizes = new Array<number>(n).fill(0);
+    const smallest = () => sizes.indexOf(Math.min(...sizes));
+    const clans = new Map<string, Member[]>();
+    const alone: Member[] = [];
+    for (const m of this.members.values()) {
+      if (!m.clanTag) alone.push(m);
+      else if (clans.has(m.clanTag)) clans.get(m.clanTag)!.push(m);
+      else clans.set(m.clanTag, [m]);
+    }
+    // Largest clan first; between equals, whoever arrived first (the sort is stable).
+    for (const clan of [...clans.values()].sort((a, b) => b.length - a.length)) {
+      const t = smallest();
+      for (const m of clan) out.set(m.clientID, t);
+      sizes[t] += clan.length;
+    }
+    for (const m of alone) {
+      const t = smallest();
+      out.set(m.clientID, t);
+      sizes[t]++;
+    }
+    return out;
   }
 
   /** Who the last turn could not be sent to, so the log says it once. */
@@ -238,6 +283,11 @@ class Lobby {
     });
     client.lobby = this;
     this.emptySince = null;
+    // The first lord into a public game starts its count: time for others to
+    // find it and, in a team game, for the teams to fill.
+    if (this.kind === "public" && this.members.size === 1) {
+      this.startsAt = Math.max(this.startsAt, Date.now() + ((this.config.teams ?? 0) >= 2 ? TEAM_WAIT_MS() : PUBLIC_WAIT_MS));
+    }
     this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
     if (this.kind === "public") {
       if (this.members.size >= PUBLIC_FULL) this.start();
@@ -268,6 +318,9 @@ class Lobby {
     if (this.status === "open") {
       this.members.delete(client.clientID);
       if (this.kind === "public") {
+        // Everyone has gone: it takes its turn in the rotation again rather
+        // than sitting out a count nobody is waiting for.
+        if (this.members.size === 0) this.startsAt = Math.min(this.startsAt, Date.now() + ROTATE_MS);
         this.broadcast({ type: "lobby", lobby: this.view(), now: Date.now() });
         broadcastHall();
         return;
@@ -337,6 +390,8 @@ class Lobby {
     // Load first: if the realm can't be built nothing else has changed.
     this.realm = loadRealmFromDisk(c.map, c.seed, c.kingdoms);
     this.hash = realmHash(this.realm);
+    const teamCount = c.teams ?? 0;
+    const sides = this.teamsNow();
     this.status = "running";
     this.startedAt = Date.now();
     this.info = {
@@ -348,7 +403,8 @@ class Lobby {
         donateGold: !rules.noGoldGifts,
         donateTroops: !rules.noLevyGifts,
         gameType: GameType.Private,
-        gameMode: GameMode.FFA,
+        gameMode: teamCount >= 2 ? GameMode.Team : GameMode.FFA,
+        ...(teamCount >= 2 ? { playerTeams: teamCount } : {}),
         gameMapSize: GameMapSize.Normal,
         nations: c.kingdoms > 0 ? "default" : "disabled",
         bots: c.clans,
@@ -368,6 +424,8 @@ class Lobby {
         clientID: m.clientID,
         username: m.name,
         clanTag: m.clanTag,
+        // Fixed here for the whole game: nobody changes side once it has begun.
+        ...(sides.has(m.clientID) ? { teamIndex: sides.get(m.clientID) } : {}),
       })),
     };
     log(
@@ -458,8 +516,10 @@ function openPublicGames(): Lobby[] {
  */
 function ensurePublicGame() {
   if (maintenance) return;
-  const gap = PUBLIC_WAIT_MS / PUBLIC_GAMES;
-  for (let open = openPublicGames(); open.length < PUBLIC_GAMES; open = openPublicGames()) {
+  // One of the open games is always a team game; the rest are free-for-alls.
+  const want = (l: Lobby) => (l.config.teams ?? 0) >= 2;
+  for (let open = openPublicGames(); open.length < PUBLIC_GAMES + 1; open = openPublicGames()) {
+    const team = !open.some(want);
     const taken = new Set(open.map((l) => l.config.map));
     let map = PUBLIC_REALMS[publicRotation++ % PUBLIC_REALMS.length];
     for (let i = 0; i < PUBLIC_REALMS.length && taken.has(map); i++) {
@@ -472,13 +532,14 @@ function ensurePublicGame() {
       kingdoms: DEFAULT_KINGDOMS[map],
       clans: DEFAULT_CLANS,
       maxPlayers: PUBLIC_FULL,
+      ...(team ? { teams: 2 } : {}),
     });
-    // After the latest one already waiting, never sooner than one gap from now.
+    // Empty games take turns to give way: each a step after the latest.
     const now = Date.now();
-    lobby.startsAt = Math.max(now + gap, ...open.map((l) => l.startsAt + gap));
+    lobby.startsAt = Math.max(now + ROTATE_MS, ...open.map((l) => (l.members.size === 0 ? l.startsAt + ROTATE_MS : 0)));
     lobbies.set(lobby.code, lobby);
     // Routine once the server is up: empty games are replaced every half minute.
-    if (verbose || !booted) log(`public game ${lobby.code}: open, ${map}, starts in ${Math.round((lobby.startsAt - now) / 1000)}s`);
+    if (verbose || !booted) log(`public game ${lobby.code}: open, ${map}${team ? ", 2 teams" : ""}, turns over in ${Math.round((lobby.startsAt - now) / 1000)}s`);
   }
 }
 

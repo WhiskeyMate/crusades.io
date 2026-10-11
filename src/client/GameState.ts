@@ -1,6 +1,7 @@
 // The client's copy of the game: tiles, players and units, rebuilt each tick
 // from what the engine worker sends. The renderer and HUD only read this.
 
+import { TEAM_COLORS, TEAM_NAMES } from "./Teams";
 import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   PlayerType,
@@ -48,6 +49,8 @@ export interface PlayerState {
   allies: number[];
   embargoes: Set<string>;
   isTraitor: boolean;
+  /** In a team game, the team this realm fights for ("Red", "Blue"...); tribes are on none. */
+  team: string | null;
   /** How many pacts this realm has broken in the game. */
   betrayals: number;
   targets: number[];
@@ -170,6 +173,18 @@ export class GameState {
     return a.allies.includes(b.smallID);
   }
 
+  /** Whether two realms fight on the same side: a pact, or the same team. */
+  friends(a: PlayerState, b: PlayerState): boolean {
+    return a !== b && (a.allies.includes(b.smallID) || (a.team !== null && a.team === b.team));
+  }
+
+  /** The teams of this game, in the engine's order; empty for a free-for-all. */
+  teams(): string[] {
+    const seen = new Set<string>();
+    for (const p of this.players.values()) if (p.team) seen.add(p.team);
+    return TEAM_NAMES.filter((t) => seen.has(t));
+  }
+
   apply(gu: GameUpdateViewData): TickDelta {
     this.tick = gu.tick;
     const delta: TickDelta = {
@@ -285,6 +300,7 @@ export class GameState {
         allies: [],
         embargoes: new Set(),
         isTraitor: false,
+        team: pu.team && pu.team !== "Bot" ? pu.team : null,
         betrayals: 0,
         targets: [],
         outgoingAttacks: [],
@@ -307,12 +323,10 @@ export class GameState {
       const sent = worn?.skin && validSkin(worn.skin) ? worn.skin : null;
       const arms = (mine ? liegeArms() : null) ?? sent;
       p.arms = arms;
-      if (arms) {
-        setArms(p.name, arms);
-        p.color = hexToRGB(arms.color);
-      } else {
-        p.color = playerColor(p.smallID, p.type, mine, p.name);
-      }
+      if (arms) setArms(p.name, arms);
+      // In a team game the land is in the team's colour, whatever arms are borne.
+      const banner = p.team ? (TEAM_COLORS[p.team] ?? null) : null;
+      p.color = arms && !banner ? hexToRGB(arms.color) : playerColor(p.smallID, p.type, mine, p.name, banner);
       this.players.set(p.smallID, p);
       this.playersByID.set(p.id, p);
       if (mine) this.me = p;

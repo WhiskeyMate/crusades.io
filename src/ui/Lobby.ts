@@ -1,12 +1,13 @@
 // Online play from the hall: the list of public games starting soon,
 // hosting a private lobby, joining by code, and the waiting room.
 
+import { teamCSS, teamName, teamsText } from "../client/Teams";
 import { describeRules } from "../client/Rules";
 import { mapStillHTML } from "./MapPreview";
 import { Session } from "../client/Session";
 import { account } from "../account/Account";
 import { GAME_SERVER, Online } from "../net/Online";
-import { LobbyConfig, LobbyView, PublicGame } from "../net/Protocol";
+import { LobbyConfig, LobbyMember, LobbyView, PublicGame } from "../net/Protocol";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) =>
@@ -220,7 +221,7 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
         return (
           `<div class="pub${inIt ? " in" : ""}${n === 0 ? " lead" : ""}" data-code="${g.code}">` +
           mapStillHTML(c.map, "pub-thumb") +
-          `<div class="pub-map">${esc(c.map)}</div>` +
+          `<div class="pub-map">${esc(c.map)}${c.teams && c.teams >= 2 ? ` <i class="pub-teams">${teamsText(c.teams)}</i>` : ""}</div>` +
           `<div class="pub-meta">${g.players} of ${c.maxPlayers} lords · ${c.kingdoms} kingdoms · ${c.clans} tribes</div>` +
           `<div class="pub-time"><b>${g.players === 0 ? "—" : s > 0 ? `${s}s` : "…"}</b><span>${g.players === 0 ? "waiting for lords" : s > 0 ? "until it starts" : "starting"}</span></div>` +
           `<button>${inIt ? "You're in" : "Join"}</button></div>`
@@ -336,15 +337,25 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     const nameBox = el<HTMLInputElement>("lobby-name");
     el("lobby-name-row").hidden = lobby.status !== "open" || !mine;
     if (mine && document.activeElement !== nameBox) nameBox.value = mine.name;
-    el("lobby-members").innerHTML = lobby.members
-      .map(
-        (m) =>
-          `<li class="${m.connected ? "" : "away"}">${m.tag ? `<span class="clan-tag">${esc(m.tag)}</span> ` : ""}${esc(m.name)}${m.clientID === lobby.owner ? " <i>host</i>" : ""}${m.clientID === me ? " <i>you</i>" : ""}</li>`,
-      )
-      .join("");
+    const line = (m: LobbyMember) =>
+      `<li class="${m.connected ? "" : "away"}">${m.tag ? `<span class="clan-tag">${esc(m.tag)}</span> ` : ""}${esc(m.name)}${m.clientID === lobby.owner ? " <i>host</i>" : ""}${m.clientID === me ? " <i>you</i>" : ""}</li>`;
+    const sides = lobby.config.teams ?? 0;
+    const list = el("lobby-members");
+    list.classList.toggle("sides", sides >= 2);
+    if (sides >= 2) {
+      // By team, in the team's colour. The server sorts everyone and may move
+      // people as others arrive; the sides are fixed when the game begins.
+      list.innerHTML = Array.from({ length: sides }, (_, t) => {
+        const on = lobby.members.filter((m) => m.team === t);
+        return `<li class="side" style="--side:${teamCSS(teamName(t))}"><b>${teamName(t)} <span>${on.length}</span></b><ul>${on.map(line).join("") || `<li class="none">nobody yet</li>`}</ul></li>`;
+      }).join("");
+    } else {
+      list.innerHTML = lobby.members.map(line).join("");
+    }
     const c = lobby.config;
     el("lobby-config").textContent =
-      `${c.map} · seed ${c.seed} · ${c.kingdoms} kingdoms · ${c.clans} tribes · ${c.difficulty} · up to ${c.maxPlayers} lords`;
+      `${c.map} · ${sides >= 2 ? `${teamsText(sides)} · ` : ""}seed ${c.seed} · ${c.kingdoms} kingdoms · ${c.clans} tribes · ${c.difficulty} · up to ${c.maxPlayers} lords`;
+    el("lobby-sides-note").hidden = sides < 2;
     const rules = describeRules(c.rules);
     el("lobby-rules").hidden = rules.length === 0;
     el("lobby-rules").innerHTML = rules.length ? `<b>House rules:</b> ${esc(rules.join(" · "))}` : "";

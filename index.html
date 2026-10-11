@@ -231,6 +231,14 @@
               <option value="Impossible">Tyrants (brutal)</option>
             </select>
           </label>
+          <label>Sides
+            <select id="opt-teams">
+              <option value="0" selected>Every house for itself</option>
+              <option value="2">Two teams</option>
+              <option value="3">Three teams</option>
+              <option value="4">Four teams</option>
+            </select>
+          </label>
           <label>Kingdoms <b id="opt-kingdoms-v"></b>
             <input id="opt-kingdoms" type="range" min="0" max="120" value="52" />
           </label>
@@ -313,6 +321,7 @@
         <p id="lobby-config" class="dim small"></p>
         <p id="lobby-rules" class="small" hidden></p>
         <div id="lobby-name-row" class="inline lobby-name"><label for="lobby-name">Your house</label><input id="lobby-name" maxlength="24" autocomplete="off" /><button id="lobby-rename">Rename</button></div>
+        <p id="lobby-sides-note" class="dim small" hidden>Teams are sorted for you: evenly, with clan-mates kept together. They may shift as lords arrive, and are fixed when the game begins.</p>
         <ul id="lobby-members"></ul>
         <p id="lobby-wait" class="dim">Waiting for the host to start…</p>
         <div class="row">

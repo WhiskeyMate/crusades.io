@@ -94,7 +94,15 @@ export function playerColor(
   type: PlayerType,
   mine: boolean,
   name: string,
+  /** In a team game, the colour of the player's team: everyone on it wears a shade of that. */
+  team?: RGB | null,
 ): RGB {
+  if (team) {
+    // A step lighter or darker for each member, so the borders inside a
+    // team can still be told; one's own realm is the brightest of its team.
+    const k = mine ? 1.18 : 0.82 + ((hash(untagged(name)) % 7) / 6) * 0.3;
+    return [Math.min(1, team[0] * k), Math.min(1, team[1] * k), Math.min(1, team[2] * k)];
+  }
   if (mine) return liegeSkin ? hexToRGB(liegeSkin.color) : [0.78, 0.1, 0.13];
   const t = (smallID * 0.61803398875) % 1;
   const hue = (28 + t * 300) / 360;

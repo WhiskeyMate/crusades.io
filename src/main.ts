@@ -252,6 +252,7 @@ async function begin() {
     kingdoms: Number(el<HTMLInputElement>("opt-kingdoms").value),
     clans: Number(el<HTMLInputElement>("opt-clans").value),
     sandbox: el<HTMLInputElement>("opt-sandbox").checked,
+    teams: Number(el<HTMLSelectElement>("opt-teams").value),
     rules: readRules(),
     cosmetic: account.state ? { equipped: account.state.equipped, skin: account.skin } : undefined,
     // A clan member carries the tag in solo games too. Asked for once, then remembered.
@@ -379,6 +380,7 @@ const { hostLobby } = initOnline({
     kingdoms: Number(el<HTMLInputElement>("opt-kingdoms").value),
     clans: Number(el<HTMLInputElement>("opt-clans").value),
     maxPlayers: Number(el<HTMLInputElement>("opt-players").value),
+    teams: Number(el<HTMLSelectElement>("opt-teams").value),
     rules: readRules(),
   }),
 });
