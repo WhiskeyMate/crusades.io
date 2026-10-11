@@ -10,3 +10,4 @@ tools/preview-*.png
 # PowerShell transcripts from install runs
 install-output.txt
 *.transcript.txt
+media/
