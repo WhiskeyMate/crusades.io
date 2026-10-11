@@ -641,14 +641,18 @@ export class Hud {
           about: owner ? `What is known of ${owner.name}, and your dealings with them.` : "Nobody holds this.",
           act: () => void this.inform(tile, clientX, clientY),
         },
-        // Building is for your own ground only.
-        ...(owner === me
-          ? [{
+        // On your own ground, what to raise there; anywhere else, what to send against it.
+        owner === me
+          ? {
               icon: ICON.hammer, label: "Build",
               about: "Raise a building on this spot.",
-              children: () => this.buildSlices(tile),
-            } satisfies Slice]
-          : []),
+              children: () => this.buildSlices(tile, RAISED),
+            }
+          : {
+              icon: ICON.flame, label: "Attack",
+              about: "Send war galleys or cast sorcery here.",
+              children: () => this.buildSlices(tile, SENT),
+            },
         {
           icon: ICON.ship, label: "Sail", sub: owner !== me && canSail(actions.buildableUnits) ? send : undefined,
           disabled: owner === me || !canSail(actions.buildableUnits),
@@ -670,10 +674,10 @@ export class Hud {
     el("tip").hidden = true;
   }
 
-  /** The ring of things to build on a tile: each with its cost, greyed if it cannot go there. */
-  private async buildSlices(tile: TileRef): Promise<Slice[]> {
+  /** A ring of things to build or send at a tile: each with its cost, greyed if it cannot go there. */
+  private async buildSlices(tile: TileRef, types: UnitType[]): Promise<Slice[]> {
     const can = await this.session.buildables(tile);
-    return BUILD_ORDER.map((type): Slice => {
+    return types.map((type): Slice => {
       const lore = UNIT_LORE[type];
       const b = can.find((x) => x.type === type);
       const raise = b !== undefined && b.canUpgrade !== false;
@@ -764,6 +768,11 @@ export class Hud {
     el("tip").hidden = true;
   }
 }
+
+/** What the wheel offers to raise on your own land. */
+const RAISED = [UnitType.City, UnitType.Factory, UnitType.Port, UnitType.MissileSilo, UnitType.SAMLauncher];
+/** What it offers to send against anywhere else. */
+const SENT = [UnitType.Warship, UnitType.AtomBomb, UnitType.HydrogenBomb, UnitType.MIRV];
 
 export function canSail(units: BuildableUnit[]): boolean {
   return units.some((b) => b.type === UnitType.TransportShip && b.canBuild !== false);
