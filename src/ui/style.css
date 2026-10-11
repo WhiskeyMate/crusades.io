@@ -967,7 +967,7 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 #opt-shelves .chip.on { background: linear-gradient(#7b5a22, #5a3f12); border-color: var(--gold); }
 #opt-maps { max-height: 330px; overflow-y: auto; padding-right: 2px; }
 /* Team games. */
-.pub .pub-teams { font-style: normal; font-size: 11px; font-weight: normal; letter-spacing: 0.6px; text-transform: uppercase; vertical-align: middle; padding: 1px 7px; border-radius: 9px; background: #7a1a1f; border: 1px solid #d68a6a; color: #fff3d6; text-shadow: none; }
+.pub .pub-teams { display: inline-block; white-space: nowrap; line-height: 1.5; font-style: normal; font-size: 11px; font-weight: normal; letter-spacing: 0.6px; text-transform: uppercase; vertical-align: middle; padding: 1px 7px; border-radius: 9px; background: #7a1a1f; border: 1px solid #d68a6a; color: #fff3d6; text-shadow: none; }
 #lobby-members.sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; list-style: none; padding: 0; }
 #lobby-members .side { border: 1px solid var(--side); border-top-width: 4px; border-radius: 5px; padding: 6px 9px 8px; background: color-mix(in srgb, var(--side) 12%, #1d150c); }
 #lobby-members .side > b { display: flex; justify-content: space-between; font-weight: normal; color: var(--side); filter: brightness(1.35); font-size: 15px; }
