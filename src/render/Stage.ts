@@ -3,6 +3,7 @@
 // to turn and tilt.
 
 import * as THREE from "three";
+import { quality } from "./Quality";
 import { Terrain } from "./Terrain";
 
 export interface PickHit {
@@ -60,19 +61,25 @@ export class Stage {
     old.replaceWith(canvas);
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: true,
+      antialias: quality.antialias,
       powerPreference: "high-performance",
     });
+    // What is drawing decides how much can be drawn: a browser working
+    // without a graphics card gets the lowest level.
+    try {
+      const gl = this.renderer.getContext();
+      const info = gl.getExtension("WEBGL_debug_renderer_info");
+      quality.noteRenderer(String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? ""));
+    } catch {
+      // Unknown: carry on at the level already chosen.
+    }
     // The browser can take the graphics away (a driver fault, too little
     // video memory, the card being handed to another program). Nothing is
     // drawn after that, so whoever owns the stage is told.
     canvas.addEventListener("webglcontextlost", () => {
       if (!this.closing) this.onLost?.();
     });
-    // Phones have very dense screens and modest graphics chips: draw a little
-    // under their full resolution there.
-    const phone = window.matchMedia("(pointer: coarse)").matches;
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, phone ? 1.5 : 2));
+    this.renderer.setPixelRatio(quality.pixelRatio);
     this.scene.background = new THREE.Color(0.66, 0.76, 0.86);
     this.scene.add(new THREE.HemisphereLight(0xcfe2ff, 0x4a4436, 1.25));
     const sun = new THREE.DirectionalLight(0xfff1d6, 2.3);
@@ -127,6 +134,12 @@ export class Stage {
     this.goal.distance = distance;
     this.goal.x = x;
     this.goal.z = z;
+  }
+
+  /** Takes up the graphics level now in force (see Quality). */
+  applyQuality() {
+    this.renderer.setPixelRatio(quality.pixelRatio);
+    this.resize();
   }
 
   private resize() {

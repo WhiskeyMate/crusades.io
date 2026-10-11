@@ -13,7 +13,8 @@ import { TickDelta, UnitState } from "./client/GameState";
 import { UNIT_LORE } from "./client/Lexicon";
 import { Session } from "./client/Session";
 import { Armies } from "./render/Armies";
-import { plantWoods } from "./render/Decor";
+import { plantWoods, Woods } from "./render/Decor";
+import { quality, SlowWatch } from "./render/Quality";
 import { Effects } from "./render/Effects";
 import { GroundNames } from "./render/GroundNames";
 import { PickHit, Stage } from "./render/Stage";
@@ -35,6 +36,10 @@ export class Game {
   private attackLabels: AttackLabels;
   private groundNames: GroundNames;
   private raf = 0;
+  private woods!: Woods;
+  /** The graphics level last taken up, as Quality numbers its changes. */
+  private qualitySeen = 0;
+  private slow = new SlowWatch();
   private last = performance.now();
   private time = 0;
   private hoverOwner = 0;
@@ -53,7 +58,9 @@ export class Game {
     this.terrain = new Terrain(this.session.realm, state);
     this.stage = new Stage(this.terrain);
     this.stage.onLost = () => this.onGraphicsLost?.();
-    plantWoods(this.session.realm, this.terrain, this.stage.scene);
+    this.woods = plantWoods(this.session.realm, this.terrain, this.stage.scene);
+    this.woods.thin(quality.treeShare);
+    this.qualitySeen = quality.version;
     this.effects = new Effects();
     this.stage.scene.add(this.effects.group);
     this.units = new Units(this.stage, this.terrain, state, this.effects);
@@ -95,6 +102,9 @@ export class Game {
     const loop = () => {
       if (this.stopped) return;
       this.raf = requestAnimationFrame(loop);
+      // At the lowest level every other frame is let go by: half the drawing.
+      const cap = quality.frameCap;
+      if (cap > 0 && performance.now() - this.last < 1000 / cap - 3) return;
       this.frame();
     };
     loop();
@@ -538,9 +548,20 @@ export class Game {
 
   private frame() {
     const now = performance.now();
-    const dt = Math.min(0.1, (now - this.last) / 1000);
+    const elapsed = (now - this.last) / 1000;
+    const dt = Math.min(0.1, elapsed);
     this.last = now;
     this.time += dt;
+    // Too slow for too long, and the level is on auto: draw less.
+    if (!document.hidden && !this.session.paused && this.slow.frame(elapsed) && quality.lower()) {
+      this.hud.toast(`Graphics lowered to ${quality.level} to keep the game smooth. The Graphics button changes it.`, "warn");
+    }
+    if (this.qualitySeen !== quality.version) {
+      this.qualitySeen = quality.version;
+      this.stage.applyQuality();
+      this.woods.thin(quality.treeShare);
+      this.hud.showGraphics();
+    }
     const session = this.session;
     const alpha = session.paused
       ? 1

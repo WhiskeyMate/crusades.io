@@ -7,6 +7,7 @@ import { Session, soloSession } from "./client/Session";
 import { DEFAULT_KINGDOMS } from "./worldgen/RealmGen";
 import { Armies } from "./render/Armies";
 import { plantWoods } from "./render/Decor";
+import { quality } from "./render/Quality";
 import { Effects } from "./render/Effects";
 import { GroundNames } from "./render/GroundNames";
 import { Stage } from "./render/Stage";
@@ -50,7 +51,7 @@ export class Attract {
     const state = this.session.state;
     this.terrain = new Terrain(this.session.realm, state);
     this.stage = new Stage(this.terrain, false);
-    plantWoods(this.session.realm, this.terrain, this.stage.scene);
+    plantWoods(this.session.realm, this.terrain, this.stage.scene).thin(quality.treeShare);
     this.stage.scene.add(this.effects.group);
     this.units = new Units(this.stage, this.terrain, state, this.effects);
     this.armies = new Armies(this.stage, this.terrain, state, this.effects);

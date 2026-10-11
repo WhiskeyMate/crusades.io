@@ -1,5 +1,6 @@
 // The hall: pick a house, a realm and rivals, then start a game.
 
+import { quality } from "./render/Quality";
 import { drawBans, readRules } from "./client/Rules";
 import { mapStillHTML, startLiveMaps } from "./ui/MapPreview";
 import { checkAcceleration } from "./ui/Acceleration";
@@ -105,6 +106,7 @@ function offerBackdrop() {
 async function startAttract() {
   if (attract || game) return;
   if (stored(BACKDROP_OFF)) return offerBackdrop();
+  if (!quality.backdrop) return;
   try {
     store(CRUMB, "building the backdrop");
     const a = (attract = await Attract.create());
@@ -123,6 +125,13 @@ async function startAttract() {
     if (!accelChecked) {
       accelChecked = true;
       checkAcceleration(a.context);
+    }
+    // Setting the backdrop up is also how the game learns what is drawing.
+    // If that turns out to be too weak for it, the plain backdrop stays.
+    if (!quality.backdrop) {
+      store(CRUMB, null);
+      stopAttract();
+      return;
     }
     await a.start();
     if (attract === a) el("landing").classList.remove("no-gl");

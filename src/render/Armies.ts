@@ -10,6 +10,7 @@ import { Effects } from "./Effects";
 import { modelFor, MODELS, Pool } from "./Models";
 import "./Styles";
 import "./Follies";
+import { quality } from "./Quality";
 import { Stage } from "./Stage";
 import { Terrain } from "./Terrain";
 
@@ -193,7 +194,7 @@ export class Armies {
       const yaw = Math.atan2(co.dx, co.dy);
       const rx = co.dy;
       const ry = -co.dx;
-      const n = 3 + Math.round(co.heat * 11);
+      const n = Math.max(2, Math.round((3 + Math.round(co.heat * 11)) * quality.soldierShare));
       const perRank = Math.ceil(n / 2);
       for (let i = 0; i < n; i++) {
         const rank = i < perRank ? 0 : 1;

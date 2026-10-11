@@ -2,6 +2,7 @@
 // standings, the build bar, the chronicle, wars, pact offers and the
 // right-click menu.
 
+import { Choice, quality } from "../render/Quality";
 import { track } from "./Analytics";
 import { drawEndOffer } from "../account/Panel";
 import { TileRef } from "@crusades/engine-api/game/GameMap";
@@ -71,6 +72,18 @@ export class Hud {
     el("btn-pause").onclick = () => this.setSpeed(session.paused ? session.speed : 0);
     for (const s of [1, 2, 4]) el(`btn-x${s}`).onclick = () => this.setSpeed(s);
     el("btn-quit").onclick = () => this.onQuit();
+    el("btn-gfx").onclick = () => {
+      const next: Record<Choice, Choice> = { auto: "high", high: "medium", medium: "low", low: "auto" };
+      quality.set(next[quality.choice]);
+      this.showGraphics();
+      this.toast(
+        quality.choice === "auto"
+          ? `Graphics: automatic (now ${quality.level}). The game lowers it if it runs slowly.`
+          : `Graphics: ${quality.choice}.`,
+        "good",
+      );
+    };
+    this.showGraphics();
     el("btn-help").onclick = () => (el("help").hidden = !el("help").hidden);
     el("help").onclick = () => (el("help").hidden = true);
     this.setSpeed(1);
@@ -168,6 +181,14 @@ export class Hud {
       state === true ? `${name}: a ballista tower covers this flight. It will likely be shot down (red line).`
       : state === false ? `${name}: clear flight, no ballista tower in reach. Click to cast. Esc to cancel.`
       : `${name}: click the map to place it. Shift-click to place several. Esc to cancel.`;
+  }
+
+  /** The Graphics button says what is in force. */
+  showGraphics() {
+    const b = el("btn-gfx");
+    const name = { high: "High", medium: "Med", low: "Low" }[quality.level];
+    b.textContent = quality.choice === "auto" ? `Auto·${name}` : name;
+    b.title = `Graphics quality: ${quality.choice === "auto" ? `automatic, now ${quality.level}` : quality.choice}. Click to change.`;
   }
 
   private lastUpgrade: number | null = null;

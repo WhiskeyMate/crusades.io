@@ -1,8 +1,13 @@
 {
-  "version": "0.1.101",
-  "builtAt": "2026-10-10",
-  "commits": 101,
+  "version": "0.1.102",
+  "builtAt": "2026-10-11",
+  "commits": 102,
   "entries": [
+    {
+      "hash": "e7931b6",
+      "date": "2026-10-11",
+      "subject": "House rules can be set for a solo game too"
+    },
     {
       "hash": "6f0ceae",
       "date": "2026-10-10",

@@ -3,6 +3,7 @@
 
 import * as THREE from "three";
 import { RGB } from "../client/Heraldry";
+import { quality } from "./Quality";
 
 const P_VERT = /* glsl */ `
 attribute vec3 aVel;
@@ -294,6 +295,7 @@ export class Effects {
 
   /** A burning trail behind something flying. */
   trail(p: THREE.Vector3, size: number, hue: "fire" | "star" | "arcane" = "fire") {
+    if (!quality.particles) return;
     const t = this.time;
     const c = hue === "fire" ? [1.0, 0.62, 0.2] : hue === "star" ? [0.75, 0.85, 1.0] : [0.6, 0.95, 1.0];
     for (let i = 0; i < 3; i++) {
@@ -375,6 +377,7 @@ export class Effects {
 
   /** Splash, dust or splinters: a small local puff. */
   puff(pos: THREE.Vector3, size: number, kind: "dust" | "splash" | "spark") {
+    if (!quality.particles) return;
     const t = this.time;
     const c = kind === "dust" ? [0.55, 0.48, 0.38] : kind === "splash" ? [0.85, 0.92, 0.97] : [1, 0.8, 0.4];
     const sys = kind === "spark" ? this.fire : this.smoke;
@@ -391,6 +394,7 @@ export class Effects {
 
   /** A wisp of dust kicked up by marching feet. */
   dust(x: number, y: number, z: number, size: number) {
+    if (!quality.particles) return;
     this.smoke.emit(
       this.time, x, y + 0.2, z, rnd(-0.6, 0.6) * size, rnd(0.4, 1.2) * size, rnd(-0.6, 0.6) * size,
       0.6, 0.53, 0.42, rnd(0.8, 1.6), size * 0.9, size * 2.8,
@@ -399,6 +403,7 @@ export class Effects {
 
   /** Dragon's breath, poured at the ground ahead. */
   breath(from: THREE.Vector3, dir: THREE.Vector3, size: number) {
+    if (!quality.particles) return;
     for (let i = 0; i < 6; i++) {
       this.fire.emit(
         this.time, from.x, from.y, from.z,
