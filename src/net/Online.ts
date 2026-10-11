@@ -220,6 +220,11 @@ export class Online {
   start() {
     this.post({ type: "start" });
   }
+
+  /** In a private team game: take a side. */
+  pickTeam(team: number) {
+    this.post({ type: "team", team });
+  }
   sendIntent = (intent: Intent) =>
     this.post({ type: "intent", intent: intent as ClientMessage extends { intent: infer I } ? I : never });
   reportHash(tick: number, hash: number) {

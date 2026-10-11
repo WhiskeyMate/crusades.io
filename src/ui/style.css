@@ -933,3 +933,5 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 #public-list:has(.pub:nth-child(4)) .pub.lead { grid-row: span 3; }
 #public-list:has(.pub:nth-child(4)) .pub:not(.lead) { min-height: 92px; }
 body.phone #public-list:has(.pub:nth-child(4)) .pub.lead { grid-row: auto; }
+#lobby-members .side.mine { box-shadow: 0 0 0 2px var(--side); }
+#lobby-members .side button { margin-top: 6px; width: 100%; font-size: 12.5px; padding: 4px; }

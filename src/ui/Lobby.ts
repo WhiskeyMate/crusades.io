@@ -347,8 +347,14 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
       // people as others arrive; the sides are fixed when the game begins.
       list.innerHTML = Array.from({ length: sides }, (_, t) => {
         const on = lobby.members.filter((m) => m.team === t);
-        return `<li class="side" style="--side:${teamCSS(teamName(t))}"><b>${teamName(t)} <span>${on.length}</span></b><ul>${on.map(line).join("") || `<li class="none">nobody yet</li>`}</ul></li>`;
+        // Among friends you take your own side, while the game has not begun.
+        const mineNow = lobby.members.find((m) => m.clientID === me)?.team === t;
+        const pick = lobby.kind === "private" && lobby.status === "open" && !mineNow ? `<button data-side="${t}">Join ${teamName(t)}</button>` : "";
+        return `<li class="side${mineNow ? " mine" : ""}" style="--side:${teamCSS(teamName(t))}"><b>${teamName(t)} <span>${on.length}</span></b><ul>${on.map(line).join("") || `<li class="none">nobody yet</li>`}</ul>${pick}</li>`;
       }).join("");
+      for (const b of Array.from(list.querySelectorAll<HTMLButtonElement>("button[data-side]"))) {
+        b.onclick = () => online?.pickTeam(Number(b.dataset.side));
+      }
     } else {
       list.innerHTML = lobby.members.map(line).join("");
     }
@@ -356,6 +362,10 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
     el("lobby-config").textContent =
       `${c.map} · ${sides >= 2 ? `${teamsText(sides)} · ` : ""}seed ${c.seed} · ${c.kingdoms} kingdoms · ${c.clans} tribes · ${c.difficulty} · up to ${c.maxPlayers} lords`;
     el("lobby-sides-note").hidden = sides < 2;
+    el("lobby-sides-note").textContent =
+      lobby.kind === "private"
+        ? "Choose your side. You start on the smaller one; move as you like until the host begins the game, and then the sides are fixed."
+        : "Teams are sorted for you: evenly, with clan-mates kept together. They may shift as lords arrive, and are fixed when the game begins.";
     const rules = describeRules(c.rules);
     el("lobby-rules").hidden = rules.length === 0;
     el("lobby-rules").innerHTML = rules.length ? `<b>House rules:</b> ${esc(rules.join(" · "))}` : "";

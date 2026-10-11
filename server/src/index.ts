@@ -143,6 +143,8 @@ interface Member {
   secret: string;
   name: string;
   clanTag: string | null;
+  /** In a private team game, the side they are on: put there on joining, theirs to change until it starts. */
+  team: number | null;
   client: Client | null;
   cosmetic: Cosmetic | null;
 }
@@ -206,9 +208,10 @@ class Lobby {
   }
 
   /**
-   * In a team game, who is on which team as the lobby stands. Worked out
-   * afresh from who is here each time it is asked for, so the teams settle as
-   * lords come and go, and nobody chooses: clans first, largest first, each
+   * In a team game, who is on which team as the lobby stands. A private game
+   * leaves it to the players (see below). A public one works it out afresh
+   * from who is here each time it is asked for, so the teams settle as lords
+   * come and go, and nobody chooses: clans first, largest first, each
    * kept whole on whichever team is smallest; then everyone else, one by one,
    * onto the smallest team. Keeping a clan together comes before even numbers.
    * What this says when the game begins is what the game is played with.
@@ -219,6 +222,23 @@ class Lobby {
     if (n < 2) return out;
     const sizes = new Array<number>(n).fill(0);
     const smallest = () => sizes.indexOf(Math.min(...sizes));
+    if (this.kind === "private") {
+      // Among friends each player takes a side. Whoever has not yet (just
+      // arrived, or their side went when the host changed the number of
+      // teams) is put on the smallest, and stays there until they move.
+      for (const m of this.members.values()) {
+        if (m.team !== null && m.team < n) sizes[m.team]++;
+        else m.team = null;
+      }
+      for (const m of this.members.values()) {
+        if (m.team === null) {
+          m.team = smallest();
+          sizes[m.team]++;
+        }
+        out.set(m.clientID, m.team);
+      }
+      return out;
+    }
     const clans = new Map<string, Member[]>();
     const alone: Member[] = [];
     for (const m of this.members.values()) {
@@ -278,6 +298,7 @@ class Lobby {
       secret: client.secret,
       name: client.name,
       clanTag: client.clanTag,
+      team: null,
       client,
       cosmetic: client.cosmetic,
     });
@@ -819,6 +840,17 @@ async function handle(client: Client, msg: ClientMessage) {
         send(client, hallMessage());
       }
       break;
+    case "team": {
+      const l = client.lobby;
+      // Only among friends, only while still gathering, only a side that exists.
+      if (!l || l.kind !== "private" || l.status !== "open") return;
+      if (msg.team >= (l.config.teams ?? 0)) return;
+      const m = l.members.get(client.clientID);
+      if (!m || m.team === msg.team) return;
+      m.team = msg.team;
+      l.broadcast({ type: "lobby", lobby: l.view(), now: Date.now() });
+      break;
+    }
     case "configure": {
       const l = client.lobby;
       if (!l || l.owner !== client.clientID || l.status !== "open") return;

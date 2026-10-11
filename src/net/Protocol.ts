@@ -107,6 +107,8 @@ export const ClientMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("list") }),
   z.object({ type: z.literal("join"), lobby: z.string().regex(LOBBY_CODE) }),
   z.object({ type: z.literal("leave") }),
+  /** In a private team game, before it starts: the side the player chooses (0 is the first). */
+  z.object({ type: z.literal("team"), team: z.number().int().min(0).max(3) }),
   z.object({ type: z.literal("configure"), config: LobbyConfigSchema }),
   z.object({ type: z.literal("start") }),
   z.object({ type: z.literal("intent"), intent: PlayerIntentSchema }),
@@ -131,9 +133,10 @@ export interface LobbyMember {
   /** The tag of the clan they belong to, if any. */
   tag?: string | null;
   /**
-   * In a team game, which team they are on for now (0 is the first). The
-   * server sorts the lobby afresh as lords come and go; it is fixed when the
-   * game starts.
+   * In a team game, which team they are on for now (0 is the first). In a
+   * public game the server sorts the lobby afresh as lords come and go; in a
+   * private one each player chooses. Either way it is fixed when the game
+   * starts.
    */
   team?: number;
   connected: boolean;
@@ -193,5 +196,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "17";
+export const PROTOCOL_VERSION = "18";
 export const TURN_MS = 100;
