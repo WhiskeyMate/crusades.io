@@ -1,8 +1,13 @@
 {
-  "version": "0.1.117",
+  "version": "0.1.118",
   "builtAt": "2026-10-11",
-  "commits": 117,
+  "commits": 118,
   "entries": [
+    {
+      "hash": "9b0f9ec",
+      "date": "2026-10-11",
+      "subject": "Clans: found or join one, carry its tag before your house name, and see where they gather on a map of the world"
+    },
     {
       "hash": "3a24bd2",
       "date": "2026-10-11",

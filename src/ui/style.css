@@ -835,3 +835,9 @@ canvas.world.fixed { cursor: default; }
 .clan-mine textarea { font: inherit; color: var(--ink); background: #120c07; border: 1px solid var(--edge); border-radius: 4px; padding: 6px 8px; resize: vertical; }
 body.phone .clan-map, body.phone .clan-mine .found { grid-template-columns: 1fr; }
 body.phone #clans-nav button { padding: 9px 10px; font-size: 14px; }
+/* Reporting a clan. */
+button.link { background: none; border: 0; padding: 0; font-size: inherit; color: var(--dim); text-decoration: underline dotted; }
+button.link:hover { color: #ffb4a3; filter: none; }
+.clan-report { display: flex; flex-direction: column; gap: 6px; margin: -2px 0 8px; padding: 9px 11px; border: 1px solid #a3423a; border-radius: 6px; background: #261510; }
+.clan-report b { font-size: 14px; font-weight: normal; color: #ffb4a3; }
+.clan-report select, .clan-report input { width: 100%; }

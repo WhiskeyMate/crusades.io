@@ -372,10 +372,103 @@ create policy "asker and founder read requests" on public.clan_requests for sele
 drop policy if exists "asker withdraws request" on public.clan_requests;
 create policy "asker withdraws request" on public.clan_requests for delete using (auth.uid() = user_id);
 
--- A name fit to show: the letters a house name may have, at most 24 of them.
+-- Words clans may not use, in their names, tags or descriptions. Add or
+-- remove rows here (or in the table editor) at any time; nothing needs
+-- redeploying. Lower case letters only, except tags, which are as written.
+--   any   : matched anywhere, even spread across spaces
+--   part  : matched inside a single word
+--   whole : matched as a whole word only (short words that sit inside innocent ones)
+--   tag   : a whole tag
+create table if not exists public.banned_words (
+  word text not null,
+  kind text not null check (kind in ('any', 'part', 'whole', 'tag')),
+  primary key (word, kind)
+);
+-- Nobody reads it but the functions below.
+alter table public.banned_words enable row level security;
+insert into public.banned_words (word, kind) values
+  ('nigger', 'any'), ('nigga', 'any'), ('niggr', 'any'), ('faggot', 'any'), ('kike', 'any'), ('tranny', 'any'),
+  ('wetback', 'any'), ('hitler', 'any'), ('heilhitler', 'any'), ('whitepower', 'any'), ('gasthejews', 'any'), ('rapist', 'whole'), ('rapists', 'whole'),
+  ('pedophile', 'any'), ('paedophile', 'any'), ('motherfucker', 'any'), ('fuck', 'any'), ('fuk', 'whole'), ('shit', 'part'),
+  ('cunt', 'part'), ('bitch', 'part'), ('whore', 'part'), ('slut', 'part'), ('pussy', 'part'), ('penis', 'part'),
+  ('vagina', 'part'), ('porn', 'part'), ('wanker', 'part'), ('jizz', 'part'), ('dildo', 'part'), ('blowjob', 'part'),
+  ('handjob', 'part'), ('asshole', 'part'), ('arsehole', 'part'), ('molest', 'part'), ('retard', 'part'), ('nazi', 'part'),
+  ('pedo', 'whole'), ('paedo', 'whole'), ('fagg', 'part'), ('cocksuck', 'part'), ('dickhead', 'part'), ('bollock', 'part'),
+  ('cock', 'whole'), ('cocks', 'whole'), ('dick', 'whole'), ('dicks', 'whole'), ('rape', 'whole'), ('raped', 'whole'),
+  ('rapes', 'whole'), ('raping', 'whole'), ('cum', 'whole'), ('anal', 'whole'), ('tits', 'whole'), ('fag', 'whole'),
+  ('fags', 'whole'), ('twat', 'whole'), ('twats', 'whole'), ('wank', 'whole'), ('coon', 'whole'), ('coons', 'whole'),
+  ('gook', 'whole'), ('spic', 'whole'), ('chink', 'whole'), ('kkk', 'any'), ('nonce', 'whole'), ('kys', 'whole'),
+  ('KKK', 'tag'), ('NAZI', 'tag'), ('1488', 'tag'), ('FAG', 'tag'), ('FAGS', 'tag'), ('CUNT', 'tag'),
+  ('FUCK', 'tag'), ('FUK', 'tag'), ('FUCC', 'tag'), ('FCK', 'tag'), ('SHIT', 'tag'), ('SHT', 'tag'),
+  ('RAPE', 'tag'), ('NIGR', 'tag'), ('NIGA', 'tag'), ('NGGR', 'tag'), ('NGR', 'tag'), ('SLUT', 'tag'),
+  ('DICK', 'tag'), ('COCK', 'tag'), ('PORN', 'tag'), ('ANAL', 'tag'), ('CUM', 'tag'), ('TITS', 'tag'),
+  ('HEIL', 'tag'), ('PEDO', 'tag'), ('KYS', 'tag'), ('WANK', 'tag'), ('TWAT', 'tag'), ('HOE', 'tag')
+on conflict do nothing;
+
+-- Whether a piece of writing uses a banned word. Digits and signs often used
+-- in place of letters are read as those letters first.
+create or replace function public.foul(s text) returns boolean
+language sql stable security definer set search_path = public as $$
+  with t as (select translate(lower(coalesce(s, '')), '013457@$!', 'oieastasi') as v)
+  select exists (
+    select 1 from public.banned_words b, t where
+      (b.kind = 'any' and regexp_replace(t.v, '[^a-z]', '', 'g') like '%' || b.word || '%')
+      or (b.kind = 'part' and exists (select 1 from unnest(regexp_split_to_array(t.v, '[^a-z]+')) w where w like '%' || b.word || '%'))
+      or (b.kind = 'whole' and b.word = any (regexp_split_to_array(t.v, '[^a-z]+')))
+  );
+$$;
+create or replace function public.foul_tag(tag text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.banned_words b where b.kind = 'tag' and b.word = upper(coalesce(tag, ''))) or public.foul(tag);
+$$;
+revoke all on function public.foul(text) from public, anon, authenticated;
+revoke all on function public.foul_tag(text) from public, anon, authenticated;
+
+-- Reports of clans, for whoever runs the site to read in the table editor
+-- (or the clan_reports_open view, which counts them by clan). One per player
+-- and clan. Nobody reads them through the site.
+create table if not exists public.clan_reports (
+  id bigserial primary key,
+  clan_id uuid not null references public.clans on delete cascade,
+  reporter uuid not null references auth.users on delete cascade,
+  reason text not null check (reason in ('name', 'about', 'pretending', 'other')),
+  note text not null default '' check (char_length(note) <= 300),
+  created_at timestamptz not null default now(),
+  unique (clan_id, reporter)
+);
+alter table public.clan_reports enable row level security;
+
+create or replace view public.clan_reports_open as
+  select c.id as clan_id, c.name, c.tag, c.blurb, c.members, count(*) as reports,
+         max(r.created_at) as latest, string_agg(distinct r.reason, ', ') as reasons,
+         string_agg(nullif(r.note, ''), ' | ') as notes
+  from public.clan_reports r join public.clans c on c.id = r.clan_id
+  group by c.id order by count(*) desc, max(r.created_at) desc;
+revoke all on public.clan_reports_open from anon, authenticated;
+
+create or replace function public.report_clan(clan uuid, reason text, note text)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Sign in first.'; end if;
+  if reason not in ('name', 'about', 'pretending', 'other') then raise exception 'Choose a reason.'; end if;
+  if not exists (select 1 from clans c where c.id = clan) then raise exception 'No such clan.'; end if;
+  if (select count(*) from clan_reports r where r.reporter = uid and r.created_at > now() - interval '1 day') >= 10 then
+    raise exception 'That is enough reports for one day. Thank you.';
+  end if;
+  insert into clan_reports (clan_id, reporter, reason, note) values (clan, uid, report_clan.reason, left(btrim(coalesce(note, '')), 300))
+  on conflict (clan_id, reporter) do update set reason = excluded.reason, note = excluded.note, created_at = now();
+end $$;
+revoke all on function public.report_clan(uuid, text, text) from public, anon;
+grant execute on function public.report_clan(uuid, text, text) to authenticated;
+
+-- A name fit to show: the letters a house name may have, at most 24 of them,
+-- and no banned word.
 create or replace function public.clan_display(display text) returns text
-language sql immutable as $$
-  select coalesce(nullif(btrim(left(regexp_replace(coalesce(display, ''), '[^A-Za-z0-9À-ÖØ-öø-ÿ _.\-]', '', 'g'), 24)), ''), 'A lord');
+language sql stable as $$
+  select case when public.foul(display) then 'A lord' else
+    coalesce(nullif(btrim(left(regexp_replace(coalesce(display, ''), '[^A-Za-z0-9À-ÖØ-öø-ÿ _.\-]', '', 'g'), 24)), ''), 'A lord') end;
 $$;
 
 create or replace function public.create_clan(name text, tag text, blurb text, open boolean, x real, y real, display text)
@@ -392,6 +485,9 @@ begin
     raise exception 'A clan name is 3 to 24 letters, digits and spaces.';
   end if;
   if t !~ '^[A-Z0-9]{2,4}$' then raise exception 'A tag is 2 to 4 letters or digits.'; end if;
+  if foul(n) then raise exception 'That clan name is not allowed.'; end if;
+  if foul_tag(t) then raise exception 'That tag is not allowed.'; end if;
+  if foul(blurb) then raise exception 'That description is not allowed.'; end if;
   begin
     insert into clans (name, tag, blurb, open, pin_x, pin_y, founder)
     values (n, t, left(btrim(coalesce(blurb, '')), 200), coalesce(open, true), greatest(0, least(1, x)), greatest(0, least(1, y)), uid)
@@ -497,6 +593,7 @@ declare
   uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Sign in first.'; end if;
+  if foul(update_clan.blurb) then raise exception 'That description is not allowed.'; end if;
   update clans set
     blurb = left(btrim(coalesce(update_clan.blurb, '')), 200),
     open = coalesce(update_clan.open, clans.open),

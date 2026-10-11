@@ -5,7 +5,7 @@
 import { GameMapType } from "@crusades/engine-api/game/Maps.gen";
 import { account, accountsEnabled } from "../account/Account";
 import { flatMap } from "../ui/MapPreview";
-import { Clan, clans, Mine } from "./Clans";
+import { Clan, clans, Mine, REPORT_REASONS, ReportReason } from "./Clans";
 
 const el = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -32,6 +32,8 @@ let search = "";
 let world: HTMLCanvasElement | null = null;
 let loaded = false;
 let leaving = false;
+/** The clan a report is being written about, if any. */
+let reporting: string | null = null;
 
 function say(text: string, bad = false) {
   const n = el("clans-note");
@@ -145,11 +147,22 @@ function joinButton(c: Clan): string {
 }
 
 function row(c: Clan): string {
+  const own = mine?.clan.id === c.id;
   return (
     `<div class="clan-row"><span class="tag">${esc(c.tag)}</span>` +
     `<div class="about"><b>${esc(c.name)}</b>${c.blurb ? `<p>${esc(c.blurb)}</p>` : ""}` +
-    `<small>${c.members} member${c.members === 1 ? "" : "s"} · ${c.open ? "open to all" : "joins by approval"}</small></div>` +
-    `${joinButton(c)}</div>`
+    `<small>${c.members} member${c.members === 1 ? "" : "s"} · ${c.open ? "open to all" : "joins by approval"}` +
+    `${own || reporting === c.id ? "" : ` · <button class="link" data-report="${c.id}">Report</button>`}</small></div>` +
+    `${joinButton(c)}</div>` +
+    (reporting === c.id
+      ? `<div class="clan-report"><b>Report ${esc(c.name)}</b>` +
+        (account.state
+          ? `<select id="report-why">${REPORT_REASONS.map(([k, label]) => `<option value="${k}">${label}</option>`).join("")}</select>` +
+            `<input id="report-note" maxlength="300" placeholder="Anything to add (optional)" />` +
+            `<div><button class="primary" data-send-report="${c.id}">Send report</button> <button data-cancel-report>Cancel</button></div>`
+          : `<p class="dim small">Sign in to send a report.</p><div><button class="primary" data-signin>Sign in</button> <button data-cancel-report>Cancel</button></div>`) +
+        `</div>`
+      : "")
   );
 }
 
@@ -229,6 +242,7 @@ function draw() {
     b.onclick = () => {
       tab = b.dataset.tab as Tab;
       leaving = false;
+      reporting = null;
       pin = null;
       say("");
       draw();
@@ -264,6 +278,22 @@ function draw() {
   on("button[data-withdraw]", (b) => {
     const c = list.find((x) => x.id === b.dataset.withdraw);
     if (c) return act(clans.withdraw(c), "Your ask is withdrawn.");
+  });
+  on("button[data-report]", (b) => {
+    reporting = b.dataset.report!;
+    draw();
+  });
+  on("button[data-cancel-report]", () => {
+    reporting = null;
+    draw();
+  });
+  on("button[data-send-report]", async (b) => {
+    const c = list.find((x) => x.id === b.dataset.sendReport);
+    if (!c) return;
+    const err = await clans.report(c, el<HTMLSelectElement>("report-why").value as ReportReason, el<HTMLInputElement>("report-note").value);
+    reporting = null;
+    say(err ?? `Thank you. ${c.name} has been reported and will be looked at.`, Boolean(err));
+    draw();
   });
   on("button[data-accept]", (b) => act(clans.answer(b.dataset.accept!, true), "Welcomed to the clan."));
   on("button[data-decline]", (b) => act(clans.answer(b.dataset.decline!, false), "Declined."));

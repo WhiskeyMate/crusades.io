@@ -23,6 +23,14 @@ export interface Clan {
   founder: string;
 }
 
+export type ReportReason = "name" | "about" | "pretending" | "other";
+export const REPORT_REASONS: [ReportReason, string][] = [
+  ["name", "Offensive name or tag"],
+  ["about", "Offensive description"],
+  ["pretending", "Pretending to be someone else"],
+  ["other", "Something else"],
+];
+
 export interface ClanMember {
   id: string;
   name: string;
@@ -276,6 +284,15 @@ class ClanService {
     }
     if (!this.db) return "Clans are not set up on this site.";
     const { error } = await this.db.rpc("kick_member", { who });
+    return error ? why(error) : null;
+  }
+
+  /** Tells whoever runs the site that a clan should be looked at. */
+  async report(clan: Clan, reason: ReportReason, note: string): Promise<string | null> {
+    if (!account.state) return "Sign in first.";
+    if (account.preview) return null;
+    if (!this.db) return "Clans are not set up on this site.";
+    const { error } = await this.db.rpc("report_clan", { clan: clan.id, reason, note });
     return error ? why(error) : null;
   }
 

@@ -105,9 +105,21 @@ approval. A player is in one clan at a time.
 - The game server reads a signed-in player's tag when they connect and shows
   it before their name in lobbies and games. It needs its Supabase settings
   and the updated server for that.
-- Clan names, tags and descriptions are not screened for abuse. To remove a
-  clan, delete its row from `public.clans` in the Supabase table editor; its
-  roll and requests go with it.
+- **Word filter.** Clan names, tags and descriptions are checked against the
+  `public.banned_words` table when a clan is founded or its description is
+  changed; a member's name on the roll that fails is shown as "A lord". Add
+  or remove rows in the Supabase table editor at any time, with no redeploy.
+  `kind` says how a word is matched: `any` (anywhere, even spread across
+  spaces), `part` (inside one word), `whole` (a whole word only) or `tag` (a
+  whole tag). Digits and signs standing in for letters are read as letters.
+  The filter runs only when something is written, so a word added later does
+  not remove clans that already use it.
+- **Reports.** Every clan in the lists has a Report link (signed-in players,
+  one report per clan each, ten a day). Reports land in `public.clan_reports`;
+  the view `public.clan_reports_open` lists reported clans, most reported
+  first, with the reasons and notes. Nothing is hidden automatically.
+- **Removing a clan.** Delete its row from `public.clans` in the table editor;
+  its roll, requests and reports go with it.
 
 ## Trying it without Supabase
 
