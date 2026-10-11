@@ -335,6 +335,15 @@ function markPhone() {
 markPhone();
 window.addEventListener("resize", markPhone);
 
+// The house name is remembered from one visit to the next.
+{
+  const HOUSE = "crusades.house";
+  const field = el<HTMLInputElement>("opt-name");
+  const last = stored(HOUSE);
+  if (last) field.value = last.slice(0, 24);
+  field.addEventListener("input", () => store(HOUSE, field.value.trim() || null));
+}
+
 drawBans();
 void initAccountPanel();
 initAds();
