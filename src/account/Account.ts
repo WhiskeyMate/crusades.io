@@ -214,6 +214,17 @@ class AccountService {
     this.onChange();
   }
 
+  /**
+   * Resolves once it is known whether anyone is signed in (or after a few
+   * seconds, if that is slow in coming). For whatever must not go ahead as a
+   * guest when the player has an account: joining a game, above all.
+   */
+  async settled(ms = 4000): Promise<void> {
+    if (!accountsEnabled) return;
+    const until = performance.now() + ms;
+    while (!this.ready && performance.now() < until) await new Promise((r) => setTimeout(r, 60));
+  }
+
   /** The signed-in session's token, for the game server to verify. */
   async token(): Promise<string | null> {
     if (!this.db) return null;

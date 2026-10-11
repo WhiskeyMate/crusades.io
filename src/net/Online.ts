@@ -77,7 +77,12 @@ export class Online {
 
   /** The account may sign in (or its token be renewed) after we connected. */
   setToken(token: string | null) {
+    if (token === this.token) return;
     this.token = token;
+    // The server learns who we are from a token sent with the name. One that
+    // turns up, or changes, after the name was sent has to be sent too, or
+    // the account's clan tag, reserved name and arms never reach the game.
+    if (token && this.name) this.post({ type: "name", name: this.name, token });
   }
 
   list() {

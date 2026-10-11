@@ -262,7 +262,12 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
   }
 
   async function joinCode(code: string) {
+    // Wait to hear whether the player is signed in: an invitation link is
+    // followed the moment the page opens, and joining before then would seat
+    // them as a guest, without their clan tag, reserved name or arms.
+    await account.settled();
     const o = await connect();
+    if (o) o.setToken(await account.token().catch(() => null));
     if (!o || !named(o)) return;
     if (o.lobby?.code === code) return;
     if (o.lobby) o.leave();
@@ -271,7 +276,9 @@ export function initOnline(hooks: OnlineHooks): { hostLobby: () => void } {
 
   function hostLobby() {
     void (async () => {
+      await account.settled();
       const o = await connect();
+      if (o) o.setToken(await account.token().catch(() => null));
       if (!o) {
         el("opt-error").textContent = "The game server is not reachable.";
         el("opt-error").hidden = false;

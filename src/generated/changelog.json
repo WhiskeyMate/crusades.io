@@ -1,8 +1,13 @@
 {
-  "version": "0.1.131",
+  "version": "0.1.132",
   "builtAt": "2026-10-11",
-  "commits": 131,
+  "commits": 132,
   "entries": [
+    {
+      "hash": "73c9343",
+      "date": "2026-10-11",
+      "subject": "Games are recorded again: the function that files them failed every time. The banner comes first on the Customisation tab. A test runs the whole database schema and its functions"
+    },
     {
       "hash": "d38d7c6",
       "date": "2026-10-11",
