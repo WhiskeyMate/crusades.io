@@ -158,12 +158,11 @@ const heldBy = (who: typeof a, centre: number, r: number) => {
 console.log("\n1. a party nobody sees");
 const spot1 = offset(homeB, -45, 0);
 check("B holds the ground it is sent to", g.owner(spot1) === b);
-const town = offset(spot1, 9, 0);
-step([{ type: "build_unit", unit: UnitType.City, tile: town, clientID: B }]);
+// A town of B's well away from there: it is what A's road will run to.
+step([{ type: "build_unit", unit: UnitType.City, tile: offset(homeB, -70, 40), clientID: B }]);
 run(5);
-const towns = b.units(UnitType.City);
-check("B has a town beside it", towns.length === 1);
-const townAt = towns[0]?.tile() ?? town;
+const roadTown = b.units(UnitType.City)[0];
+check("B has a town", roadTown !== undefined);
 check("no road runs between them yet, so no party can be sent", a.canBuild(UnitType.ScoutingParty, spot1) === false);
 // A takes a foothold at B's rim and raises a market there: its road runs to B's town.
 const foothold = offset(homeB, -118, 0);
@@ -182,13 +181,22 @@ run(30);
 check("A has a market near B's town", a.units(UnitType.Factory).length === 1, `${footing} tiles of foothold`);
 check("with the road laid, a party can be sent into B", a.canBuild(UnitType.ScoutingParty, spot1) !== false);
 check("but not into a realm no road reaches", a.canBuild(UnitType.ScoutingParty, homeC) === false);
-check("a party cannot be sent onto a building", a.canBuild(UnitType.ScoutingParty, townAt) === false);
+check("a party cannot be sent onto a building", a.canBuild(UnitType.ScoutingParty, roadTown.tile()) === false);
+check("nor anywhere a building stands within its reach", a.canBuild(UnitType.ScoutingParty, offset(roadTown.tile(), SCOUT_MAX_RADIUS - 2, 0)) === false && a.canBuild(UnitType.ScoutingParty, offset(roadTown.tile(), 0, -(SCOUT_MAX_RADIUS - 4))) === false);
+check("but just beyond it, it can", a.canBuild(UnitType.ScoutingParty, offset(roadTown.tile(), SCOUT_MAX_RADIUS + 3, 0)) !== false);
 check("nor onto its owner's land", a.canBuild(UnitType.ScoutingParty, homeA) === false);
 const goldBefore = a.gold();
 step([{ type: "build_unit", unit: UnitType.ScoutingParty, tile: spot1, clientID: A }]);
 run(3);
 check("the party is out", parties().length === 1);
 const p1 = parties()[0];
+// With the party already out, B raises a town inside the ground it is making for.
+const town = offset(spot1, 9, 0);
+step([{ type: "build_unit", unit: UnitType.City, tile: town, clientID: B }]);
+run(5);
+const towns = b.units(UnitType.City).filter((u) => u !== roadTown);
+check("B raises a town beside it", towns.length === 1);
+const townAt = towns[0]?.tile() ?? town;
 check("while it is out, no second party can be sent", a.canBuild(UnitType.ScoutingParty, offset(spot1, -30, 20)) === false);
 check("it starts hidden", p1 !== undefined && !p1.isTargetable() && !p1.reachedTarget());
 void goldBefore;

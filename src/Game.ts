@@ -508,7 +508,12 @@ export class Game {
       } else if (b && b.canBuild !== false) {
         session.send({ type: "build_unit", unit: placing, tile });
       } else {
-        this.hud.toast(`A ${UNIT_LORE[placing].name} cannot be placed there.`, "warn");
+        this.hud.toast(
+          placing === UnitType.ScoutingParty
+            ? "A scouting party goes to open country in a realm your roads reach: no building inside its circle, and only one party out at a time."
+            : `A ${UNIT_LORE[placing].name} cannot be placed there.`,
+          "warn",
+        );
         return;
       }
       if (!ev.shiftKey) this.hud.place(null);

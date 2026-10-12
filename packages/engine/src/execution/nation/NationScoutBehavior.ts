@@ -191,9 +191,10 @@ export class NationScoutBehavior {
     const h = mg.height();
     for (let i = 0; i < SPOT_TRIES; i++) {
       const by = this.random.randElement(holdings).tile();
-      const dx = this.random.nextInt(-40, 41);
-      const dy = this.random.nextInt(-40, 41);
-      if (dx * dx + dy * dy < 12 * 12) continue;
+      const dx = this.random.nextInt(-60, 61);
+      const dy = this.random.nextInt(-60, 61);
+      // A party may not be sent with a building in its reach.
+      if (dx * dx + dy * dy <= SCOUT_MAX_RADIUS * SCOUT_MAX_RADIUS) continue;
       const x = mg.x(by) + dx;
       const y = mg.y(by) + dy;
       if (x < 0 || y < 0 || x >= w || y >= h) continue;

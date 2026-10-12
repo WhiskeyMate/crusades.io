@@ -1,8 +1,13 @@
 {
-  "version": "0.1.148",
+  "version": "0.1.149",
   "builtAt": "2026-10-12",
-  "commits": 148,
+  "commits": 149,
   "entries": [
+    {
+      "hash": "40f40eb",
+      "date": "2026-10-12",
+      "subject": "No scouting parties into allied or team land, even a disconnected friend's; team-mates see a hidden party"
+    },
     {
       "hash": "fc86409",
       "date": "2026-10-12",
