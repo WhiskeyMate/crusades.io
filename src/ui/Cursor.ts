@@ -117,6 +117,16 @@ const PLACING: Record<string, string> = {
     outlined("M15 29V16h8v13z", STONE) + outlined("M13 16l6-10 6 10z", "#6a3fa6") +
       `<circle cx="19" cy="5" r="2.4" fill="#9ff3ff" stroke="${INK}" stroke-width="1.1"/>`,
   ),
+  // Ward tower: a thin tower with a watching eye over it.
+  "Ward Tower": placing(
+    outlined("M16 29V15h6v14z", STONE) + outlined("M14 15h10l-1-3h-8z", STONE) +
+      outlined("M11 8q8-7 16 0q-8 7-16 0z", "#fff3d6", 1.2) + `<circle cx="19" cy="8" r="2.2" fill="${INK}"/>`,
+  ),
+  // Scouting party: a tent with its banner.
+  "Scouting Party": placing(
+    outlined("M8 28l10-15 10 15z", "#d8c9a3") + outlined("M18 28l-3-7h6z", "#5a4630", 1.1) +
+      `<path d="M18 13V5" stroke="${INK}" stroke-width="1.6"/>` + outlined("M18 5h7l-2 2.5 2 2.5h-7z", RED, 1.1),
+  ),
   // Fireball.
   "Atom Bomb": placing(FLAME),
   // Dragon: three fireballs, for it burns far more than one does.

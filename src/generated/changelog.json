@@ -1,8 +1,23 @@
 {
-  "version": "0.1.137",
+  "version": "0.1.140",
   "builtAt": "2026-10-12",
-  "commits": 137,
+  "commits": 140,
   "entries": [
+    {
+      "hash": "d9beebb",
+      "date": "2026-10-12",
+      "subject": "Public game cards: the teams badge no longer breaks across lines"
+    },
+    {
+      "hash": "fd2f7b0",
+      "date": "2026-10-12",
+      "subject": "Clans window: solid panel, inked map, tidier rows and two-column list"
+    },
+    {
+      "hash": "dba698b",
+      "date": "2026-10-12",
+      "subject": "In a private team game each player chooses their side until the host begins"
+    },
     {
       "hash": "ab3a203",
       "date": "2026-10-12",

@@ -288,11 +288,33 @@ export class PlayerExecution implements Execution {
       this.removeCluster(largestCluster);
     }
 
+    // Land a scouting party took stands by its camp: cut off as it is, it is
+    // not given up for being surrounded while the camp is there.
+    // (A cluster here is a run of border tiles, so the camp, which sits in
+    // the middle of its land, is looked for inside the cluster's bounds.)
+    const camps: TileRef[] = [];
+    for (const u of this.player.units(UnitType.ScoutingParty)) {
+      if (u.isActive() && u.reachedTarget()) camps.push(u.tile());
+    }
+    const map = this.map;
+    const holdsCamp = (idx: number) =>
+      camps.some((t) => {
+        const x = map.x(t);
+        const y = map.y(t);
+        return (
+          x >= boxes[idx] &&
+          y >= boxes[idx + 1] &&
+          x <= boxes[idx + 2] &&
+          y <= boxes[idx + 3]
+        );
+      });
+
     // Process remaining clusters
     for (let i = 0; i < clusters.length; i++) {
       if (i === largestIndex) continue;
       const cluster = clusters[i];
       const idx = i * 4;
+      if (camps.length > 0 && holdsCamp(idx)) continue;
       if (
         this.isSurrounded(
           cluster,

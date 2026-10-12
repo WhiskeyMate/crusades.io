@@ -43,6 +43,7 @@ export type Intent =
   | EmbargoAllIntent
   | UpgradeStructureIntent
   | DeleteUnitIntent
+  | RoutScoutsIntent
   | KickPlayerIntent
   | TogglePauseIntent
   | UpdateGameConfigIntent
@@ -75,6 +76,7 @@ export type AllianceExtensionIntent = z.infer<
   typeof AllianceExtensionIntentSchema
 >;
 export type DeleteUnitIntent = z.infer<typeof DeleteUnitIntentSchema>;
+export type RoutScoutsIntent = z.infer<typeof RoutScoutsIntentSchema>;
 export type KickPlayerIntent = z.infer<typeof KickPlayerIntentSchema>;
 export type TogglePauseIntent = z.infer<typeof TogglePauseIntentSchema>;
 export type UpdateGameConfigIntent = z.infer<
@@ -508,6 +510,12 @@ export const DeleteUnitIntentSchema = z.object({
   unitId: zb.uint(),
 });
 
+/** Set upon a scouting party a ward tower has uncovered. */
+export const RoutScoutsIntentSchema = z.object({
+  type: z.literal("rout_scouts"),
+  unitId: zb.uint(),
+});
+
 export const QuickChatIntentSchema = z.object({
   type: z.literal("quick_chat"),
   recipient: MappedID,
@@ -571,6 +579,7 @@ export const IntentSchema = z.discriminatedUnion("type", [
   QuickChatIntentSchema,
   AllianceExtensionIntentSchema,
   DeleteUnitIntentSchema,
+  RoutScoutsIntentSchema,
   KickPlayerIntentSchema,
   TogglePauseIntentSchema,
   UpdateGameConfigIntentSchema,

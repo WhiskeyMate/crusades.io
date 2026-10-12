@@ -1,3 +1,4 @@
+import { SCOUT_CLEARANCE } from "@crusades/engine-api/game/Scouting";
 import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
   AllianceInfo,
@@ -1618,10 +1619,40 @@ export class PlayerImpl implements Player {
       case UnitType.SAMLauncher:
       case UnitType.City:
       case UnitType.Factory:
+      case UnitType.WardTower:
         return this.landBasedStructureSpawn(targetTile, validTiles);
+      case UnitType.ScoutingParty:
+        return this.scoutSpawn(targetTile);
       default:
         assertNever(unitType);
     }
+  }
+
+  /**
+   * A scouting party goes onto another realm's open land: not a friend's,
+   * and not within a few tiles of a building.
+   */
+  scoutSpawn(tile: TileRef): TileRef | false {
+    const mg = this.mg;
+    if (mg.isSpawnImmunityActive()) return false;
+    if (!mg.isLand(tile) || mg.isImpassable(tile)) return false;
+    const owner = mg.owner(tile);
+    if (!owner.isPlayer() || owner === this || this.isFriendly(owner)) {
+      return false;
+    }
+    if (
+      mg.anyUnitNearby(
+        tile,
+        SCOUT_CLEARANCE,
+        Structures.types,
+        () => true,
+        undefined,
+        true,
+      )
+    ) {
+      return false;
+    }
+    return tile;
   }
 
   nukeSpawn(tile: TileRef, nukeType: UnitType): TileRef | false {

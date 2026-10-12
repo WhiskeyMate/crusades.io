@@ -1,3 +1,4 @@
+import { SCOUT_COST } from "@crusades/engine-api/game/Scouting";
 import {
   Difficulty,
   Gold,
@@ -347,6 +348,14 @@ export class EngineConfig extends Config {
           (numUnits: number) => Math.min(3_000_000, (numUnits + 1) * 1_500_000),
           UnitType.SAMLauncher,
         );
+      case UnitType.WardTower:
+        // The same as a ballista tower, counted on its own.
+        return this.costWrapper(
+          (numUnits: number) => Math.min(3_000_000, (numUnits + 1) * 1_500_000),
+          UnitType.WardTower,
+        );
+      case UnitType.ScoutingParty:
+        return this.costWrapper(() => SCOUT_COST, UnitType.ScoutingParty);
       case UnitType.City:
         return this.costWrapper(
           (numUnits: number) => Math.min(1_000_000, pow2(numUnits) * 125_000),

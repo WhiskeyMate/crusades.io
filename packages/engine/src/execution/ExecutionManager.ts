@@ -1,3 +1,4 @@
+import { RoutScoutsExecution } from "./ScoutingPartyExecution";
 import {
   ClientID,
   GameID,
@@ -133,6 +134,8 @@ export class Executor {
         );
       case "delete_unit":
         return new DeleteUnitExecution(player, intent.unitId);
+      case "rout_scouts":
+        return new RoutScoutsExecution(player, intent.unitId);
       case "quick_chat":
         return new QuickChatExecution(
           player,

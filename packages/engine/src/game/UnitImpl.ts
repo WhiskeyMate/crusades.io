@@ -56,6 +56,8 @@ export class UnitImpl implements Unit {
   private _troops: number;
   // Number of missiles in cooldown, if empty all missiles are ready.
   private _missileTimerQueue: number[] = [];
+  /** Ground a scouting party has covered and not yet told the clients of. */
+  private _scoutNews: number[] = [];
   private _hasTrainStation: boolean = false;
   private _level: number = 1;
   private _targetable: boolean = true;
@@ -147,6 +149,10 @@ export class UnitImpl implements Unit {
   touch(): void {
     this.mg.addUpdate(this.toUpdate());
   }
+  reachScoutTiles(tiles: readonly TileRef[]): void {
+    for (const t of tiles) this._scoutNews.push(t);
+    this.mg.addUpdate(this.toUpdate());
+  }
   setTileTarget(tile: TileRef | undefined): void {
     this._targetTile = tile;
   }
@@ -195,6 +201,9 @@ export class UnitImpl implements Unit {
       hasTrainStation: this._hasTrainStation,
       trainType: this._trainType,
       loaded: this._loaded,
+      // Sent once: whichever update goes out next carries them.
+      scoutTiles:
+        this._scoutNews.length > 0 ? this._scoutNews.splice(0) : undefined,
     };
     return update;
   }

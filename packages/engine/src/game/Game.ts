@@ -111,6 +111,10 @@ export interface UnitParamsMap {
   [UnitType.SAMLauncher]: Record<string, never>;
 
   [UnitType.City]: Record<string, never>;
+
+  [UnitType.WardTower]: Record<string, never>;
+
+  [UnitType.ScoutingParty]: Record<string, never>;
 }
 
 // Type helper to get params type for a specific unit type
@@ -215,6 +219,8 @@ export interface Unit extends UnitLike {
   isActive(): boolean;
   setOwner(owner: Player): void;
   touch(): void;
+  /** A scouting party has spread over these tiles: tell the clients, who draw it. */
+  reachScoutTiles(tiles: readonly TileRef[]): void;
   hash(): number;
   toUpdate(): UnitUpdate;
   hasTrainStation(): boolean;

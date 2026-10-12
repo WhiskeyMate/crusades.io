@@ -199,6 +199,10 @@ export enum UnitType {
   MIRVWarhead = "MIRV Warhead",
   Train = "Train",
   Factory = "Factory",
+  /** A watchtower that uncovers scouting parties near it. */
+  WardTower = "Ward Tower",
+  /** A band sent into another realm, taking land unseen until it is done. */
+  ScoutingParty = "Scouting Party",
 }
 
 export enum TrainType {
@@ -219,6 +223,7 @@ export const BuildableAttacks = unitTypeGroup([
   UnitType.HydrogenBomb,
   UnitType.MIRV,
   UnitType.Warship,
+  UnitType.ScoutingParty,
 ] as const);
 
 export const Structures = unitTypeGroup([
@@ -228,6 +233,7 @@ export const Structures = unitTypeGroup([
   UnitType.MissileSilo,
   UnitType.Port,
   UnitType.Factory,
+  UnitType.WardTower,
 ] as const);
 
 export const BuildMenus = unitTypeGroup([

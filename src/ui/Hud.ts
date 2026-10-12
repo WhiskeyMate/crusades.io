@@ -20,6 +20,7 @@ import { Intent } from "@crusades/engine-api/Schemas";
 import { PlayerState, TickDelta, UnitState } from "../client/GameState";
 import { css, shieldSVG } from "../client/Heraldry";
 import {
+  BUILD_KEYS,
   BUILD_ORDER,
   eventText,
   eventTone,
@@ -124,9 +125,9 @@ export class Hud {
     } else if (e.code === "Space") {
       e.preventDefault();
       if (this.session.ownsClock) this.setSpeed(this.session.paused ? this.session.speed : 0);
-    } else if (/^Digit\d$/.test(e.code)) {
-      const n = Number(e.code.slice(5));
-      const type = BUILD_ORDER[n === 0 ? 9 : n - 1];
+    } else if (/^Digit\d$/.test(e.code) || e.code === "Minus" || e.code === "Equal") {
+      const key = e.code === "Minus" ? "-" : e.code === "Equal" ? "=" : e.code.slice(5);
+      const type = BUILD_ORDER[BUILD_KEYS.indexOf(key)];
       if (type) this.place(this.placing === type ? null : type);
     } else if (e.code === "KeyC" && this.session.state.me?.spawnTile !== undefined) {
       this.onFocus(this.session.state.me.spawnTile);
@@ -238,7 +239,7 @@ export class Hud {
       b.className = "build-btn";
       b.dataset.type = type;
       b.innerHTML =
-        `<span class="key">${(i + 1) % 10}</span><span class="glyph">${lore.glyph}</span>` +
+        `<span class="key">${BUILD_KEYS[i] ?? ""}</span><span class="glyph">${lore.glyph}</span>` +
         `<span class="name">${lore.name}</span><span class="cost">—</span><span class="count" hidden></span>` +
         `<span class="tip"><b>${lore.name}</b><br>${lore.blurb}</span>`;
       b.onclick = () => this.place(this.placing === type ? null : type);
@@ -827,9 +828,9 @@ export class Hud {
 }
 
 /** What the wheel offers to raise on your own land. */
-const RAISED = [UnitType.City, UnitType.Factory, UnitType.Port, UnitType.MissileSilo, UnitType.SAMLauncher];
+const RAISED = [UnitType.City, UnitType.Factory, UnitType.Port, UnitType.MissileSilo, UnitType.SAMLauncher, UnitType.WardTower];
 /** What it offers to send against anywhere else. */
-const SENT = [UnitType.Warship, UnitType.AtomBomb, UnitType.HydrogenBomb, UnitType.MIRV];
+const SENT = [UnitType.Warship, UnitType.ScoutingParty, UnitType.AtomBomb, UnitType.HydrogenBomb, UnitType.MIRV];
 
 export function canSail(units: BuildableUnit[]): boolean {
   return units.some((b) => b.type === UnitType.TransportShip && b.canBuild !== false);

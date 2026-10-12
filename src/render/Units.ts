@@ -25,6 +25,7 @@ const STRUCTURES: Partial<Record<UnitType, keyof typeof MODELS>> = {
   [UnitType.Factory]: "market",
   [UnitType.MissileSilo]: "mageTower",
   [UnitType.SAMLauncher]: "ballistaTower",
+  [UnitType.WardTower]: "wardTower",
 };
 
 const NEUTRAL: RGB = [0.6, 0.6, 0.6];
@@ -95,7 +96,7 @@ export class Units {
     this.trails = new SeaTrails(this.group);
     const cap: Record<string, number> = {
       town: 1500, keep: 1500, harbour: 800, market: 800, mageTower: 600,
-      ballistaTower: 800, scaffold: 400, galley: 600, longship: 600, cog: 900,
+      ballistaTower: 800, wardTower: 600, camp: 300, scaffold: 400, galley: 600, longship: 600, cog: 900,
       wagon: 1500, bolt: 500, boulder: 600, banner: 3000,
     };
     for (const [name, n] of Object.entries(cap)) {
@@ -275,6 +276,10 @@ export class Units {
       const color = this.color(u.ownerID);
       const look = this.state.players.get(u.ownerID)?.look;
       const memo = this.memoOf(u);
+      if (u.type === UnitType.ScoutingParty) {
+        this.scouts(u, color, memo, structScale, time);
+        continue;
+      }
       const structure = STRUCTURES[u.type];
       if (structure) {
         const tx = map.x(u.pos);
@@ -300,7 +305,7 @@ export class Units {
               this.marks.dot(wx + Math.sin(a) * r, wy + 0.5 * structScale, wz + Math.cos(a) * r, 0.7 * structScale, 1.0, 0.82, 0.3);
             }
             // And an arrow of three marks climbing above it.
-            const high = (structure === "mageTower" ? 11 : structure === "keep" ? 8 : 6.2) * structScale * grow;
+            const high = (structure === "mageTower" ? 11 : structure === "keep" || structure === "wardTower" ? 8 : 6.2) * structScale * grow;
             for (let i = 0; i < 3; i++) {
               const lift = ((time * 1.4 + i / 3) % 1) * 3 * structScale;
               this.marks.dot(wx, wy + high + lift, wz, (1.3 - i * 0.25) * structScale, 1.0, 0.82, 0.3);
@@ -308,7 +313,8 @@ export class Units {
           }
           if (showTags) {
             const top = structure === "mageTower" ? 9 : structure === "keep" ? 6 : 4.2;
-            this.tags.add(wx, wy + top * structScale * grow + 1.2 * Math.pow(S, 0.6), wz, u.level);
+            // A ward tower has no levels to show.
+            if (u.type !== UnitType.WardTower) this.tags.add(wx, wy + top * structScale * grow + 1.2 * Math.pow(S, 0.6), wz, u.level);
           }
           const pips = Math.min(5, u.level - 1);
           for (let i = 0; i < pips; i++) {
@@ -439,6 +445,39 @@ export class Units {
     this.aimLine(S);
     this.marks.end();
     this.trails.end();
+  }
+
+  /**
+   * A scouting party. Its owner and their friends always see it; anyone else
+   * sees it only once a ward tower has uncovered it, or once it has done its
+   * work and stands as a camp. The ground it is spreading over is painted
+   * by the terrain (Terrain.syncScouts); here, only the camp and its mark.
+   */
+  private scouts(u: UnitState, color: RGB, memo: Memo, scale: number, time: number) {
+    const me = this.state.me;
+    const owner = this.state.players.get(u.ownerID);
+    const ours = !!me && !!owner && (owner === me || this.state.friends(owner, me));
+    if (!ours && !u.targetable && !u.reachedTarget) {
+      memo.seen = false;
+      return;
+    }
+    const map = this.state.map;
+    const tx = map.x(u.pos);
+    const ty = map.y(u.pos);
+    const wx = this.terrain.worldX(tx);
+    const wz = this.terrain.worldZ(ty);
+    const wy = this.terrain.surfaceAt(tx, ty);
+    this.put(this.pools.camp, wx, wy, wz, memo.yaw, scale * 1.15, color);
+    memo.x = wx;
+    memo.y = wy + scale * 2;
+    memo.z = wz;
+    memo.seen = true;
+    if (u.reachedTarget) return;
+    const found = u.targetable;
+    if (found) {
+      // And a mark bobbing over the camp, so it is easy to find and click.
+      this.marks.dot(wx, wy + (3.4 + Math.sin(time * 5) * 0.4) * scale, wz, 1.2 * scale, 1.0, 0.2, 0.14);
+    }
   }
 
   /**

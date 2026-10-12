@@ -78,6 +78,10 @@ export interface UnitState {
   targetTile?: TileRef;
   isActive: boolean;
   reachedTarget: boolean;
+  /** For a scouting party: whether a ward tower has uncovered it. */
+  targetable: boolean;
+  /** For a scouting party: the ground it has spread over so far. */
+  scoutTiles?: number[];
   level: number;
   health?: number;
   troops: number;
@@ -374,6 +378,7 @@ export class GameState {
           targetTile: uu.targetTile,
           isActive: false,
           reachedTarget: uu.reachedTarget,
+          targetable: uu.targetable,
           level: uu.level,
           troops: uu.troops,
           underConstruction: false,
@@ -390,6 +395,7 @@ export class GameState {
         origin: uu.pos,
         isActive: true,
         reachedTarget: false,
+        targetable: uu.targetable,
         level: uu.level,
         troops: uu.troops,
         underConstruction: false,
@@ -406,6 +412,8 @@ export class GameState {
     if (!this.plans.hasGridPlan(u.id)) u.pos = uu.pos;
     u.targetTile = uu.targetTile;
     u.reachedTarget = uu.reachedTarget;
+    u.targetable = uu.targetable;
+    if (uu.scoutTiles) (u.scoutTiles ??= []).push(...uu.scoutTiles);
     u.level = uu.level;
     u.health = uu.health;
     u.troops = uu.troops;

@@ -17,7 +17,9 @@
     "build:server": "esbuild server/src/index.ts --bundle --platform=node --format=esm --target=es2022 --external:ws --external:zod --log-level=warning --outfile=server/dist/server.mjs",
     "server": "npm run build:server && node server/dist/server.mjs",
     "sim": "esbuild tools/headless.ts --bundle --platform=node --format=esm --target=es2022 --log-level=warning --outfile=node_modules/.cache/headless.mjs && node node_modules/.cache/headless.mjs",
-    "schema-test": "node tools/schema-test.mjs supabase/schema.sql"
+    "schema-test": "node tools/schema-test.mjs supabase/schema.sql",
+    "scout-test": "esbuild tools/scout-test.ts --bundle --platform=node --format=esm --target=es2022 --log-level=warning --outfile=node_modules/.cache/scout-test.mjs && node node_modules/.cache/scout-test.mjs",
+    "stress": "esbuild tools/stress.ts --bundle --platform=node --format=esm --target=es2022 --external:ws --log-level=warning --outfile=node_modules/.cache/stress.mjs && node node_modules/.cache/stress.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

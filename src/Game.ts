@@ -1,5 +1,6 @@
 // One running game: the session, the 3D stage and the HUD, wired together.
 
+import { SCOUT_MAX_RADIUS, WARD_RANGE } from "@crusades/engine-api/game/Scouting";
 import { onlineKind } from "./ui/Lobby";
 import { GameRecord } from "./account/Record";
 import { radialOpen } from "./ui/Radial";
@@ -180,6 +181,7 @@ export class Game {
     if (d.tiles.length > 0) this.terrain.tilesChanged();
     if (d.updates[GameUpdateType.Player].length > 0) this.paletteDirty = true;
     if (d.roadsChanged) this.terrain.syncRoads();
+    this.terrain.syncScouts();
     this.armies.onTick(d);
     for (const u of d.died) this.died(u);
     for (const u of d.captured) {
@@ -241,7 +243,12 @@ export class Game {
       case UnitType.Factory:
       case UnitType.MissileSilo:
       case UnitType.SAMLauncher:
+      case UnitType.WardTower:
         this.at(u, (p) => this.effects.puff(p, 3.5 * S, "dust"));
+        break;
+      case UnitType.ScoutingParty:
+        // Only a party that was in sight goes up in dust; a hidden one is gone unseen.
+        if (last && !u.reachedTarget) this.effects.puff(last, 3 * S, "dust");
         break;
     }
   }
@@ -314,6 +321,7 @@ export class Game {
       }
       return "pan";
     }
+    if (this.scoutsAt(hit.x, hit.y)) return "march";
     const owner = map.ownerID(tile);
     if (owner === me.smallID) return this.hoverUnit ? "choose" : "own";
     const them = state.players.get(owner);
@@ -483,6 +491,11 @@ export class Game {
       return;
     }
     this.choose([]);
+    const scouts = this.scoutsAt(hit.x, hit.y);
+    if (scouts) {
+      session.send({ type: "rout_scouts", unitId: scouts.id });
+      return;
+    }
     if (map.ownerID(tile) === me.smallID) return;
     const actions = await session.actions(tile, [UnitType.TransportShip]);
     if (!actions) return;
@@ -492,6 +505,24 @@ export class Game {
     } else if (canSail(actions.buildableUnits)) {
       session.send({ type: "boat", troops, dst: tile });
     }
+  }
+
+  /**
+   * An uncovered scouting party of an enemy's that a click here would fall
+   * on: anywhere inside the ground it has reached.
+   */
+  private scoutsAt(x: number, y: number): UnitState | null {
+    const state = this.session.state;
+    const me = state.me;
+    if (!me || !me.isAlive) return null;
+    const map = state.map;
+    for (const u of state.units.values()) {
+      if (u.type !== UnitType.ScoutingParty || u.reachedTarget || !u.targetable || u.ownerID === me.smallID) continue;
+      const owner = state.players.get(u.ownerID);
+      if (owner && state.friends(owner, me)) continue;
+      if (Math.hypot(map.x(u.pos) - x, map.y(u.pos) - y) <= Math.max(4, u.troops)) return u;
+    }
+    return null;
   }
 
   /** The closest standing building within `reach` tiles of a point, if any. */
@@ -522,6 +553,8 @@ export class Game {
         return [c.samRange(Math.max(1, level)), 1];
       case UnitType.Factory:
         return [c.trainStationMaxRange(), 2];
+      case UnitType.WardTower:
+        return [WARD_RANGE, 1];
       default:
         return null;
     }
@@ -564,6 +597,21 @@ export class Game {
         const r = this.reach(b.type, b.level);
         if (r) put(map.x(b.pos), map.y(b.pos), r[0], r[1]);
       }
+    } else if (placing === UnitType.ScoutingParty && this.hoverTile !== null) {
+      // Sending scouts: how far they will reach from here, and the sight of
+      // every ward tower that is not ours, since those are what will find them.
+      const hx = map.x(this.hoverTile);
+      const hy = map.y(this.hoverTile);
+      put(hx, hy, SCOUT_MAX_RADIUS, 4);
+      const wards: { u: UnitState; d: number }[] = [];
+      for (const b of this.session.state.units.values()) {
+        if (b.type !== UnitType.WardTower || b.underConstruction || (me && b.ownerID === me.smallID)) continue;
+        const dx = map.x(b.pos) - hx;
+        const dy = map.y(b.pos) - hy;
+        wards.push({ u: b, d: dx * dx + dy * dy });
+      }
+      wards.sort((a, b) => a.d - b.d);
+      for (const { u: b } of wards.slice(0, 20)) put(map.x(b.pos), map.y(b.pos), WARD_RANGE, 1);
     } else if (placing !== null && this.hoverTile !== null && Structures.has(placing)) {
       // Drawn where the building will stand, which is not always under the
       // cursor: the engine keeps buildings a set distance apart and moves a

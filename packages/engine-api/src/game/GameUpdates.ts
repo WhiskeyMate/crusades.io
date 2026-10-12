@@ -212,6 +212,8 @@ export interface UnitUpdate {
   trainType?: TrainType; // Only for trains
   loaded?: boolean; // Only for trains
   samUpgrade?: SamLauncherState;
+  /** Only for scouting parties: the tiles it has spread over since its last update. */
+  scoutTiles?: number[];
 }
 
 export interface AttackUpdate {

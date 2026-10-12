@@ -35,6 +35,16 @@ export const UNIT_LORE: Record<UnitType, UnitLore> = {
     glyph: "🏹",
     blurb: "Shoots dragons, fireballs and falling stars out of the sky.",
   },
+  [UnitType.WardTower]: {
+    name: "Ward Tower",
+    glyph: "👁",
+    blurb: "Watches the land around it and uncovers scouting parties creeping in.",
+  },
+  [UnitType.ScoutingParty]: {
+    name: "Scouting Party",
+    glyph: "⛺",
+    blurb: "Slips into an enemy realm and takes open land unseen, unless a ward tower finds it first.",
+  },
   [UnitType.MissileSilo]: {
     name: "Mage Tower",
     glyph: "🔮",
@@ -84,7 +94,12 @@ export const BUILD_ORDER: UnitType[] = [
   UnitType.AtomBomb,
   UnitType.HydrogenBomb,
   UnitType.MIRV,
+  UnitType.WardTower,
+  UnitType.ScoutingParty,
 ];
+
+/** The key that picks each place on the build bar. */
+export const BUILD_KEYS = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "="];
 
 const EVENT_TEXT: Record<string, string> = {
   "events_display.alliance_nukes_destroyed_incoming":
@@ -106,6 +121,13 @@ const EVENT_TEXT: Record<string, string> = {
   "events_display.unit_destroyed": "Your {unit} was destroyed.",
   "events_display.wants_to_renew_alliance": "{name} wishes to renew your pact.",
   "events_display.unit_voluntarily_deleted": "Your {unit} was torn down.",
+  "events_display.scouts_spotted": "A ward tower has uncovered a scouting party of {name}. Click it to rout it.",
+  "events_display.scouts_spotted_own": "A ward tower has uncovered your scouting party.",
+  "events_display.scouts_routed": "You routed a scouting party of {name}.",
+  "events_display.scouts_routed_own": "{name} routed your scouting party.",
+  "events_display.scouts_settled": "Your scouting party has taken the land around its camp.",
+  "events_display.scouts_took_land": "A scouting party of {name} has taken land inside your realm.",
+  "events_display.scouts_failed": "Your scouting party found no open land to take, and came home.",
 };
 
 /** Names the engine uses for things in its messages that are not its unit types. */

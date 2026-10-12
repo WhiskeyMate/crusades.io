@@ -2,6 +2,7 @@
 // paints who owns each tile (read straight from the game's tile-state
 // buffer), and one translucent plane for the water.
 
+import { UnitType } from "@crusades/engine-api/game/GameTypes";
 import * as THREE from "three";
 import { GameState } from "../client/GameState";
 import { clothId } from "../store/Cloths";
@@ -45,6 +46,8 @@ uniform sampler2D tPalette;
 uniform sampler2D tHeight;
 uniform sampler2D tRelief;
 uniform sampler2D tRoads;
+uniform sampler2D tScouts;
+uniform vec3 uScoutColor;
 uniform sampler2D tTerrain;
 uniform sampler2D tPattern;
 uniform vec2 uMap;
@@ -186,6 +189,14 @@ void main() {
       float hatch = step(0.82, fract((tile.x + tile.y) * 0.5));
       col = mix(col, pc.rgb * 0.35, hatch * 0.35);
     }
+  }
+  // Ground a scouting party is spreading over: its owner's colour laid over
+  // the holder's in moving bands, or red where a ward tower has found it.
+  float sc = texture(tScouts, uv).r;
+  if (sc > 0.25 && !wet) {
+    vec3 scc = sc > 0.75 ? vec3(0.95, 0.16, 0.1) : uScoutColor;
+    float band = step(0.5, fract((tile.x + tile.y) * 0.22 - uTime * 0.6));
+    col = mix(col, scc * (0.75 + dot(col, vec3(0.3, 0.55, 0.15)) * 0.6), 0.42 + band * 0.26);
   }
   float road = texture(tRoads, uv).r;
   col = mix(col, vec3(0.62, 0.52, 0.36), smoothstep(0.2, 0.55, road) * 0.9);
@@ -353,6 +364,9 @@ export class Terrain {
   private patternTex: THREE.DataTexture;
   private roadTex: THREE.DataTexture;
   private roadData: Uint8Array<ArrayBuffer>;
+  private scoutData!: Uint8Array<ArrayBuffer>;
+  private scoutTex!: THREE.DataTexture;
+  private scoutsShown = false;
 
   constructor(
     realm: Realm,
@@ -431,7 +445,14 @@ export class Terrain {
     this.roadTex.magFilter = this.roadTex.minFilter = THREE.LinearFilter;
     this.roadTex.needsUpdate = true;
 
+    this.scoutData = new Uint8Array(w * h);
+    this.scoutTex = new THREE.DataTexture(this.scoutData, w, h, THREE.RedFormat, THREE.UnsignedByteType);
+    this.scoutTex.magFilter = this.scoutTex.minFilter = THREE.NearestFilter;
+    this.scoutTex.needsUpdate = true;
+
     this.uniforms = {
+      tScouts: { value: this.scoutTex },
+      uScoutColor: { value: new THREE.Color(0.95, 0.93, 0.85) },
       tState: { value: this.stateTex },
       tPalette: { value: this.paletteTex },
       tHeight: { value: heightTex },
@@ -650,6 +671,36 @@ export class Terrain {
     }
     this.paletteTex.needsUpdate = true;
     this.patternTex.needsUpdate = true;
+  }
+
+  /**
+   * Repaint the ground scouting parties are spreading over. Only parties
+   * this player may see are drawn: their own side's, and any a ward tower
+   * has uncovered. A party that is done has taken its land and needs none.
+   */
+  syncScouts() {
+    const me = this.state.me;
+    let any = false;
+    for (const u of this.state.units.values()) {
+      if (u.type === UnitType.ScoutingParty && !u.reachedTarget && u.scoutTiles) {
+        any = true;
+        break;
+      }
+    }
+    if (!any && !this.scoutsShown) return;
+    this.scoutData.fill(0);
+    this.scoutsShown = false;
+    for (const u of this.state.units.values()) {
+      if (u.type !== UnitType.ScoutingParty || u.reachedTarget || !u.scoutTiles) continue;
+      const owner = this.state.players.get(u.ownerID);
+      const ours = !!me && !!owner && (owner === me || this.state.friends(owner, me));
+      if (!ours && !u.targetable) continue;
+      const mark = ours ? 128 : 255;
+      for (const t of u.scoutTiles) this.scoutData[t] = mark;
+      this.scoutsShown = true;
+      if (ours && owner) (this.uniforms.uScoutColor.value as THREE.Color).setRGB(owner.color[0], owner.color[1], owner.color[2]);
+    }
+    this.scoutTex.needsUpdate = true;
   }
 
   syncRoads() {

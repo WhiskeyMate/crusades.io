@@ -414,6 +414,31 @@ function soldier(kind: "default" | "mail" | "crusader" = "default"): Model {
   ]);
 }
 
+/** A tall, thin watchtower with a beacon under a peaked roof. */
+function wardTower(): Model {
+  const parts: Part[] = [
+    cyl(0.95, 1.2, 0.5, 0, 0, 0, STONE_DARK, 8),
+    cyl(0.62, 0.82, 4.2, 0, 0.5, 0, STONE, 8),
+    cyl(1.05, 0.72, 0.3, 0, 4.7, 0, STONE_DARK, 8),
+    box(0.42, 0.34, 0.42, 0, 5.0, 0, 0xffb347),
+    cone(1.12, 1.0, 0, 6.05, 0, 0, 8, true),
+  ];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) parts.push(cyl(0.06, 0.06, 1.05, sx * 0.62, 5.0, sz * 0.62, WOOD, 5));
+  return build(parts);
+}
+
+/** A scouting party's camp: two tents, a fire and the banner it marches under. */
+function camp(): Model {
+  return build([
+    cone(1.0, 1.25, -0.75, 0, 0.3, 0xd8c9a3, 4),
+    cone(0.8, 1.0, 0.9, 0, -0.55, 0xc9b98f, 4),
+    cyl(0.32, 0.36, 0.1, 0.55, 0, 0.9, 0x4a4038, 7),
+    cone(0.22, 0.5, 0.55, 0.1, 0.9, 0xff8a1c, 5),
+    cyl(0.04, 0.04, 2.5, -0.1, 0, -1.0, WOOD, 5),
+    box(0.85, 0.55, 0.04, 0.34, 1.85, -1.0, 0, true),
+  ]);
+}
+
 function banner(): Model {
   return build([
     cyl(0.035, 0.035, 2.6, 0, 0, 0, WOOD, 5),
@@ -476,6 +501,8 @@ export const MODELS = {
   market: market(),
   mageTower: mageTower(),
   ballistaTower: ballistaTower(),
+  wardTower: wardTower(),
+  camp: camp(),
   galley: galley(),
   longship: longship(),
   cog: cog(),
@@ -508,7 +535,7 @@ function variant<T>(swap: Partial<Record<"STONE" | "STONE_DARK" | "WOOD" | "WOOD
 
 const buildings = () => ({
   town: town(), keep: keep(), harbour: harbour(), market: market(),
-  mageTower: mageTower(), ballistaTower: ballistaTower(),
+  mageTower: mageTower(), ballistaTower: ballistaTower(), wardTower: wardTower(),
 });
 const ships = () => ({ galley: galley(), longship: longship(), cog: cog() });
 

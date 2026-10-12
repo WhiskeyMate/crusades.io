@@ -247,6 +247,16 @@ export class Config {
           upgradable: true,
         };
         break;
+      case UnitType.WardTower:
+        info = {
+          constructionDuration: this.instantBuild()
+            ? 0
+            : SAM_CONSTRUCTION_TICKS,
+        };
+        break;
+      case UnitType.ScoutingParty:
+        info = {};
+        break;
       case UnitType.TransportShip:
       case UnitType.SAMMissile:
       case UnitType.AtomBomb:
