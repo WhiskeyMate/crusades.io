@@ -393,7 +393,14 @@ async function onMessage(e: MessageEvent<MainThreadMessage>) {
         const asker = game.playerByClientID(message.clientID);
         if (asker && asker.isAlive()) {
           for (const p of realmsLinkedByRoad(game, asker)) {
-            if (p.isAlive() && !asker.isFriendly(p)) realms.push(p.smallID());
+            if (
+              p.isAlive() &&
+              !asker.isFriendly(p) &&
+              !asker.isAlliedWith(p) &&
+              !asker.isOnSameTeam(p)
+            ) {
+              realms.push(p.smallID());
+            }
           }
         }
       } catch (error) {

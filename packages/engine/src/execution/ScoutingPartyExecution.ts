@@ -299,7 +299,14 @@ export class ScoutingPartyExecution implements Execution {
     if (!mg.isLand(tile) || mg.isImpassable(tile)) return false;
     const holder = mg.owner(tile);
     // Only the realm it was sent into: it stops at that realm's borders.
-    if (holder !== this.target || holder === owner || holder.isFriendly(owner)) {
+    // And not while that realm is an ally or a team-mate, at the table or away from it.
+    if (
+      holder !== this.target ||
+      holder === owner ||
+      holder.isFriendly(owner) ||
+      holder.isAlliedWith(owner) ||
+      holder.isOnSameTeam(owner)
+    ) {
       return false;
     }
     return !this.inLane(tile, lanes);

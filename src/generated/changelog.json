@@ -1,8 +1,13 @@
 {
-  "version": "0.1.147",
+  "version": "0.1.148",
   "builtAt": "2026-10-12",
-  "commits": 147,
+  "commits": 148,
   "entries": [
+    {
+      "hash": "fc86409",
+      "date": "2026-10-12",
+      "subject": "Ward towers see 120 tiles instead of 50"
+    },
     {
       "hash": "b6fd183",
       "date": "2026-10-12",

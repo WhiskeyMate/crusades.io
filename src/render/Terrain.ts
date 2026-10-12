@@ -685,8 +685,8 @@ export class Terrain {
 
   /**
    * Repaint the ground scouting parties are spreading over. Only parties
-   * this player may see are drawn: their own, and any a ward tower has
-   * uncovered. Not an ally's: a hidden party is hidden from everyone else. A party that is done has taken its land and needs none.
+   * this player may see are drawn: their own, their team's in a team game,
+   * and any a ward tower has uncovered. Not an ally's by pact. A party that is done has taken its land and needs none.
    */
   syncScouts() {
     const me = this.state.me;
@@ -703,7 +703,7 @@ export class Terrain {
     for (const u of this.state.units.values()) {
       if (u.type !== UnitType.ScoutingParty || u.reachedTarget || !u.scoutTiles) continue;
       const owner = this.state.players.get(u.ownerID);
-      const ours = !!me && owner === me;
+      const ours = !!me && !!owner && (owner === me || (me.team !== null && owner.team === me.team));
       if (!ours && !u.targetable) continue;
       const mark = ours ? 128 : 255;
       for (const t of u.scoutTiles) this.scoutData[t] = mark;

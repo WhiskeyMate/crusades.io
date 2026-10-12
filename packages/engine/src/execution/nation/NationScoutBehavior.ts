@@ -68,7 +68,13 @@ export class NationScoutBehavior {
     if (!wards && !scouts) return;
     // Both turn on the roads: a party goes in by one, and comes in by one.
     const reach = [...realmsLinkedByRoad(this.game, this.player)]
-      .filter((p) => p.isAlive() && !this.player.isFriendly(p))
+      .filter(
+        (p) =>
+          p.isAlive() &&
+          !this.player.isFriendly(p) &&
+          !this.player.isAlliedWith(p) &&
+          !this.player.isOnSameTeam(p),
+      )
       .sort((a, b) => a.smallID() - b.smallID());
     if (reach.length === 0) return;
     if (wards && this.ward(manner)) return;

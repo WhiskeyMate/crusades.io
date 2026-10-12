@@ -1639,7 +1639,15 @@ export class PlayerImpl implements Player {
     if (mg.isSpawnImmunityActive()) return false;
     if (!mg.isLand(tile) || mg.isImpassable(tile)) return false;
     const owner = mg.owner(tile);
-    if (!owner.isPlayer() || owner === this || this.isFriendly(owner)) {
+    // Never an ally's land or a team-mate's, whether or not they are at the
+    // table: isFriendly alone lets a disconnected friend through.
+    if (
+      !owner.isPlayer() ||
+      owner === this ||
+      this.isFriendly(owner) ||
+      this.isAlliedWith(owner) ||
+      this.isOnSameTeam(owner)
+    ) {
       return false;
     }
     // One party out at a time; a camp, its work done, does not count.

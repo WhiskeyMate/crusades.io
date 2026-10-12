@@ -453,16 +453,16 @@ export class Units {
   }
 
   /**
-   * A scouting party. Only its owner sees it; anyone else, friend or foe,
-   * sees it only once a ward tower has uncovered it, or once it has done its
+   * A scouting party. Its owner sees it, and in a team game so does the
+   * owner's team; anyone else, ally by pact or foe, sees it only once a ward tower has uncovered it, or once it has done its
    * work and stands as a camp. The ground it is spreading over is painted
    * by the terrain (Terrain.syncScouts); here, only the camp and its mark.
    */
   private scouts(u: UnitState, color: RGB, memo: Memo, scale: number, time: number) {
     const me = this.state.me;
     const owner = this.state.players.get(u.ownerID);
-    // The owner alone: not allies, not team-mates, not those looking on.
-    const ours = !!me && owner === me;
+    // The owner, and in a team game the owner's team. Not allies by pact, nor those looking on.
+    const ours = !!me && !!owner && (owner === me || (me.team !== null && owner.team === me.team));
     if (!ours && !u.targetable && !u.reachedTarget) {
       memo.seen = false;
       return;
