@@ -105,6 +105,11 @@ export class Marks {
     this.add(x, y, z, r, g, 0.18, width, width * 0.2, 1, f);
   }
 
+  /** A progress bar, `fill` from 0 to 1: the same bar, in yellow throughout. */
+  progress(x: number, y: number, z: number, width: number, fill: number) {
+    this.add(x, y, z, 1.0, 0.82, 0.2, width, width * 0.2, 1, Math.min(1, Math.max(0, fill)));
+  }
+
   end() {
     this.mesh.count = this.n;
     this.mesh.instanceMatrix.needsUpdate = true;

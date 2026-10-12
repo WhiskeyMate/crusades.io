@@ -293,6 +293,11 @@ export class Units {
         const rise = 0.4 + 0.6 * age;
         if (u.underConstruction) {
           this.put(this.pools.scaffold, wx, wy, wz, memo.yaw, structScale * rise, color);
+          // How far along the work is, over the scaffold.
+          const takes = this.state.config.unitInfo(u.type).constructionDuration ?? 0;
+          if (takes > 0 && this.stage.distance < 900) {
+            this.marks.progress(wx, wy + 5.2 * structScale, wz, 3.2 * structScale, (this.state.tick - u.bornTick + alpha) / takes);
+          }
         } else {
           const marked = u.id === this.upgrading;
           // About to be raised a level: it swells and settles, inside a turning ring of gold.

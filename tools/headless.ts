@@ -149,3 +149,16 @@ console.log(`${players.length} alive players; top:`);
 for (const p of players.slice(0, 6)) console.log(`  ${p.type().padEnd(7)} ${p.displayName().padEnd(34)} tiles ${p.numTilesOwned()} troops ${p.troops()} gold ${p.gold()}`);
 const me = players.find((p) => p.clientID() === clientID);
 console.log("human:", me ? `${me.numTilesOwned()} tiles, ${me.troops()} troops` : "not spawned");
+
+// Scouting and warding, across every realm: what stands now, and how many were ever sent or raised.
+{
+  const { UnitType } = await import("@crusades/engine-api/game/GameTypes");
+  const all = runner.game.allPlayers();
+  const sum = (f: (p: (typeof all)[number]) => number) => all.reduce((n, p) => n + f(p), 0);
+  console.log(
+    `ward towers standing ${runner.game.unitCount(UnitType.WardTower)} (raised ${sum((p) => p.unitsConstructed(UnitType.WardTower))}); ` +
+      `scouting parties sent ${sum((p) => p.unitsConstructed(UnitType.ScoutingParty))}, ` +
+      `camps standing ${runner.game.units(UnitType.ScoutingParty).filter((u) => u.reachedTarget()).length}, ` +
+      `still spreading ${runner.game.units(UnitType.ScoutingParty).filter((u) => !u.reachedTarget()).length}`,
+  );
+}

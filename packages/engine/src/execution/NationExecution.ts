@@ -36,6 +36,7 @@ import { NationAllianceBehavior } from "./nation/NationAllianceBehavior";
 import { NationEmojiBehavior } from "./nation/NationEmojiBehavior";
 import { NationMIRVBehavior } from "./nation/NationMIRVBehavior";
 import { NationNukeBehavior } from "./nation/NationNukeBehavior";
+import { NationScoutBehavior } from "./nation/NationScoutBehavior";
 import { NationStructureBehavior } from "./nation/NationStructureBehavior";
 import { NationWarshipBehavior } from "./nation/NationWarshipBehavior";
 import { SpawnExecution } from "./SpawnExecution";
@@ -53,6 +54,7 @@ export class NationExecution implements Execution {
   private warshipBehavior!: NationWarshipBehavior;
   private nukeBehavior!: NationNukeBehavior;
   private structureBehavior!: NationStructureBehavior;
+  private scoutBehavior!: NationScoutBehavior;
   private mg: Game;
   private player: Player | null = null;
 
@@ -226,6 +228,7 @@ export class NationExecution implements Execution {
     this.attackBehavior.maybeAttack();
     this.warshipBehavior.counterWarshipInfestation();
     this.nukeBehavior.maybeSendNuke();
+    this.scoutBehavior.act();
   }
 
   private initializeBehaviors(): void {
@@ -247,6 +250,11 @@ export class NationExecution implements Execution {
       this.mg,
       this.player,
       this.emojiBehavior,
+    );
+    this.scoutBehavior = new NationScoutBehavior(
+      this.random,
+      this.mg,
+      this.player,
     );
     this.warshipBehavior = new NationWarshipBehavior(
       this.random,

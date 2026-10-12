@@ -1,8 +1,13 @@
 {
-  "version": "0.1.144",
+  "version": "0.1.145",
   "builtAt": "2026-10-12",
-  "commits": 144,
+  "commits": 145,
   "entries": [
+    {
+      "hash": "80b4a36",
+      "date": "2026-10-12",
+      "subject": "Scouting: a timed notice that jumps to the party, one out at a time, dearer each time"
+    },
     {
       "hash": "a5b4dea",
       "date": "2026-10-12",
