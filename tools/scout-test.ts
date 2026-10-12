@@ -29,6 +29,7 @@ const realm = buildRealm(
 
 const A = "SCOUTAAA";
 const B = "WARDBBBB";
+const C = "THIRDCCC";
 const info: GameStartInfo = {
   gameID: "SCOUTS01",
   lobbyCreatedAt: 0,
@@ -50,6 +51,7 @@ const info: GameStartInfo = {
   players: [
     { clientID: A, username: "Scout", clanTag: null },
     { clientID: B, username: "Warden", clanTag: null },
+    { clientID: C, username: "Bystander", clanTag: null },
   ],
 } as GameStartInfo;
 
@@ -111,10 +113,12 @@ const inland = (from: number, r: number, avoid?: number) => {
 };
 const homeB = inland(0, 110);
 const homeA = inland(0, 30, homeB);
-step([{ type: "spawn", tile: homeA, clientID: A }, { type: "spawn", tile: homeB, clientID: B }]);
+const homeC = inland(land.length >> 1, 20, homeB);
+step([{ type: "spawn", tile: homeA, clientID: A }, { type: "spawn", tile: homeB, clientID: B }, { type: "spawn", tile: homeC, clientID: C }]);
 while (g.inSpawnPhase()) step();
 const a = g.playerByClientID(A)!;
 const b = g.playerByClientID(B)!;
+const c = g.playerByClientID(C)!;
 check("both houses stand", !!a && !!b && a.isAlive() && b.isAlive());
 
 // Each is handed the open land around its seat, so there is a realm to creep
@@ -131,6 +135,7 @@ const grant = (who: typeof a, centre: number, r: number) => {
 };
 grant(a, homeA, 30);
 grant(b, homeB, 110);
+grant(c, homeC, 20);
 run(20);
 console.log(`       A holds ${a.numTilesOwned()} tiles, B ${b.numTilesOwned()}`);
 while (g.isSpawnImmunityActive()) run(50);
@@ -230,6 +235,32 @@ check("the camp is gone once B retakes its tile", !p1.isActive());
 run(400);
 const left = heldBy(a, spot1, SCOUT_MAX_RADIUS);
 check("and the land, cut off, goes back", left === 0, `${left} tiles left`);
+
+// ---- 5. Only the realm it was sent into.
+console.log("\n5. a party stops at the border of the next realm");
+// At B's rim a third house, C, holds the land beyond: from 8 tiles off the party, outward.
+const spot5 = offset(homeB, 0, -98);
+let cTiles = 0;
+for (let dy = -30; dy <= -8; dy++) {
+  for (let dx = -30; dx <= 30; dx++) {
+    const t = offset(spot5, dx, dy);
+    if (g.isLand(t) && !g.isImpassable(t)) {
+      c.conquer(t);
+      cTiles++;
+    }
+  }
+}
+run(30);
+const cBefore = heldBy(c, offset(spot5, 0, -16), 7);
+check("B holds the ground, and C the land beyond it", g.owner(spot5) === b && g.owner(offset(spot5, 0, -9)) === c && cBefore > 100, `${cTiles} tiles to C`);
+step([{ type: "build_unit", unit: UnitType.ScoutingParty, tile: spot5, clientID: A }]);
+run(3);
+const p5 = parties().find((u) => u.isActive() && u.tile() === spot5);
+check("the party is out", p5 !== undefined);
+run(SCOUT_GROW_TICKS + 10);
+check("it is done", !!p5 && p5.reachedTarget());
+check("it took B's land right up to the border", g.owner(offset(spot5, 0, -6)) === a && g.owner(offset(spot5, 10, 0)) === a);
+check("and none of C's", g.owner(offset(spot5, 0, -9)) === c && heldBy(c, offset(spot5, 0, -16), 7) === cBefore && heldBy(a, offset(spot5, 0, -16), 7) === 0);
 
 console.log(failed === 0 ? "\nall scouting checks passed" : `\n${failed} check(s) FAILED`);
 process.exit(failed === 0 ? 0 : 1);

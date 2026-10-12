@@ -36,8 +36,9 @@ const RAGGED = 48;
  * A scouting party: sent into another realm, it spreads unseen from where it
  * was sent, tile by tile as an attack does, until it has covered its full
  * size (or has nowhere left to go), and then the land it has covered becomes
- * its owner's. It covers only open land: it spreads around buildings, never
- * over them. Until then the land is still its holder's in every way.
+ * its owner's. It covers only open land of the one realm it was sent into:
+ * it stops at that realm's borders, and spreads around buildings, never over
+ * them. Until then the land is still its holder's in every way.
  *
  * The unit carries the party's state where every client can read it:
  *  - scoutTiles:    the tiles it has covered, sent as it covers them;
@@ -57,6 +58,8 @@ export class ScoutingPartyExecution implements Execution {
   private active = true;
   private party: Unit | null = null;
   private startTick = 0;
+  /** The realm it was sent into: it spreads over that realm's land and no other's. */
+  private target: Player | null = null;
   /** The ground covered so far, in the order it was covered. */
   private covered: TileRef[] = [];
   private coveredSet = new Set<TileRef>();
@@ -92,6 +95,8 @@ export class ScoutingPartyExecution implements Execution {
       this.party.setTargetable(false);
       this.party.setTroops(1);
       this.startTick = ticks;
+      const realm = this.mg.owner(spawn);
+      this.target = realm.isPlayer() ? realm : null;
       this.lanesNow = this.lanes(spawn);
       this.cover(spawn);
       this.party.reachScoutTiles([spawn]);
@@ -288,12 +293,13 @@ export class ScoutingPartyExecution implements Execution {
     return false;
   }
 
-  /** Land a party may take: another's, no friend's, and clear of buildings. */
+  /** Land a party may take: the chosen realm's, while it is no friend, and clear of buildings. */
   private open(tile: TileRef, owner: Player, lanes: number[][]): boolean {
     const mg = this.mg;
     if (!mg.isLand(tile) || mg.isImpassable(tile)) return false;
     const holder = mg.owner(tile);
-    if (!holder.isPlayer() || holder === owner || holder.isFriendly(owner)) {
+    // Only the realm it was sent into: it stops at that realm's borders.
+    if (holder !== this.target || holder === owner || holder.isFriendly(owner)) {
       return false;
     }
     return !this.inLane(tile, lanes);
@@ -359,6 +365,7 @@ export class ScoutingPartyExecution implements Execution {
       tile: this.tile,
       party: w.unitOrNull(this.party),
       startTick: this.startTick,
+      target: w.playerOrNull(this.target),
       covered: this.covered,
       frontier: this.frontier,
       reachSquared: this.reachSquared,
@@ -372,6 +379,7 @@ export class ScoutingPartyExecution implements Execution {
     this.tile = s.tile;
     this.party = r.unitOrNull(s.party);
     this.startTick = s.startTick;
+    this.target = r.playerOrNull(s.target);
     this.covered = [...s.covered];
     this.coveredSet = new Set(this.covered);
     this.frontier = [...s.frontier];
@@ -389,6 +397,7 @@ const ScoutingPartyStateSchema = z.object({
   tile: zInt(),
   party: zRef().nullable(),
   startTick: zInt(),
+  target: zPlayerRef().nullable(),
   covered: z.array(zInt()),
   frontier: z.array(zInt()),
   reachSquared: zInt(),
