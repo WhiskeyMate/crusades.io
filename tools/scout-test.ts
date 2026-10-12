@@ -214,8 +214,9 @@ check("surrounded, the land stays while the camp stands", kept === took, `${kept
 
 // ---- 2. A ward tower uncovers a party, and it is routed.
 console.log("\n2. a party a ward tower finds");
-const spot2 = offset(homeB, 45, 30);
-const ward = offset(spot2, WARD_RANGE - 10, 0);
+// Well clear of the first party's ground, so each is counted on its own.
+const ward = offset(homeB, 40, 60);
+const spot2 = offset(ward, 0, -(WARD_RANGE - 10));
 check("B holds the ground", g.owner(spot2) === b && g.owner(ward) === b);
 step([{ type: "build_unit", unit: UnitType.WardTower, tile: ward, clientID: B }]);
 run(5);
@@ -236,7 +237,7 @@ check("and it took no land", heldBy(a, spot2, SCOUT_MAX_RADIUS) === 0);
 
 // ---- 3. Out of a ward tower's sight until it grows into it.
 console.log("\n3. a party that grows into a ward tower's sight");
-const spot3 = offset(ward, -(WARD_RANGE + 10), 0);
+const spot3 = offset(ward, 0, -(WARD_RANGE + 10));
 step([{ type: "build_unit", unit: UnitType.ScoutingParty, tile: spot3, clientID: A }]);
 run(12);
 const p3 = parties().find((u) => u !== p1 && u.isActive());

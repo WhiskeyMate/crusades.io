@@ -1,8 +1,18 @@
 {
-  "version": "0.1.145",
+  "version": "0.1.147",
   "builtAt": "2026-10-12",
-  "commits": 145,
+  "commits": 147,
   "entries": [
+    {
+      "hash": "b6fd183",
+      "date": "2026-10-12",
+      "subject": "A hidden scouting party is seen by its owner alone, not by allies or team-mates"
+    },
+    {
+      "hash": "d2c2797",
+      "date": "2026-10-12",
+      "subject": "AI nations raise ward towers, send scouting parties and rout the ones they uncover; yellow progress bar on buildings going up"
+    },
     {
       "hash": "80b4a36",
       "date": "2026-10-12",
