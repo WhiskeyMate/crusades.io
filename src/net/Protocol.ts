@@ -196,5 +196,5 @@ export type ServerMessage =
   | { type: "error"; message: string };
 
 // Bump whenever the site and the server must be updated together (map lists, message shapes).
-export const PROTOCOL_VERSION = "20";
+export const PROTOCOL_VERSION = "21";
 export const TURN_MS = 100;

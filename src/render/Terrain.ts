@@ -658,14 +658,23 @@ export class Terrain {
     this.stateTex.needsUpdate = true;
   }
 
+  /**
+   * While something is being placed that only some realms can take: the
+   * small ids of those realms. Every other realm is drawn dark, so the ones
+   * that can be chosen stand out. Null when nothing of the kind is afoot.
+   */
+  lit: ReadonlySet<number> | null = null;
+
   /** Repaint the palette: colour per player, alpha marks self and allies. */
   syncPalette() {
     const me = this.state.me;
     for (const p of this.state.players.values()) {
       const i = p.smallID * 4;
-      this.palette[i] = Math.round(p.color[0] * 255);
-      this.palette[i + 1] = Math.round(p.color[1] * 255);
-      this.palette[i + 2] = Math.round(p.color[2] * 255);
+      // Out of reach: nearly black. Our own land a little dimmed, to keep our bearings.
+      const k = this.lit === null || this.lit.has(p.smallID) ? 1 : p === me ? 0.55 : 0.16;
+      this.palette[i] = Math.round(p.color[0] * 255 * k);
+      this.palette[i + 1] = Math.round(p.color[1] * 255 * k);
+      this.palette[i + 2] = Math.round(p.color[2] * 255 * k);
       this.palette[i + 3] =
         p === me ? 255 : me && this.state.friends(me, p) ? 200 : 128;
       this.pattern[p.smallID] = clothId(p.look.territory);

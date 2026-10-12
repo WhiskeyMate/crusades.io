@@ -333,6 +333,13 @@ export class Session {
     return reply.type === "client_stats_result" ? reply.stats : null;
   }
 
+  /** The realms a scouting party could be sent into now (small ids): those this player's roads reach. */
+  async scoutTargets(): Promise<number[]> {
+    if (!this.clientID) return [];
+    const reply = await this.ask({ type: "scout_targets", clientID: this.clientID });
+    return reply.type === "scout_targets_result" ? reply.realms : [];
+  }
+
   async buildables(
     tile: TileRef | null,
     units?: readonly PlayerBuildableUnitType[],

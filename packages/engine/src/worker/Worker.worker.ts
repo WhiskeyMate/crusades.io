@@ -1,3 +1,4 @@
+import { realmsLinkedByRoad } from "../game/RoadLinks";
 import {
   ErrorUpdate,
   GameUpdateViewData,
@@ -5,6 +6,7 @@ import {
 import {
   AttackClusteredPositionsResultMessage,
   ClientStatsResultMessage,
+  ScoutTargetsResultMessage,
   InitErrorMessage,
   InitializedMessage,
   MainThreadMessage,
@@ -381,6 +383,29 @@ async function onMessage(e: MessageEvent<MainThreadMessage>) {
         } as ClientStatsResultMessage);
       }
       break;
+    case "scout_targets": {
+      if (!gameRunner) {
+        throw new Error("Game runner not initialized");
+      }
+      const realms: number[] = [];
+      try {
+        const game = (await gameRunner).game;
+        const asker = game.playerByClientID(message.clientID);
+        if (asker && asker.isAlive()) {
+          for (const p of realmsLinkedByRoad(game, asker)) {
+            if (p.isAlive() && !asker.isFriendly(p)) realms.push(p.smallID());
+          }
+        }
+      } catch (error) {
+        console.error("Failed to find scout targets:", error);
+      }
+      sendMessage({
+        type: "scout_targets_result",
+        id: message.id,
+        realms,
+      } as ScoutTargetsResultMessage);
+      break;
+    }
     case "transport_ship_spawn":
       if (!gameRunner) {
         throw new Error("Game runner not initialized");

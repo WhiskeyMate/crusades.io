@@ -36,6 +36,8 @@ export type WorkerMessageType =
   | "attack_clustered_positions_result"
   | "client_stats"
   | "client_stats_result"
+  | "scout_targets"
+  | "scout_targets_result"
   | "transport_ship_spawn"
   | "transport_ship_spawn_result"
   | "snapshot"
@@ -193,6 +195,19 @@ export interface ClientStatsResultMessage extends BaseWorkerMessage {
   stats: PlayerStats | null;
 }
 
+// crusades.io: the realms a client could send a scouting party into now:
+// those its roads reach, that are no friends of its.
+export interface ScoutTargetsMessage extends BaseWorkerMessage {
+  type: "scout_targets";
+  clientID: string;
+}
+
+export interface ScoutTargetsResultMessage extends BaseWorkerMessage {
+  type: "scout_targets_result";
+  /** Small ids of those realms. */
+  realms: number[];
+}
+
 export interface TransportShipSpawnMessage extends BaseWorkerMessage {
   type: "transport_ship_spawn";
   playerID: PlayerID;
@@ -227,6 +242,7 @@ export type MainThreadMessage =
   | PlayerBorderTilesMessage
   | AttackClusteredPositionsMessage
   | ClientStatsMessage
+  | ScoutTargetsMessage
   | TransportShipSpawnMessage
   | SnapshotMessage;
 
@@ -245,5 +261,6 @@ export type WorkerMessage =
   | PlayerBorderTilesResultMessage
   | AttackClusteredPositionsResultMessage
   | ClientStatsResultMessage
+  | ScoutTargetsResultMessage
   | TransportShipSpawnResultMessage
   | SnapshotResultMessage;

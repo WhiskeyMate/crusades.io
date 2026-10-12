@@ -163,6 +163,24 @@ run(5);
 const towns = b.units(UnitType.City);
 check("B has a town beside it", towns.length === 1);
 const townAt = towns[0]?.tile() ?? town;
+check("no road runs between them yet, so no party can be sent", a.canBuild(UnitType.ScoutingParty, spot1) === false);
+// A takes a foothold at B's rim and raises a market there: its road runs to B's town.
+const foothold = offset(homeB, -118, 0);
+let footing = 0;
+for (let dy = -10; dy <= 10; dy++) {
+  for (let dx = -10; dx <= 10; dx++) {
+    const t = offset(foothold, dx, dy);
+    if (g.isLand(t) && !g.isImpassable(t)) {
+      a.conquer(t);
+      footing++;
+    }
+  }
+}
+step([{ type: "build_unit", unit: UnitType.Factory, tile: foothold, clientID: A }]);
+run(30);
+check("A has a market near B's town", a.units(UnitType.Factory).length === 1, `${footing} tiles of foothold`);
+check("with the road laid, a party can be sent into B", a.canBuild(UnitType.ScoutingParty, spot1) !== false);
+check("but not into a realm no road reaches", a.canBuild(UnitType.ScoutingParty, homeC) === false);
 check("a party cannot be sent onto a building", a.canBuild(UnitType.ScoutingParty, townAt) === false);
 check("nor onto its owner's land", a.canBuild(UnitType.ScoutingParty, homeA) === false);
 const goldBefore = a.gold();

@@ -1,3 +1,4 @@
+import { linkedByRoad } from "./RoadLinks";
 import { SCOUT_CLEARANCE } from "@crusades/engine-api/game/Scouting";
 import { TileRef } from "@crusades/engine-api/game/GameMap";
 import {
@@ -1630,7 +1631,8 @@ export class PlayerImpl implements Player {
 
   /**
    * A scouting party goes onto another realm's open land: not a friend's,
-   * and not within a few tiles of a building.
+   * not within a few tiles of a building, and only into a realm one of this
+   * player's roads runs to, for that is the way in.
    */
   scoutSpawn(tile: TileRef): TileRef | false {
     const mg = this.mg;
@@ -1640,6 +1642,7 @@ export class PlayerImpl implements Player {
     if (!owner.isPlayer() || owner === this || this.isFriendly(owner)) {
       return false;
     }
+    if (!linkedByRoad(mg, this, owner)) return false;
     if (
       mg.anyUnitNearby(
         tile,

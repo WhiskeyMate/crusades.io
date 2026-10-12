@@ -1,8 +1,23 @@
 {
-  "version": "0.1.140",
+  "version": "0.1.143",
   "builtAt": "2026-10-12",
-  "commits": 140,
+  "commits": 143,
   "entries": [
+    {
+      "hash": "51c6b81",
+      "date": "2026-10-12",
+      "subject": "Scouting parties stay inside the realm they were sent into"
+    },
+    {
+      "hash": "129b178",
+      "date": "2026-10-12",
+      "subject": "Scouting spread pulses in and out instead of banding"
+    },
+    {
+      "hash": "c847e19",
+      "date": "2026-10-12",
+      "subject": "Ward towers and scouting parties"
+    },
     {
       "hash": "d9beebb",
       "date": "2026-10-12",

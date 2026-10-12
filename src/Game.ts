@@ -329,6 +329,47 @@ export class Game {
     return this.wayTo(tile, owner);
   }
 
+  private reachAsked = -Infinity;
+  private reachAsking = false;
+
+  /**
+   * While a scouting party is being placed, the realms it could go into are
+   * left in their colours and every other is darkened. Which those are only
+   * the engine knows (it follows the roads), so it is asked, again every
+   * second or so, since roads are laid and cut.
+   */
+  private scoutReach() {
+    if (this.hud.placing !== UnitType.ScoutingParty) {
+      this.reachAsked = -Infinity;
+      if (this.terrain.lit !== null) {
+        this.terrain.lit = null;
+        this.paletteDirty = true;
+      }
+      return;
+    }
+    if (this.terrain.lit === null) {
+      // Dark at once; the realms in reach light up when the answer comes.
+      this.terrain.lit = new Set();
+      this.paletteDirty = true;
+    }
+    const now = performance.now();
+    if (this.reachAsking || now - this.reachAsked < 1000) return;
+    this.reachAsking = true;
+    void this.session.scoutTargets().then((realms) => {
+      this.reachAsking = false;
+      const first = this.reachAsked === -Infinity;
+      this.reachAsked = performance.now();
+      if (this.hud.placing !== UnitType.ScoutingParty) return;
+      if (first && realms.length === 0) {
+        this.hud.toast("No realm is joined to yours by road. Lay a road to a neighbour first: a market near their buildings will do it.", "warn");
+      }
+      const old = this.terrain.lit;
+      if (old && old.size === realms.length && realms.every((r) => old.has(r))) return;
+      this.terrain.lit = new Set(realms);
+      this.paletteDirty = true;
+    });
+  }
+
   /** What the engine last said about building on the tile under the cursor. */
   private upgrade = {
     tile: -1, type: null as UnitType | null, id: null as number | null,
@@ -676,6 +717,7 @@ export class Game {
       ? 1
       : Math.min(1, Math.max(0, (now - session.lastTickAt) / session.tickMs()));
 
+    this.scoutReach();
     if (this.paletteDirty) {
       this.paletteDirty = false;
       this.terrain.syncPalette();
