@@ -2,6 +2,7 @@
 // standings, the build bar, the chronicle, wars, pact offers and the
 // right-click menu.
 
+import { SCOUT_MAX_TILES, SCOUT_TILES_PER_TICK } from "@crusades/engine-api/game/Scouting";
 import { teamCSS } from "../client/Teams";
 import { closeRadial, ICON, openRadial, radialOpen, Slice } from "./Radial";
 import { Choice, quality } from "../render/Quality";
@@ -322,8 +323,50 @@ export class Hud {
     box.hidden = this.raids.size === 0;
   }
 
+  /**
+   * Our scouting party, while it spreads: where it has gone, how long it has
+   * left, and a warning if a ward tower has found it. A click goes there.
+   */
+  private watchScouts() {
+    const state = this.session.state;
+    const me = state.me;
+    const note = el("scouts") as HTMLButtonElement;
+    let party: UnitState | null = null;
+    if (me && me.isAlive) {
+      for (const u of state.units.values()) {
+        if (u.type === UnitType.ScoutingParty && u.ownerID === me.smallID && !u.reachedTarget) {
+          party = u;
+          break;
+        }
+      }
+    }
+    if (!party) {
+      note.hidden = true;
+      return;
+    }
+    const covered = party.scoutTiles?.length ?? 0;
+    const left = Math.max(0, Math.ceil((SCOUT_MAX_TILES - covered) / SCOUT_TILES_PER_TICK / 10));
+    const realm = state.players.get(state.map.ownerID(party.pos));
+    const text = `${party.targetable ? "f" : ""}|${left}|${realm?.name ?? ""}`;
+    if (note.dataset.text !== text) {
+      note.dataset.text = text;
+      note.classList.toggle("found", party.targetable);
+      const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+      note.innerHTML =
+        `<span class="tent">⛺</span><span>${party.targetable ? "Scouting party <b>uncovered</b>" : "Scouting party"}` +
+        `${realm ? ` in <b>${esc(realm.name)}</b>` : ""}</span>` +
+        `<span class="track"><i style="width:${Math.min(100, (covered / SCOUT_MAX_TILES) * 100).toFixed(0)}%"></i></span>` +
+        `<span class="left">${clock}</span>`;
+    }
+    note.title = "Click to see your scouting party";
+    const at = party.pos;
+    note.onclick = () => this.onFocus(at);
+    note.hidden = false;
+  }
+
   onTick(delta: TickDelta) {
     if (delta.tick % 3 === 0) this.watchTheSea();
+    if (delta.tick % 2 === 0) this.watchScouts();
     const state = this.session.state;
     const me = state.me;
     const u = delta.updates;

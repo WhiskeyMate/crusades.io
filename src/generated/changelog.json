@@ -1,8 +1,13 @@
 {
-  "version": "0.1.143",
+  "version": "0.1.144",
   "builtAt": "2026-10-12",
-  "commits": 143,
+  "commits": 144,
   "entries": [
+    {
+      "hash": "a5b4dea",
+      "date": "2026-10-12",
+      "subject": "Scouting parties need a road into the realm; realms out of reach darken while placing"
+    },
     {
       "hash": "51c6b81",
       "date": "2026-10-12",

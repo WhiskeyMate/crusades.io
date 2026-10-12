@@ -43,7 +43,7 @@ export const UNIT_LORE: Record<UnitType, UnitLore> = {
   [UnitType.ScoutingParty]: {
     name: "Scouting Party",
     glyph: "⛺",
-    blurb: "Slips along your roads into a realm they reach and takes open land unseen, unless a ward tower finds it first.",
+    blurb: "Slips along your roads into a realm they reach and takes open land unseen, unless a ward tower finds it first. One at a time, and each costs more than the last.",
   },
   [UnitType.MissileSilo]: {
     name: "Mage Tower",

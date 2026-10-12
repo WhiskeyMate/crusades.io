@@ -14,6 +14,7 @@ import {
   UnitType,
 } from "@crusades/engine-api/game/GameTypes";
 import { GameUpdateType } from "@crusades/engine-api/game/GameUpdates";
+import { SCOUT_COST, scoutCost } from "@crusades/engine-api/game/Scouting";
 import { SCOUT_CLEARANCE, SCOUT_GROW_TICKS, SCOUT_MAX_RADIUS, WARD_RANGE } from "@crusades/engine-api/game/Scouting";
 import { GameStartInfo } from "@crusades/engine-api/Schemas";
 import { buildRealm, DEFAULT_KINGDOMS, MAP_DIR, MapInfoFile } from "../src/worldgen/RealmGen";
@@ -188,6 +189,7 @@ step([{ type: "build_unit", unit: UnitType.ScoutingParty, tile: spot1, clientID:
 run(3);
 check("the party is out", parties().length === 1);
 const p1 = parties()[0];
+check("while it is out, no second party can be sent", a.canBuild(UnitType.ScoutingParty, offset(spot1, -30, 20)) === false);
 check("it starts hidden", p1 !== undefined && !p1.isTargetable() && !p1.reachedTarget());
 void goldBefore;
 step([{ type: "rout_scouts", unitId: p1.id(), clientID: B }]);
@@ -279,6 +281,12 @@ run(SCOUT_GROW_TICKS + 10);
 check("it is done", !!p5 && p5.reachedTarget());
 check("it took B's land right up to the border", g.owner(offset(spot5, 0, -6)) === a && g.owner(offset(spot5, 10, 0)) === a);
 check("and none of C's", g.owner(offset(spot5, 0, -9)) === c && heldBy(c, offset(spot5, 0, -16), 7) === cBefore && heldBy(a, offset(spot5, 0, -16), 7) === 0);
+
+// ---- 6. Dearer each time.
+console.log("\n6. each party costs more than the last");
+const sent = a.unitsConstructed(UnitType.ScoutingParty);
+check("A has sent four parties", sent === 4, `${sent}`);
+check("the price climbs with each, to a ceiling", scoutCost(0) === SCOUT_COST && scoutCost(1) > scoutCost(0) && scoutCost(4) > scoutCost(3) && scoutCost(100) === scoutCost(1000), `${scoutCost(0)}, ${scoutCost(1)}, ${scoutCost(4)} ... ${scoutCost(100)}`);
 
 console.log(failed === 0 ? "\nall scouting checks passed" : `\n${failed} check(s) FAILED`);
 process.exit(failed === 0 ? 0 : 1);

@@ -12,7 +12,16 @@ export const SCOUT_GROW_TICKS = SCOUT_MAX_TILES / SCOUT_TILES_PER_TICK;
 export const SCOUT_MAX_RADIUS = 24;
 /** A party keeps this far from any building: it takes the land around them, not under them. */
 export const SCOUT_CLEARANCE = 3;
-/** What a party costs, in gold: more than a fireball, less than a dragon. */
+/** What a player's first party costs, in gold: more than a fireball, less than a dragon. */
 export const SCOUT_COST = 2_500_000;
+/** Each party a player has sent makes the next this much dearer. */
+export const SCOUT_COST_STEP = 1_250_000;
+/** And no party costs more than this. */
+export const SCOUT_COST_MAX = 10_000_000;
+
+/** What a party costs a player who has already sent `sent` of them. */
+export function scoutCost(sent: number): number {
+  return Math.min(SCOUT_COST_MAX, SCOUT_COST + Math.max(0, sent) * SCOUT_COST_STEP);
+}
 /** How far a ward tower sees. A party is uncovered when this circle meets the ground it has covered. */
 export const WARD_RANGE = 50;

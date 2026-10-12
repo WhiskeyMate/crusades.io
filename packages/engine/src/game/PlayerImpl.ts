@@ -1642,6 +1642,14 @@ export class PlayerImpl implements Player {
     if (!owner.isPlayer() || owner === this || this.isFriendly(owner)) {
       return false;
     }
+    // One party out at a time; a camp, its work done, does not count.
+    if (
+      this.units(UnitType.ScoutingParty).some(
+        (u) => u.isActive() && !u.reachedTarget(),
+      )
+    ) {
+      return false;
+    }
     if (!linkedByRoad(mg, this, owner)) return false;
     if (
       mg.anyUnitNearby(

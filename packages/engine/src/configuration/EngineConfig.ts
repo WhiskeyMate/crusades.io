@@ -1,4 +1,4 @@
-import { SCOUT_COST } from "@crusades/engine-api/game/Scouting";
+import { scoutCost } from "@crusades/engine-api/game/Scouting";
 import {
   Difficulty,
   Gold,
@@ -355,7 +355,18 @@ export class EngineConfig extends Config {
           UnitType.WardTower,
         );
       case UnitType.ScoutingParty:
-        return this.costWrapper(() => SCOUT_COST, UnitType.ScoutingParty);
+        // Dearer with every one the player has sent, whatever became of them.
+        return (game: Game, player: Player) => {
+          if (
+            player.type() === PlayerType.Human &&
+            this.hasInfiniteGoldFor(player)
+          ) {
+            return 0n;
+          }
+          return BigInt(
+            scoutCost(player.unitsConstructed(UnitType.ScoutingParty)),
+          );
+        };
       case UnitType.City:
         return this.costWrapper(
           (numUnits: number) => Math.min(1_000_000, pow2(numUnits) * 125_000),

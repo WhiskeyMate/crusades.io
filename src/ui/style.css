@@ -982,3 +982,19 @@ body.phone #hall .hall-row { grid-template-columns: 1fr; }
 body.phone #public-list:has(.pub:nth-child(4)) .pub.lead { grid-row: auto; }
 #lobby-members .side.mine { box-shadow: 0 0 0 2px var(--side); }
 #lobby-members .side button { margin-top: 6px; width: 100%; font-size: 12.5px; padding: 4px; }
+
+/* A scouting party of ours at its work: how long it has left; click to go and look. */
+#scouts { display: flex; align-items: center; gap: 10px; padding: 5px 12px; font-size: 13.5px; color: #ffe3ae; border-color: var(--gold); cursor: pointer; }
+#scouts[hidden] { display: none; }
+#scouts:hover { filter: none; border-color: #fff0b8; }
+#scouts .tent { font-size: 16px; }
+#scouts b { font-weight: normal; color: var(--ink); }
+#scouts .left { min-width: 44px; text-align: right; font-variant-numeric: tabular-nums; color: var(--gold); }
+#scouts .track { width: 90px; height: 5px; border-radius: 3px; background: #120c07; overflow: hidden; }
+#scouts .track i { display: block; height: 100%; background: var(--gold); }
+#scouts.found { border-color: #c0392b; color: #ffb4a3; animation: scouts-found 0.9s ease-in-out infinite; }
+#scouts.found .left, #scouts.found b { color: #ffb4a3; }
+#scouts.found .track i { background: #e2664f; }
+@keyframes scouts-found { 50% { box-shadow: 0 0 0 2px rgba(226, 102, 79, 0.55); } }
+body.phone #scouts { font-size: 12.5px; }
+body.phone #scouts .track { width: 56px; }
