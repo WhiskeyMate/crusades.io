@@ -205,7 +205,9 @@ const newMag = new Uint8Array(n);
   }
   for (let i = 0; i < n; i++) {
     if (!newLand[i]) continue;
-    newMag[i] = land[i] ? mag[i] : Math.min(mag[src[i]], 9);
+    // Water filled in beside ground that is out of play is out of play too:
+    // a river crossing it must not become a strip of land to be fought over.
+    newMag[i] = land[i] ? mag[i] : mag[src[i]] === 31 ? 31 : Math.min(mag[src[i]], 9);
   }
 }
 

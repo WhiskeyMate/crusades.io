@@ -271,6 +271,13 @@ export class TransportShipExecution implements Execution {
           }
           return;
         }
+        if (this.mg.isImpassable(this.dst)) {
+          // crusades.io: nowhere to land after all; the levies come home.
+          this.attacker.addTroops(this.boat.troops());
+          this.boat.delete(false);
+          this.active = false;
+          return;
+        }
         this.attacker.conquer(this.dst);
         if (this.target.isPlayer() && this.attacker.isFriendly(this.target)) {
           this.attacker.addTroops(this.boat.troops());

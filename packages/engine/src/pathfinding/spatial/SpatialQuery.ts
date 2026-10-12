@@ -108,6 +108,8 @@ export class SpatialQuery {
 
     const isValidTile = (t: TileRef) => {
       if (!gm.isShore(t) || !gm.isLand(t)) return false;
+      // crusades.io: as below, impassable coast is nobody's landing place.
+      if (gm.isImpassable(t)) return false;
       const tOwner = gm.ownerID(t);
       return tOwner === ownerId;
     };
@@ -139,6 +141,10 @@ export class SpatialQuery {
 
     const isValidTile = (t: TileRef) => {
       if (!gm.isShore(t) || !gm.isLand(t)) return false;
+      // crusades.io: ground nobody can hold is no landing place. Unclaimed
+      // impassable coast would otherwise pass for wilderness, and the ship
+      // that reached it would try to take a tile that cannot be taken.
+      if (gm.isImpassable(t)) return false;
       if (gm.ownerID(t) !== targetId) return false;
       const component = gm.getWaterComponent(t);
       return component !== null && reachable.has(component);

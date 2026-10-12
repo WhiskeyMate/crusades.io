@@ -1,8 +1,13 @@
 {
-  "version": "0.1.149",
+  "version": "0.1.150",
   "builtAt": "2026-10-12",
-  "commits": 149,
+  "commits": 150,
   "entries": [
+    {
+      "hash": "92f5fb0",
+      "date": "2026-10-12",
+      "subject": "A scouting party cannot be sent where a building stands within its reach"
+    },
     {
       "hash": "40f40eb",
       "date": "2026-10-12",
