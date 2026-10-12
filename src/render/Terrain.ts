@@ -191,12 +191,13 @@ void main() {
     }
   }
   // Ground a scouting party is spreading over: its owner's colour laid over
-  // the holder's in moving bands, or red where a ward tower has found it.
+  // the holder's, pulsing in and out, or red where a ward tower has found it.
   float sc = texture(tScouts, uv).r;
   if (sc > 0.25 && !wet) {
     vec3 scc = sc > 0.75 ? vec3(0.95, 0.16, 0.1) : uScoutColor;
-    float band = step(0.5, fract((tile.x + tile.y) * 0.22 - uTime * 0.6));
-    col = mix(col, scc * (0.75 + dot(col, vec3(0.3, 0.55, 0.15)) * 0.6), 0.42 + band * 0.26);
+    // It breathes: fading up and away again, all of it together.
+    float pulse = 0.5 + 0.5 * sin(uTime * 2.6);
+    col = mix(col, scc * (0.75 + dot(col, vec3(0.3, 0.55, 0.15)) * 0.6), 0.12 + pulse * 0.58);
   }
   float road = texture(tRoads, uv).r;
   col = mix(col, vec3(0.62, 0.52, 0.36), smoothstep(0.2, 0.55, road) * 0.9);
