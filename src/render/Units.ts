@@ -29,6 +29,8 @@ const STRUCTURES: Partial<Record<UnitType, keyof typeof MODELS>> = {
 };
 
 const NEUTRAL: RGB = [0.6, 0.6, 0.6];
+/** Arrows in the volley a war galley looses. */
+const VOLLEY = 6;
 /** How far along its flight a dragon looses its fireball and turns for home. */
 const DRAGON_TURNS_AT = 0.75;
 
@@ -109,7 +111,7 @@ export class Units {
     const cap: Record<string, number> = {
       town: 1500, keep: 1500, harbour: 800, market: 800, mageTower: 600,
       ballistaTower: 800, wardTower: 600, camp: 300, scaffold: 400, galley: 600, longship: 600, cog: 900,
-      wagon: 1500, bolt: 500, boulder: 600, banner: 3000,
+      wagon: 1500, bolt: 2500, boulder: 600, banner: 3000,
     };
     for (const [name, n] of Object.entries(cap)) {
       this.pools[name] = new Pool(MODELS[name as keyof typeof MODELS], n, this.group);
@@ -433,8 +435,29 @@ export class Units {
           break;
         }
         case UnitType.Shell: {
+          // A galley's shot is a small volley: a handful of arrows flying
+          // loosely together, each a little off the line and rising and
+          // dipping on its own. Where each sits is fixed by the shot's
+          // number, so the volley holds its shape as it flies.
           const y = 2.5 * shipScale;
-          this.put(this.pools.bolt, pos.x, y, pos.z, memo.yaw, 1.0 * shipScale, color);
+          const fx = Math.sin(memo.yaw);
+          const fz = Math.cos(memo.yaw);
+          for (let i = 0; i < VOLLEY; i++) {
+            const h = Math.sin((u.id * 7 + i) * 12.9898) * 43758.5453;
+            const r1 = h - Math.floor(h);
+            const h2 = Math.sin((u.id * 13 + i * 5) * 78.233) * 12543.117;
+            const r2 = h2 - Math.floor(h2);
+            const side = (i - (VOLLEY - 1) / 2) * 0.42 + (r1 - 0.5) * 0.3;
+            const along = (r2 - 0.5) * 1.6;
+            const lift = (r1 - 0.5) * 0.7 + Math.sin(time * 9 + i * 1.7 + u.id) * 0.08;
+            this.put(
+              this.pools.bolt,
+              pos.x + (fz * side + fx * along) * shipScale,
+              y + lift * shipScale,
+              pos.z + (-fx * side + fz * along) * shipScale,
+              memo.yaw + (r2 - 0.5) * 0.12, 0.4 * shipScale, color, 1, (r1 - 0.5) * 0.2,
+            );
+          }
           memo.y = y;
           break;
         }
