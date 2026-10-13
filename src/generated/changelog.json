@@ -1,8 +1,18 @@
 {
-  "version": "0.1.150",
-  "builtAt": "2026-10-12",
-  "commits": 150,
+  "version": "0.1.152",
+  "builtAt": "2026-10-13",
+  "commits": 152,
   "entries": [
+    {
+      "hash": "2b1f5a3",
+      "date": "2026-10-13",
+      "subject": "Dragons loose a fireball three quarters of the way and fly home to their tower"
+    },
+    {
+      "hash": "9ce0278",
+      "date": "2026-10-12",
+      "subject": "Fix 'cannot conquer impassable terrain'; rivers across out-of-play ground are out of play again"
+    },
     {
       "hash": "92f5fb0",
       "date": "2026-10-12",

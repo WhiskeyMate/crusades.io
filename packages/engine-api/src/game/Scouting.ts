@@ -23,5 +23,5 @@ export const SCOUT_COST_MAX = 10_000_000;
 export function scoutCost(sent: number): number {
   return Math.min(SCOUT_COST_MAX, SCOUT_COST + Math.max(0, sent) * SCOUT_COST_STEP);
 }
-/** How far a ward tower sees. A party is uncovered when this circle meets the ground it has covered. */
-export const WARD_RANGE = 120;
+/** How far a ward tower sees: a little less than a new ballista tower shoots (70). A party is uncovered when this circle meets the ground it has covered. */
+export const WARD_RANGE = 62;
