@@ -29,6 +29,8 @@ const STRUCTURES: Partial<Record<UnitType, keyof typeof MODELS>> = {
 };
 
 const NEUTRAL: RGB = [0.6, 0.6, 0.6];
+/** How far along its flight a dragon looses its fireball and turns for home. */
+const DRAGON_TURNS_AT = 0.75;
 
 /** A war galley's full strength (veterans can hold a little more). */
 const GALLEY_HEALTH = 1000;
@@ -76,6 +78,16 @@ export class Units {
   private trailZ = new Float32Array(TRAIL_POINTS);
   private memo = new Map<number, Memo>();
   private dragons = new Map<number, Dragon>();
+  /** When each dragon was first seen in the air, to judge how fast it flies. */
+  private dragonSince = new Map<number, number>();
+  /**
+   * Dragons on their way home. A dragon does not go down with its fire: three
+   * quarters of the way there it looses a fireball, which goes on alone, and
+   * turns back for the tower it rose from.
+   */
+  private homing = new Map<number, {
+    d: Dragon; from: THREE.Vector3; to: THREE.Vector3; t0: number; dur: number; yaw0: number; scale: number;
+  }>();
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
   private e = new THREE.Euler();
@@ -220,10 +232,10 @@ export class Units {
     const m = this.memo.get(u.id);
     this.memo.delete(u.id);
     const d = this.dragons.get(u.id);
-    if (d) {
-      this.group.remove(d.group);
-      this.dragons.delete(u.id);
-    }
+    // One already heading home flies on; one brought down before it loosed its fire is gone.
+    if (d && !this.homing.has(u.id)) this.group.remove(d.group);
+    this.dragons.delete(u.id);
+    this.dragonSince.delete(u.id);
     return m && m.seen ? new THREE.Vector3(m.x, m.y, m.z) : null;
   }
 
@@ -445,6 +457,7 @@ export class Units {
       memo.z = pos.z;
       memo.seen = true;
     }
+    this.flyHome(time);
     for (const pool of Object.values(this.pools)) pool.end();
     this.tags.end();
     this.aimLine(S);
@@ -608,6 +621,35 @@ export class Units {
     }
   }
 
+  /** Dragons that have loosed their fire, flying back to the tower they rose from. */
+  private flyHome(time: number) {
+    for (const [id, h] of this.homing) {
+      const k = (time - h.t0) / h.dur;
+      if (k >= 1) {
+        this.group.remove(h.d.group);
+        this.homing.delete(id);
+        continue;
+      }
+      // Eased at both ends, with a rise in the middle of the way.
+      const e = k * k * (3 - 2 * k);
+      const x = h.from.x + (h.to.x - h.from.x) * e;
+      const z = h.from.z + (h.to.z - h.from.z) * e;
+      const y = h.from.y + (h.to.y - h.from.y) * e + Math.sin(Math.PI * k) * 6 * h.scale * 0.4;
+      // It comes about over the first part of the way, rather than flipping on the spot.
+      const homeward = Math.atan2(h.to.x - h.from.x, h.to.z - h.from.z);
+      let turn = homeward - h.yaw0;
+      while (turn > Math.PI) turn -= Math.PI * 2;
+      while (turn < -Math.PI) turn += Math.PI * 2;
+      const about = Math.min(1, k / 0.14);
+      const yaw = h.yaw0 + turn * about * about * (3 - 2 * about);
+      h.d.group.position.set(x, y, z);
+      h.d.group.scale.setScalar(h.scale * (k > 0.9 ? 1 - (k - 0.9) * 6 : 1));
+      // Banked through the turn, level after it.
+      h.d.group.rotation.set(0, yaw, about < 1 ? Math.sin(Math.PI * about) * 0.6 * Math.sign(turn || 1) : 0, "YXZ");
+      h.d.animate(time);
+    }
+  }
+
   /** Flight of a fireball, dragon, rising star or falling star. */
   private sorcery(
     u: UnitState, tx: number, ty: number, pos: THREE.Vector3, memo: Memo, S: number, time: number,
@@ -619,23 +661,40 @@ export class Units {
     const at = this.p.set(pos.x, y, pos.z);
 
     if (u.type === UnitType.HydrogenBomb) {
+      const scale = 2.2 * Math.pow(S, 0.8);
+      if (this.homing.has(u.id)) {
+        // The dragon has turned for home: what flies on is its fireball.
+        this.effects.trail(at.clone(), scale * 0.75, "fire");
+        this.effects.trail(at.clone(), scale * 0.4, "fire");
+        return;
+      }
       let d = this.dragons.get(u.id);
       if (!d) {
         d = new Dragon(color);
         this.dragons.set(u.id, d);
+        this.dragonSince.set(u.id, time);
         this.group.add(d.group);
       }
-      const scale = 2.2 * Math.pow(S, 0.8);
       d.group.position.copy(at);
       d.group.scale.setScalar(scale);
       d.group.rotation.set(Math.max(-0.5, Math.min(0.5, (prevY - y) * 0.25)), memo.yaw, 0, "YXZ");
       d.animate(time);
-      if (t > 0.82) {
-        const dir = new THREE.Vector3(Math.sin(memo.yaw) * 0.6, -0.8, Math.cos(memo.yaw) * 0.6);
+      if (t >= DRAGON_TURNS_AT) {
+        // It looses its fire at the mark, and wheels about.
+        const dir = new THREE.Vector3(Math.sin(memo.yaw) * 0.8, -0.45, Math.cos(memo.yaw) * 0.8);
         const mouth = new THREE.Vector3(
           at.x + Math.sin(memo.yaw) * 4.3 * scale, at.y + 0.6 * scale, at.z + Math.cos(memo.yaw) * 4.3 * scale,
         );
-        this.effects.breath(mouth, dir, scale * 0.5);
+        this.effects.breath(mouth, dir, scale * 0.6);
+        const map = this.state.map;
+        const ox = map.x(u.origin);
+        const oy = map.y(u.origin);
+        const home = new THREE.Vector3(
+          this.terrain.worldX(ox), this.terrain.surfaceAt(ox, oy) + 9 * scale * 0.5, this.terrain.worldZ(oy),
+        );
+        // Home takes as long as the way out did: the same ground at the same pace.
+        const out = Math.max(1.5, time - (this.dragonSince.get(u.id) ?? time));
+        this.homing.set(u.id, { d, from: at.clone(), to: home, t0: time, dur: out, yaw0: memo.yaw, scale });
       } else if (Math.random() < 0.2) {
         this.effects.trail(at.clone(), scale * 0.4);
       }
